@@ -1,0 +1,58 @@
+\section{Bối cảnh và bài toán}
+
+\begin{frame}{Bối cảnh và bài toán}
+  \footnotesize
+  \begin{itemize}
+    \setlength{\itemsep}{2pt}
+    \item \alert{Vấn đề:} \alert{47,21\%} cặp issue--sprint không hoàn thành đúng hạn;
+          số cảnh báo mỗi sprint phải giới hạn.
+    \item \alert{Bài toán:} tại mốc $t\in\{0, 25, 50, 75\%\}$ sprint, ước lượng
+          $P(\text{không hoàn thành}\mid\text{thông tin đến } t)$, dữ liệu tái dựng \emph{as-of}.
+    \item \alert{RQ1:} lịch sử thực thi có giúp dự báo tốt hơn thông tin đầu sprint?\\
+          \alert{RQ2:} có giữ được trên sprint tương lai và dự án chưa thấy?\\
+          \alert{RQ3:} với số cảnh báo giới hạn, mô hình nào bắt được nhiều issue rủi ro hơn?
+    \item \alert{Giả thuyết chính (đăng ký trước):} tại mốc 50\%, cùng ngân sách,
+          mô hình \emph{động} có recall cao hơn mô hình \emph{tĩnh}.
+    \item \alert{Hai phần:} mô hình chọn \emph{issue nào} cần chú ý; agent giải thích
+          \emph{vì sao}, kèm bằng chứng.
+  \end{itemize}
+\end{frame}
+
+\begin{frame}{Dữ liệu TAWOS v1.1 và thiết kế đánh giá}
+  \footnotesize
+  \begin{columns}[T,onlytextwidth]
+    \begin{column}{0.44\textwidth}
+      \renewcommand{\arraystretch}{1.25}
+      \begin{tabular}{l|r|r}
+        & \textbf{Gốc} & \textbf{Đánh giá} \\
+        \hline
+        Dự án & 39 & 14 \\
+        Sprint & 4.594 & 1.962 \\
+        Issue / cặp & 458.232 & 18.322 \\
+      \end{tabular}
+
+      \vspace{0.3cm}
+      \begin{itemize}
+        \setlength{\itemsep}{3pt}
+        \item \alert{Nhãn:} trạng thái tại ngày kết thúc sprint không thuộc
+              \{Done, Resolved, Closed, Complete\}.
+        \item Kiểm tra chéo nhãn bằng SQL độc lập trên 765 cặp.
+      \end{itemize}
+    \end{column}
+    \begin{column}{0.52\textwidth}
+      \alert{\textbf{Temporal} (sprint tương lai)}\\
+      Train trên sprint cũ, test trên sprint mới hơn.\\[0.1cm]
+      \renewcommand{\arraystretch}{1.15}
+      \begin{tabular}{l|r|r|r}
+        & Train & Validation & Test \\
+        \hline
+        Cặp & 11.500 & 3.401 & 3.293 \\
+      \end{tabular}\\[0.1cm]
+      Vùng \emph{purge} (128 cặp) tách train và test để tránh rò rỉ.
+
+      \vspace{0.35cm}
+      \alert{\textbf{Cross-project} (dự án chưa thấy)}\\
+      Lần lượt giữ 1 trong 14 dự án làm test, train trên 13 dự án còn lại.
+    \end{column}
+  \end{columns}
+\end{frame}

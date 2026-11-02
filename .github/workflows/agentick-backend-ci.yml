@@ -1,0 +1,61 @@
+name: agentick-backend CI
+
+on:
+  push:
+    paths:
+      - "agentick-backend/**"
+  pull_request:
+    paths:
+      - "agentick-backend/**"
+
+defaults:
+  run:
+    working-directory: agentick-backend
+
+jobs:
+  openapi-contract:
+    runs-on: ubuntu-latest
+    services:
+      db:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_DB: agentick
+          POSTGRES_USER: agentick
+          POSTGRES_PASSWORD: agentick_local_dev
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+    env:
+      DATABASE_URL: postgresql+psycopg://agentick:agentick_local_dev@localhost:5432/agentick
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install dependencies
+        run: pip install -r requirements-dev.txt
+
+      - name: Run migrations
+        run: alembic upgrade head
+
+      - name: Validate OpenAPI schema syntax
+        run: python scripts/validate_openapi.py
+
+      - name: Export OpenAPI schema
+        run: python scripts/export_openapi.py openapi.json
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+
+      - name: Lint OpenAPI schema (RESTful conventions)
+        run: npx --yes @stoplight/spectral-cli lint openapi.json --ruleset .spectral.yaml
+
+      - name: Run OpenAPI contract tests (schemathesis)
+        run: pytest tests/test_openapi_contract.py

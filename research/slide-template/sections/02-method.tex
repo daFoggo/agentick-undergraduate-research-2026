@@ -1,0 +1,59 @@
+\section{Phương pháp}
+
+\begin{frame}{Đặc trưng và mô hình}
+  \footnotesize
+  \begin{columns}[T,onlytextwidth]
+    \begin{column}{0.5\textwidth}
+      \renewcommand{\arraystretch}{1.25}
+      \begin{tabular}{L{0.5\linewidth}|L{0.38\linewidth}}
+        \textbf{Nhóm đặc trưng} & \textbf{Mô hình tĩnh?} \\
+        \hline
+        Timing & có \\
+        Attributes & có (tại đầu sprint) \\
+        Execution state & không \\
+        Prefix activity & không \\
+        Cohort context & không \\
+      \end{tabular}
+
+      \vspace{0.2cm}
+      \scriptsize Chỉ dùng thông tin có trước hoặc đúng thời điểm mốc.
+    \end{column}
+    \begin{column}{0.46\textwidth}
+      \textbf{6 mô hình so sánh}
+      \begin{enumerate}
+        \setlength{\itemsep}{1pt}
+        \item Frequency (tỷ lệ lịch sử)
+        \item Quy tắc nghiệp vụ: Done $\to$ 0,01; còn lại
+              $\mathrm{clip}(0{,}5+0{,}02d+0{,}1u)$
+        \item Logistic Regression tĩnh
+        \item CatBoost tĩnh
+        \item \alert{CatBoost động}
+        \item CatBoost động, bỏ nhóm cohort
+      \end{enumerate}
+      \scriptsize CatBoost\ieeecitefootnote{2}{L.~Prokhorenkova \emph{et al.}, ``CatBoost: Unbiased boosting with categorical features,'' in \emph{Proc. NeurIPS}, 2018.}: 400 cây, depth 5, lr 0,05, L2 = 5; hiệu chuẩn sigmoid trên validation.
+    \end{column}
+  \end{columns}
+\end{frame}
+
+\begin{frame}{Cảnh báo theo ngân sách và cách đọc chỉ số}
+  \scriptsize
+  \textbf{Ngân sách:} mỗi sprint có $n$ issue nhận tối đa
+  $\lceil 0{,}2\,n\rceil$ cảnh báo, dành cho các issue có điểm rủi ro cao nhất.
+  So sánh mô hình bằng paired bootstrap 2.000 lần (theo sprint / theo dự án).
+
+  \vspace{0.12cm}
+  \setlength{\tabcolsep}{3pt}
+  \renewcommand{\arraystretch}{1.22}
+  \begin{tabular}{L{0.2\textwidth}|L{0.44\textwidth}|L{0.28\textwidth}}
+    \textbf{Chỉ số} & \textbf{Ý nghĩa} & \textbf{Tốt khi} \\
+    \hline
+    Recall@ngân sách & \% issue thực sự trễ nằm trong danh sách cảnh báo & cao \\
+    Precision & \% cảnh báo đúng & cao \\
+    Cảnh báo sai/sprint & số cảnh báo rơi vào issue cuối cùng vẫn xong & thấp \\
+    Lead time & số ngày từ lúc cảnh báo đến hết sprint & dài \\
+    AP & chất lượng xếp hạng trên mọi ngưỡng; ngẫu nhiên $\approx$ tỷ lệ lớp & gần 1 \\
+    Brier & sai số bình phương của xác suất; đoán hằng $\approx 0{,}25$ & thấp \\
+    Intercept / slope & xác suất có khớp tần suất thực tế không & 0 / 1 \\
+    Chênh lệch, CI 95\% & recall động trừ recall tĩnh (điểm \%); CI không chứa 0 $\Rightarrow$ có ý nghĩa & CI $>0$ \\
+  \end{tabular}
+\end{frame}

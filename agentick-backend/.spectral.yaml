@@ -1,0 +1,35 @@
+extends: ["spectral:oas"]
+
+rules:
+  operation-operationId: error
+  operation-tags: error
+  operation-description: warn
+  operation-success-response: error
+  path-params: error
+
+  # RESTful conventions beyond the default oas ruleset
+  paths-kebab-case:
+    description: Path segments must be kebab-case, not camelCase or snake_case.
+    severity: warn
+    given: "$.paths[*]~"
+    then:
+      function: pattern
+      functionOptions:
+        match: "^(/[a-z0-9]+(-[a-z0-9]+)*|/\\{[a-zA-Z0-9_]+\\})*$"
+
+  no-http-verbs-in-path:
+    description: Paths should be noun-based resources, not verbs (use the HTTP method instead).
+    severity: warn
+    given: "$.paths[*]~"
+    then:
+      function: pattern
+      functionOptions:
+        notMatch: "/(get|create|update|delete|list)s?(/|$)"
+
+  error-response-has-schema:
+    description: Every documented 4xx/5xx response must define a response schema.
+    severity: warn
+    given: "$.paths[*][*].responses[?(@property >= '400')]"
+    then:
+      field: content
+      function: truthy

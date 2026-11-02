@@ -1,0 +1,153 @@
+\section{Kết quả trên TAWOS}
+
+\begin{frame}{Kết quả chính: giả thuyết tại mốc 50\%}
+  \small
+  \renewcommand{\arraystretch}{1.35}
+  \begin{tabular}{l|r|r|r|l|l}
+    \textbf{Thiết kế} & \textbf{Tĩnh} & \textbf{Động} & \textbf{Chênh lệch} & \textbf{CI 95\%} & \textbf{Đơn vị} \\
+    \hline
+    Temporal & 44,46\% & 53,36\% & \alert{+8,90} & [6,38; 11,70] & 336 sprint \\
+    Cross-project & 43,56\% & 53,52\% & \alert{+9,96} & [7,53; 12,82] & 14 dự án \\
+  \end{tabular}
+
+  \vspace{0.3cm}
+  \footnotesize
+  \begin{itemize}
+    \setlength{\itemsep}{2pt}
+    \item \alert{Đọc:} với khoảng 20\% cảnh báo mỗi sprint, mô hình động bắt
+          được trung bình 53\% số issue sẽ trễ, mô hình tĩnh bắt được 44\%.
+          CI không chứa 0, nên \alert{giả thuyết chính được ủng hộ}.
+    \item \alert{Cùng 850 cảnh báo (temporal):} phát hiện 682 so với 605 issue
+          (trên tổng 1.883); precision gộp 80,24\% so với 71,18\%; cảnh báo sai
+          168 so với 245 (0,42 so với 0,62 mỗi sprint).
+  \end{itemize}
+\end{frame}
+
+\begin{frame}{Chính xác hơn nhưng muộn hơn}
+  \small
+  \renewcommand{\arraystretch}{1.35}
+  \begin{tabular}{L{0.28\textwidth}|R{0.15\textwidth}|R{0.13\textwidth}|R{0.13\textwidth}|R{0.13\textwidth}}
+    \textbf{Mốc} & \textbf{0\%} & \textbf{25\%} & \textbf{50\%} & \textbf{75\%} \\
+    \hline
+    Recall động & 45,12\% & 50,22\% & 53,36\% & 54,55\% \\
+    Chênh lệch (điểm \%) & +0,66\textsuperscript{*} & +5,76 & +8,90 & +10,09 \\
+    Lead time TB & $\sim$12,6 ngày & $\sim$9,5 ngày & $\sim$6,3 ngày & $\sim$3,1 ngày \\
+  \end{tabular}
+
+  \vspace{0.1cm}
+  \scriptsize \textsuperscript{*} CI 95\% [$-$0,89; 2,04] chứa 0. Recall tĩnh = 44,46\% ở mọi mốc.
+
+  \vspace{0.2cm}
+  \footnotesize
+  \begin{itemize}
+    \setlength{\itemsep}{2pt}
+    \item Ở mốc 0\% chưa có lịch sử nên hai mô hình ngang nhau. Đây là kết quả
+          kỳ vọng và cho thấy không có rò rỉ thông tin.
+    \item Mốc muộn hơn cho chênh lệch lớn hơn nhưng ít thời gian xử lý hơn. Đề tài
+          \alert{không chọn một mốc ``tối ưu''} duy nhất.
+  \end{itemize}
+\end{frame}
+
+\begin{frame}{Kiểm tra độ vững: phải đọc kỹ}
+  \scriptsize
+  \setlength{\tabcolsep}{3pt}
+  \renewcommand{\arraystretch}{1.2}
+  \begin{tabular}{L{0.42\textwidth}|L{0.2\textwidth}|L{0.2\textwidth}}
+    \textbf{Chênh lệch động -- tĩnh tại 50\% (điểm \%)} & \textbf{Temporal} & \textbf{Cross-project} \\
+    \hline
+    Chính: $\lceil 0{,}2n\rceil$ & +8,90 [6,38; 11,70] & +9,96 [7,53; 12,82] \\
+    Làm tròn xuống $\lfloor 0{,}2n\rfloor$ & +3,82 [2,20; 5,67] & +6,09 [4,34; 8,09] \\
+    \alert{Chỉ issue còn mở} & \alert{+2,59 [0,68; 4,69]} & \alert{+2,03 [0,73; 3,58]} \\
+    Chỉ tính Closed là hoàn thành & +1,87 [0,83; 3,04] & +1,95 [0,32; 3,81] \\
+  \end{tabular}
+
+  \vspace{0.15cm}
+  \begin{alertblock}{Ba lưu ý}
+    \begin{enumerate}
+      \setlength{\itemsep}{1pt}
+      \item Phần lớn lợi thế đến từ việc \alert{nhận ra issue đã Done}:
+            \texttt{dynamic\_is\_done} chiếm 27,41\% / 56,44\% importance.
+      \item Ngân sách thực tế \alert{không phải 20\%}: 207/397 sprint có dưới 5 issue,
+            nên tỷ lệ cảnh báo thực tế là 41,54\% (macro) / 25,81\% (micro).
+      \item Mọi chênh lệch vẫn dương và có ý nghĩa, nhưng nhỏ hơn nhiều so với con số chính.
+    \end{enumerate}
+  \end{alertblock}
+\end{frame}
+
+\begin{frame}{Chất lượng xác suất (mốc 50\%)}
+  \footnotesize
+  \setlength{\tabcolsep}{3pt}
+  \renewcommand{\arraystretch}{1.35}
+  \begin{tabular}{L{0.15\textwidth}|L{0.07\textwidth}|R{0.1\textwidth}|R{0.1\textwidth}|R{0.11\textwidth}|L{0.17\textwidth}|L{0.15\textwidth}}
+    & & \textbf{AP TB dự án} & \textbf{Brier thô} & \textbf{Brier HC}
+      & \textbf{Intercept} & \textbf{Slope} \\
+    \hline
+    Temporal & tĩnh & 0,6571 & 0,2188 & 0,1894 & 0,49 $\to$ 0,03 & 0,66 $\to$ 0,88 \\
+             & động & 0,8128 & 0,1279 & 0,1137 & 0,57 $\to$ 0,09 & 0,87 $\to$ 1,03 \\
+    \hline
+    Cross-project & tĩnh & 0,6359 & 0,2257 & 0,2241 & 0,17 $\to$ $-$0,09 & 0,67 $\to$ 0,74 \\
+                  & động & 0,8035 & 0,1374 & \textcolor{templateRed}{0,1381} & 0,20 $\to$ $-$0,004 & 0,89 $\to$ 0,92 \\
+  \end{tabular}
+
+  \vspace{0.1cm}
+  \scriptsize HC: sau hiệu chuẩn. Lý tưởng: intercept 0, slope 1. Đoán ngẫu
+  nhiên: AP $\approx$ 0,47--0,57; Brier $\approx$ 0,25.
+
+  \vspace{0.15cm}
+  \footnotesize
+  \begin{itemize}
+    \setlength{\itemsep}{2pt}
+    \item Mô hình động \alert{xếp hạng tốt hơn rõ rệt} (AP $\sim$0,65 $\to$ $\sim$0,81).
+    \item Cross-project: Brier \alert{không cải thiện}, nên cần hiệu chuẩn lại
+          trên dữ liệu Agentick.
+  \end{itemize}
+\end{frame}
+
+\begin{frame}{So với quy tắc đơn giản và giữa các dự án (khám phá)}
+  \small
+  \renewcommand{\arraystretch}{1.35}
+  \begin{tabular}{l|l|l}
+    \textbf{Chênh lệch tại 50\% (điểm \%)} & \textbf{Temporal} & \textbf{Cross-project} \\
+    \hline
+    Động -- quy tắc nghiệp vụ & \alert{+2,13 [$-$0,33; 4,60]} & +3,83 [2,10; 5,73] \\
+    Động -- không cohort & $-$0,87 [$-$2,26; 0,29] & +0,72 [0,05; 1,42] \\
+    Tuần tự: động -- tĩnh & +1,30 [$-$0,46; 3,21] & +1,88 [0,60; 3,14] \\
+  \end{tabular}
+
+  \vspace{0.25cm}
+  \footnotesize
+  \begin{itemize}
+    \setlength{\itemsep}{2pt}
+    \item Trên sprint tương lai, \alert{chưa chứng minh ML hơn quy tắc}
+          (recall 51,23\% so với 53,36\%; CI chứa 0).
+    \item Cảnh báo tuần tự: recall 51,56\%, precision 77,67\%, lead time
+          $\sim$8,3 ngày, so với $\sim$6,3 ngày khi chỉ cảnh báo một lần ở 50\%.
+    \item Giữa các dự án: chênh lệch động -- tĩnh \alert{dương ở cả 14 dự án} nhưng
+          dao động mạnh (temporal +2,6 đến +35 điểm), nên không suy ra được mức
+          cải thiện cho một nhóm cụ thể.
+  \end{itemize}
+\end{frame}
+
+\begin{frame}{Phân bổ cảnh báo theo thời gian (khám phá)}
+  \footnotesize
+  \textbf{Câu hỏi:} giữ tổng $K$ cảnh báo, chỉ xét issue còn mở. Phát sớm một
+  phần (\emph{quota}) có tốt hơn phát hết ở mốc 50\% (\emph{midpoint}) không?
+
+  \vspace{0.15cm}
+  \renewcommand{\arraystretch}{1.3}
+  \begin{tabular}{L{0.32\textwidth}|R{0.16\textwidth}|R{0.16\textwidth}}
+    $K=2$, temporal & \textbf{Quota} & \textbf{Midpoint} \\
+    \hline
+    Recall phát hiện sớm & 58,77\% & 59,20\% \\
+    Precision & 77,31\% & 79,70\% \\
+    Lead time & 8,18 ngày & 6,29 ngày \\
+  \end{tabular}
+
+  \vspace{0.2cm}
+  \begin{itemize}
+    \setlength{\itemsep}{2pt}
+    \item Chênh lệch recall (quota -- midpoint): $-$0,43 [$-$1,36; 0,55] (temporal); $-$1,08 [$-$1,88; $-$0,35] (cross-project).
+    \item \alert{Kết luận:} sớm hơn $\sim$1,9 ngày nhưng \alert{không tăng recall}.
+          $K=2$ là giá trị được khảo sát, \alert{không phải} giá trị tối ưu đã chứng minh.
+  \end{itemize}
+\end{frame}

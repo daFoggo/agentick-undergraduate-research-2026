@@ -1,0 +1,94 @@
+\section{Agent cảnh báo}
+
+\begin{frame}{Kiến trúc agent: hai tầng}
+  \centering
+  \begin{tikzpicture}[
+      stage/.style={draw=templateRed, fill=templateRed!7, rounded corners=3pt,
+        minimum width=3.1cm, minimum height=1.45cm, align=center,
+        font=\scriptsize},
+      key/.style={stage, fill=templateDarkRed, text=white},
+      arr/.style={-{Stealth}, thick, templateRed}]
+    \node[stage] (a) {Nhật ký sự kiện\\+ đồng hồ sprint};
+    \node[key, right=0.45cm of a] (b) {\textbf{Tầng 1}\\CatBoost + Controller\\(không dùng LLM)};
+    \node[key, right=0.45cm of b] (c) {\textbf{Tầng 2}\\Agent lập brief\\công cụ chỉ đọc};
+    \node[stage, right=0.45cm of c] (d) {Bảng cảnh báo\\(Agentick)};
+    \draw[arr] (a)--(b); \draw[arr] (b)--(c); \draw[arr] (c)--(d);
+    \node[below=0.2cm of b, font=\scriptsize, align=center, text width=3.3cm]
+      {quyết định \emph{khi nào} và \emph{issue nào} theo ngân sách};
+    \node[below=0.2cm of c, font=\scriptsize, align=center, text width=3.3cm]
+      {mỗi khẳng định trích \texttt{event\_id}; verifier chặn khi sai};
+  \end{tikzpicture}
+
+  \vspace{0.15cm}
+  \footnotesize
+  \raggedright
+  \begin{itemize}
+    \setlength{\itemsep}{1pt}
+    \item \alert{Công cụ:} \texttt{get\_issue\_evidence}, \texttt{get\_sprint\_summary};
+          chỉ thấy sự kiện \emph{as-of} và thuộc đúng dự án.
+    \item \alert{Kiểm tra:} \texttt{EvidenceVerifier} chặn brief vi phạm trước khi hiển thị.
+    \item LLM (\texttt{gemini-3.5-flash-lite}, temperature 0,1) tự gọi công cụ,
+          tối đa 3 bước; \alert{không} sinh xác suất, \alert{không} sửa sprint.
+  \end{itemize}
+\end{frame}
+
+\begin{frame}{Agent làm được gì}
+  \footnotesize
+  \renewcommand{\arraystretch}{1.3}
+  \begin{tabular}{L{0.3\textwidth}|L{0.62\textwidth}}
+    \textbf{Khả năng} & \textbf{Cách thực hiện} \\
+    \hline
+    Lấy bằng chứng của issue & \texttt{get\_issue\_evidence(issue\_id)}: trạng thái, số ngày không hoạt động,
+      ước lượng, điểm rủi ro (CatBoost), các sự kiện đến thời điểm dự báo \\
+    Lấy tổng quan sprint & \texttt{get\_sprint\_summary()}: dự án, sprint, số issue, danh sách issue \\
+    Đề xuất cảnh báo / bỏ qua & trả về \texttt{alert} hoặc \texttt{abstain} kèm lý do \\
+    Viết brief có cấu trúc & loại rủi ro, giá trị đo, \texttt{event\_id} làm căn cứ,
+      việc nên kiểm tra, điều chưa biết \\
+  \end{tabular}
+
+  \vspace{0.2cm}
+  \alert{Ràng buộc cài trong mã:} chỉ đọc; lọc sự kiện sau thời điểm dự báo; chặn issue
+  của dự án khác; nội dung issue gắn nhãn không tin cậy; verifier chặn \texttt{event\_id}
+  bịa, số liệu sai, khẳng định nhân quả.
+\end{frame}
+
+\begin{frame}[fragile]{Ví dụ: agent gọi công cụ lấy bằng chứng}
+  \footnotesize
+  Issue 177929, dự án CONFSERVER, sprint 2393, mốc 50\% (13/01/2014). Trace thật.
+
+  \vspace{0.1cm}
+  \textbf{Agent gọi:} \texttt{get\_issue\_evidence(issue\_id="177929")}
+
+  \vspace{0.1cm}
+  \textbf{Công cụ trả về} (rút gọn):
+\begin{verbatim}
+status            : open
+inactive_days     : 7.0
+estimate          : 5.0
+risk_score        : 0.863    <- do CatBoost tính
+untrusted_content : true
+events:
+  EVT-CONFSERVER-177929-created        04/01/2014  CREATED
+  EVT-CONFSERVER-177929-sprint-start   06/01/2014  COMMITTED
+  EVT-CONFSERVER-177929-status-update  06/01/2014  status = open
+\end{verbatim}
+\end{frame}
+
+\begin{frame}{Ví dụ: brief agent trả về}
+  \footnotesize
+  \begin{itemize}
+    \setlength{\itemsep}{3pt}
+    \item \alert{Quyết định:} \texttt{alert}
+    \item \alert{Khẳng định} (\texttt{status\_stagnation}, 7,0 ngày): ``Issue 177929 được tạo
+          04/01/2014, đưa vào sprint 06/01/2014 với trạng thái open, và giữ nguyên open
+          trong 7,0 ngày đến thời điểm dự báo.''
+    \item \alert{Căn cứ:} 3 \texttt{event\_id} ở slide trước.
+    \item \alert{Nên kiểm tra:} người phụ trách có bị chặn / chưa rõ yêu cầu?
+          Có tiến triển nhưng chưa cập nhật trạng thái?
+    \item \alert{Chưa biết:} có commit hay thay đổi mã ngoài hệ thống issue không.
+  \end{itemize}
+
+  \vspace{0.1cm}
+  Verifier: \texttt{event\_id} có thật, 7,0 ngày khớp dữ liệu $\Rightarrow$ brief được chấp nhận.
+  Thực tế issue này không hoàn thành trong sprint.
+\end{frame}

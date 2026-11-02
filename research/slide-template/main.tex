@@ -1,0 +1,32 @@
+\documentclass[aspectratio=169,14pt]{beamer}
+
+\input{theme}
+\RequirePackage{array}
+\RequirePackage[export]{adjustbox}
+\RequirePackage{booktabs}
+\newcolumntype{L}[1]{>{\raggedright\arraybackslash}p{#1}}
+\newcolumntype{R}[1]{>{\raggedleft\arraybackslash}p{#1}}
+\usetikzlibrary{positioning,arrows.meta}
+
+% Result figure copied from artifacts/results/ into assets/results/.
+\newcommand{\resultfigure}[2][0.62\textheight]{%
+  \includegraphics[max width=0.98\linewidth,max height=#1,keepaspectratio]{assets/results/#2}%
+}
+
+\title{\texorpdfstring{{\fontsize{15}{20}\selectfont Nghiên cứu mô hình đánh giá rủi ro trễ hạn công việc trong sprint và xây dựng agent hỗ trợ can thiệp sớm\par}%
+  \vspace{0.3cm}{\normalsize Báo cáo tiến độ -- Mã đề tài: 04-SV-2026-RIPT\par}}{Nghiên cứu mô hình đánh giá rủi ro trễ hạn công việc trong sprint và xây dựng agent hỗ trợ can thiệp sớm}}
+\author{\texorpdfstring{{\normalsize Chủ trì đề tài: Nguyễn Trường Giang}\\[0.08cm]{\footnotesize MSV B23DCCC055 -- Lớp D23CCPM02}}{Nguyễn Trường Giang}}
+\institute{{\small GVHD: ThS. Trần Minh Hiếu}}
+\date{}
+
+\begin{document}
+
+\frame{\titlepage}
+
+\input{sections/01-setup}
+\input{sections/02-method}
+\input{sections/03-results}
+\input{sections/04-agent}
+\input{sections/05-next}
+
+\end{document}

@@ -1,0 +1,97 @@
+\begin{frame}{Giới hạn}
+  \footnotesize
+  \begin{enumerate}
+    \setlength{\itemsep}{3pt}
+    \item \alert{Chưa triển khai thực nghiệm:} agent chưa tích hợp vào Agentick,
+          mọi kết quả đều từ benchmark TAWOS.
+    \item Trên issue còn mở, cải thiện chỉ $\sim$2--2,6 điểm.
+    \item Ngân sách ``20\%'' thực tế cao hơn 20\%.
+    \item Chưa chứng minh ML hơn quy tắc đơn giản (temporal).
+    \item Xác suất không chuyển giao giữa dự án.
+    \item Phân tích phân bổ cảnh báo và một số so sánh là post-hoc.
+    \item Mô phỏng không chứng minh cảnh báo làm giảm trễ.
+  \end{enumerate}
+\end{frame}
+
+\section{Tiến độ và kế hoạch}
+
+\begin{frame}{Tiến độ hiện tại}
+  \scriptsize
+  \begin{columns}[T,onlytextwidth]
+    \begin{column}{0.49\textwidth}
+      \begin{block}{Đã hoàn thành}
+        \begin{itemize}
+          \setlength{\itemsep}{1pt}
+          \item Protocol, nhãn, cohort; giả thuyết chính
+          \item Pipeline TAWOS $\to$ PostgreSQL, snapshot as-of 4 mốc
+          \item 6 mô hình, đánh giá temporal/cross-project, sensitivity
+          \item Bản thảo bài báo (LaTeX)
+          \item Phân tích phân bổ cảnh báo theo thời gian
+          \item \alert{Mô-đun agent} (công cụ chỉ đọc, brief, verifier)
+        \end{itemize}
+      \end{block}
+    \end{column}
+    \begin{column}{0.47\textwidth}
+      \begin{alertblock}{Đang chờ / chưa làm}
+        \begin{itemize}
+          \setlength{\itemsep}{1pt}
+          \item \alert{Tích hợp agent vào Agentick} (bước tiếp theo)
+          \item Registry mô hình, endpoint dự báo
+          \item Kiểm tra agent trên dữ liệu Agentick
+          \item Ledger/outbox, bảng cảnh báo, dry-run
+        \end{itemize}
+      \end{alertblock}
+      \vspace{0.05cm}
+      Agentick là dự án riêng bên ngoài, đã có mã nguồn, dùng để thu dữ liệu
+      và chạy thực nghiệm. \alert{Mọi kết quả hôm nay đều từ benchmark TAWOS.}
+    \end{column}
+  \end{columns}
+\end{frame}
+
+\begin{frame}{Roadmap và kế hoạch (tính từ T0 = hôm nay)}
+  \scriptsize
+  \setlength{\tabcolsep}{3pt}
+  \renewcommand{\arraystretch}{1.3}
+  \begin{tabular}{L{0.2\textwidth}|L{0.14\textwidth}|L{0.32\textwidth}|L{0.24\textwidth}}
+    \textbf{Giai đoạn} & \textbf{Thời gian} & \textbf{Công việc} & \textbf{Tiêu chí xong} \\
+    \hline
+    1. Tích hợp Agentick & T0 $\to$ +2 tuần & Nối dữ liệu vào pipeline as-of; endpoint dự báo; bảng cảnh báo, ledger, dry-run & Agentick hiển thị issue rủi ro + brief; log có phiên bản \\
+    2. Hoàn thiện kiểm tra agent & song song bước 1 & Chạy agent trên issue được chọn từ Agentick; kiểm tra trích dẫn, số liệu & Agent chạy trong luồng cảnh báo, brief lưu kèm trace \\
+    3. Thực nghiệm & +2 $\to$ +5 tuần & Shadow mode, hiệu chuẩn lại, so với quy tắc & Recall, precision, lead time trên dữ liệu thật \\
+    4. Báo cáo cuối & 2 tuần cuối & Tổng hợp, hoàn thiện bài báo và ứng dụng & Báo cáo, mã, dữ liệu tái lập \\
+  \end{tabular}
+
+  \vspace{0.2cm}
+  \footnotesize
+  \alert{Shadow mode:} dự báo và brief được ghi log nhưng chưa gửi cho người dùng.
+  Chỉ sang bước 3 khi dữ liệu Agentick tái dựng được phạm vi cam kết và trạng thái
+  hoàn thành, theo cùng tiêu chí đã dùng với TAWOS.
+\end{frame}
+
+\begin{frame}{Tóm tắt}
+  \small
+  \begin{itemize}
+    \setlength{\itemsep}{4pt}
+    \item Lịch sử thực thi \alert{cải thiện} khả năng phát hiện issue sắp trễ
+          (+8,90 / +9,96 điểm tại 50\%), giữ được trên dự án chưa thấy.
+    \item Phần lớn lợi thế đến từ việc nhận biết issue đã xong. Trên issue còn
+          mở, mức cải thiện \alert{nhỏ nhưng vẫn có ý nghĩa}.
+    \item Mô-đun agent đã xây xong: tự lấy bằng chứng tại thời điểm dự báo,
+          đề xuất cảnh báo và viết brief \alert{trích dẫn sự kiện có thật}.
+    \item \alert{Bước tiếp theo:} tích hợp vào Agentick, kiểm tra agent, thực
+          nghiệm shadow mode trên dữ liệu thật.
+  \end{itemize}
+\end{frame}
+
+\begin{frame}{Tài liệu tham khảo}
+  \scriptsize
+  \begin{thebibliography}{9}
+    \setbeamertemplate{bibliography item}[text]
+    \bibitem{tu} F.~Tu, J.~Zhu, Q.~Zheng, and M.~Zhou, ``Be careful of when: An empirical study on time-related misuse of issue tracking data,'' in \emph{Proc. ESEC/FSE}, 2018.
+    \bibitem{catboost} L.~Prokhorenkova \emph{et al.}, ``CatBoost: Unbiased boosting with categorical features,'' in \emph{Proc. NeurIPS}, 2018.
+    \bibitem{agentdojo} E.~Debenedetti \emph{et al.}, ``AgentDojo: A dynamic environment to evaluate prompt injection attacks and defenses for LLM agents,'' arXiv:2406.13352, 2024.
+    \bibitem{tawos} V.~Tawosi, A.~Al-Subaihin, R.~Moussa, and F.~Sarro, ``A versatile dataset of agile open source software projects,'' in \emph{Proc. MSR}, 2022, pp.~707--711.
+    \bibitem{verenich} I.~Verenich \emph{et al.}, ``Survey and cross-benchmark comparison of remaining time prediction methods in business process monitoring,'' \emph{ACM TIST}, 2019.
+    \bibitem{kubrak} M.~Kubrak \emph{et al.}, ``Prescriptive process monitoring: Quo vadis?,'' \emph{PeerJ Comput. Sci.}, 2022.
+  \end{thebibliography}
+\end{frame}
