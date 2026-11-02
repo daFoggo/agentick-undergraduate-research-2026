@@ -1,15 +1,22 @@
-from fastapi import Depends, FastAPI
+from fastapi import Depends, FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import JSONResponse
+from sqlalchemy.exc import DataError, IntegrityError
 
 from app.api_router import api_router
 from app.core.config import settings
+from app.core.exceptions import DuplicatedError
 from app.dependencies import get_token_header
 from app.internal import admin
+from app.schemas.error import ErrorDetail
 
 openapi_tags = [
     {"name": "health", "description": "Service liveness and readiness checks."},
     {"name": "items", "description": "CRUD operations over items."},
-    {"name": "admin", "description": "Internal administrative operations, requires `X-Token` header."},
+    {
+        "name": "admin",
+        "description": "Internal administrative operations, requires `X-Token` header.",
+    },
 ]
 
 app = FastAPI(
@@ -19,6 +26,9 @@ app = FastAPI(
     openapi_tags=openapi_tags,
     contact={"name": "Agentick", "email": "anhdungvk01@gmail.com"},
     license_info={"name": "MIT"},
+    docs_url="/docs" if settings.docs_enabled else None,
+    redoc_url="/redoc" if settings.docs_enabled else None,
+    openapi_url="/openapi.json" if settings.docs_enabled else None,
 )
 
 app.add_middleware(
@@ -29,10 +39,35 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+
+@app.exception_handler(IntegrityError)
+async def handle_integrity_error(request: Request, exc: IntegrityError) -> JSONResponse:
+    error = DuplicatedError()
+    return JSONResponse(status_code=error.status_code, content={"detail": error.detail})
+
+
+@app.exception_handler(DataError)
+async def handle_data_error(request: Request, exc: DataError) -> JSONResponse:
+    # Mirror FastAPI's own 422 shape (HTTPValidationError) so clients only
+    # ever parse one structure for "request body failed validation".
+    return JSONResponse(
+        status_code=422,
+        content={
+            "detail": [
+                {
+                    "loc": ["body"],
+                    "msg": "Request data is not valid for this field.",
+                    "type": "value_error",
+                }
+            ]
+        },
+    )
+
+
 app.include_router(api_router, prefix=settings.api_v1_prefix)
 app.include_router(
     admin.router,
     prefix=settings.api_v1_prefix + "/admin",
     dependencies=[Depends(get_token_header)],
-    responses={400: {"description": "Invalid X-Token header"}},
+    responses={400: {"model": ErrorDetail, "description": "Invalid X-Token header."}},
 )

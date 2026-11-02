@@ -22,3 +22,4 @@ class ItemRead(ItemBase):
 
     id: int
     created_at: datetime
+    updated_at: datetime

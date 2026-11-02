@@ -41,6 +41,23 @@ alembic upgrade head
 uvicorn app.main:app --reload
 ```
 
+## Running tests
+
+Tests hit a real Postgres (no mocked DB) — point `DATABASE_URL` at any disposable instance:
+
+```bash
+docker run -d --rm --name agentick-backend-testdb \
+  -e POSTGRES_DB=agentick_test -e POSTGRES_USER=agentick -e POSTGRES_PASSWORD=agentick_test \
+  -p 15999:5432 postgres:16-alpine
+
+DATABASE_URL="postgresql+psycopg://agentick:agentick_test@localhost:15999/agentick_test" \
+  pytest
+
+docker stop agentick-backend-testdb
+```
+
+`tests/conftest.py` creates/drops the schema per session and truncates tables between tests.
+
 ## Creating a migration
 
 ```bash

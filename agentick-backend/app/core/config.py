@@ -15,11 +15,20 @@ class Settings(BaseSettings):
 
     cors_origins: list[str] = ["http://localhost:3000"]
 
+    # Environments where interactive docs (/docs, /redoc, /openapi.json) are served.
+    # Anywhere else (e.g. "production") they're disabled by default to avoid
+    # publicly exposing the schema.
+    docs_enabled_environments: set[str] = {"local", "staging"}
+
     model_config = SettingsConfigDict(
         env_file=".env",
         env_file_encoding="utf-8",
         extra="ignore",
     )
+
+    @property
+    def docs_enabled(self) -> bool:
+        return self.environment in self.docs_enabled_environments
 
 
 @lru_cache
