@@ -25,4 +25,3 @@ build/
 *.log
 .DS_Store
 .idea/
-agentick-frontend/

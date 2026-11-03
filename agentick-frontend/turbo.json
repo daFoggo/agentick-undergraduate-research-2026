@@ -1,0 +1,76 @@
+{
+  "$schema": "https://turborepo.dev/schema.json",
+  "ui": "tui",
+  "globalEnv": [
+    "CI",
+    "BASE_URL"
+  ],
+  "tasks": {
+    "build": {
+      "dependsOn": [
+        "^build"
+      ],
+      "inputs": [
+        "$TURBO_DEFAULT$",
+        ".env*"
+      ],
+      "outputs": [
+        ".next/**",
+        "!.next/cache/**",
+        "!.next/dev/**",
+        "dist/**"
+      ],
+      "env": [
+        "AUTH_PROVIDER",
+        "API_BASE_URL",
+        "API_AUDIENCE",
+        "DATABASE_URL",
+        "BETTER_AUTH_URL",
+        "BETTER_AUTH_SECRET",
+        "NEXT_PUBLIC_SUPABASE_URL",
+        "NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY",
+        "GOOGLE_CLIENT_ID",
+        "GOOGLE_CLIENT_SECRET",
+        "NODE_ENV",
+        "EXPOSE_TESTING_API",
+        "DEMO_AUTH",
+        "DEMO_AUTH_SECRET",
+        "KEYCLOAK_ISSUER",
+        "KEYCLOAK_CLIENT_ID",
+        "KEYCLOAK_CLIENT_SECRET",
+        "JWT_SECRET_KEY",
+        "DISABLE_REDACT"
+      ]
+    },
+    "lint": {
+      "dependsOn": [
+        "^lint"
+      ]
+    },
+    "format": {
+      "cache": false
+    },
+    "transit": {
+      "dependsOn": [
+        "^transit"
+      ]
+    },
+    "typecheck": {
+      "dependsOn": [
+        "transit"
+      ]
+    },
+    "dev": {
+      "cache": false,
+      "persistent": true
+    },
+    "test": {
+      "dependsOn": [
+        "^test"
+      ]
+    },
+    "test:e2e": {
+      "cache": false
+    }
+  }
+}

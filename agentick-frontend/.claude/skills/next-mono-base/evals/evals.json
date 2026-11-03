@@ -1,0 +1,124 @@
+{
+  "skill_name": "next-mono-base",
+  "evals": [
+    {
+      "id": 1,
+      "name": "notification-prefs-store",
+      "prompt": "Add a notification-preferences panel to /dashboard/settings. The preferences (email on/off, push on/off, digest frequency) come from GET /me/preferences for the signed-in user. The panel is made of several client components with instant toggles that share local state through a Zustand store; saving happens with one Save button that persists to PATCH /me/preferences. Tell me where each file goes in this repo and write the code.",
+      "expectations": [
+        "The store is created by a factory function (createStore from zustand/vanilla) that a client provider instantiates once with useState; there is no module-level create() store exported as a hook",
+        "The preferences are fetched on the server (a queries.ts/server.ts path that calls verifySession) and passed to the provider as initial-state props; the store itself never calls the backend",
+        "Saving is a Server Action in actions.ts with \"use server\", verifySession, Zod safeParse and updateTag; it is not a store action that calls fetch",
+        "The provider is mounted from an app/ page or layout and the page does not await cookies, params or searchParams at its top level (an async child under <Suspense> or equivalent is used)",
+        "Consumers read the store with one selector per value or useShallow, never a selector returning a fresh object",
+        "The answer deals with client state outliving navigation or sign-out: it resets or re-keys the provider after a successful save, or keys it by user id",
+        "No file under features/ imports from app/ or from another feature"
+      ]
+    },
+    {
+      "id": 2,
+      "name": "zustand5-selector-crash",
+      "prompt": "After upgrading to Zustand 5 this component crashes with 'Maximum update depth exceeded' and 'The result of getServerSnapshot should be cached to avoid an infinite loop'. It was fine on v4: `const { search, setSearch } = useFiltersStore((s) => ({ search: s.search, setSearch: s.setSearch }))`. Why does it happen and what is the right fix in this repo?",
+      "expectations": [
+        "The answer explains that the selector returns a new object on every call, so the default Object.is comparison sees a changed value each time (the cause is the changed reference, not a Zustand bug that needs a downgrade)",
+        "The answer offers useShallow (imported from zustand/react/shallow or zustand/shallow) or one selector per value as the fix",
+        "The answer does not recommend downgrading Zustand, disabling React Strict Mode or suppressing the error",
+        "The answer notes that search filters belong in URL search params rather than a client store in this repository",
+        "The answer mentions that createWithEqualityFn / useStoreWithEqualityFn (zustand/traditional) is the other documented option or states that create no longer accepts an equality function in v5"
+      ]
+    },
+    {
+      "id": 3,
+      "name": "persist-hydration-nextjs",
+      "prompt": "I want to add Zustand persist (localStorage) to a per-feature store in this repo (Next 16.4 with Cache Components, zustand 5). I'm worried about hydration errors. Will I get them, and what should I do? Show the store config.",
+      "expectations": [
+        "The answer gives a safe approach: either explains that reading through useStore hydrates from the initial (server) snapshot so no mismatch occurs and the persisted value appears afterwards, or uses skipHydration: true with persist.rehydrate() in an effect",
+        "The answer points out that the persisted value overrides server-provided initial state after hydration (a visible change) or discusses merge precedence",
+        "The config includes name, version and partialize, and says the name should include the user id for user-scoped data",
+        "The answer recommends validating storage data (for example a Zod-validating PersistStorage) or a migrate function for version changes",
+        "The answer states persist is client-only and the server never reads the persisted value"
+      ]
+    },
+    {
+      "id": 4,
+      "name": "blocking-route-build-error",
+      "prompt": "`next build` fails with a blocking route error on /dashboard/orders. The page does `const { status } = await searchParams` at the top, then renders <OrdersTable> which calls `new Date()` to print 'generated at'. A teammate suggests removing cacheComponents from next.config.ts so the build passes. What do we do instead?",
+      "expectations": [
+        "The answer rejects removing cacheComponents and keeps it enabled",
+        "searchParams is no longer awaited at the top level of the page: it is read in a child component wrapped in <Suspense> or passed down as a promise",
+        "The answer provides a <Suspense> fallback so the static shell can be prerendered",
+        "The new Date() problem is handled explicitly: call await io() (from next/cache) before it so it runs per request, or cache the value, or move it to a client component",
+        "The answer explains that uncached or runtime work outside Suspense is what makes the route blocking"
+      ]
+    },
+    {
+      "id": 5,
+      "name": "cache-token-key-review",
+      "prompt": "Review this code a teammate wrote for the profile card: `async function getProfile(token: string) { \"use cache\"; return apiFetch(\"me\", { token }) }` and they also call `cacheTag(token)` inside it. What's wrong and how should it look?",
+      "expectations": [
+        "The answer flags that cache keys and cacheTag values are stored in plain text, so passing the access token as an argument or tag leaks it",
+        "The answer flags the missing cacheLife call",
+        "The fix is per-user caching without the token in the key: either \"use cache: private\" reading the session inside, or a \"use cache\" function keyed only by a plain userId",
+        "The tag is based on a stable id such as the user id (for example profile:<userId>), not the token",
+        "The answer says per-user data must not be cached in a shared public cache scope, and mentions that the mutation should call updateTag to expire it"
+      ]
+    },
+    {
+      "id": 6,
+      "name": "redirect-in-try-catch",
+      "prompt": "This Server Action never redirects after a successful create, it just returns the error state, and the cases list isn't refreshed either: `try { await createCase(session.accessToken, data); redirect(\"/cases\") } catch (e) { return { error: \"failed\" } }`. Fix it.",
+      "expectations": [
+        "The answer explains that redirect() works by throwing, so the catch block swallows it",
+        "The fix moves redirect() outside the try/catch or rethrows non-API errors so the redirect is not caught",
+        "The answer calls updateTag (or an equivalent invalidation) for the cases list before the redirect so the list is fresh",
+        "Expected API errors are returned as values while unexpected errors are rethrown instead of returning a generic failure for everything",
+        "The action calls verifySession and validates input with Zod safeParse (shown or listed as required)"
+      ]
+    },
+    {
+      "id": 7,
+      "name": "client-component-server-import",
+      "prompt": "ESLint reports 'Feature components must not import server-only modules' in features/cases/components/case-list.tsx, which imports getCases from '../queries'. We tried to work around it by calling fetch() in a useEffect inside the component. What's the right fix in this repo?",
+      "expectations": [
+        "The answer rejects the useEffect + fetch workaround and does not add TanStack Query or SWR",
+        "The data is read on the server in the page or a Server Component (app/ composes) using queries.ts and handed to the component as props, or as an un-awaited promise read with use()",
+        "The answer explains that components/ and feature components must not import server.ts, queries.ts, lib/dal or lib/http, and why (server secrets and client bundles)",
+        "The answer keeps queries.ts/server.ts server-side and mentions Suspense for the streamed part"
+      ]
+    },
+    {
+      "id": 8,
+      "name": "admin-only-billing",
+      "prompt": "Make /dashboard/billing admin-only. Where should the role check go, what happens to non-admins, and would a single check in the dashboard layout be enough? Look at how sessions work in this repo before answering.",
+      "expectations": [
+        "The role check is done in the data path (queries.ts and actions.ts) through the DAL (verifySession from lib/dal), not only in a layout",
+        "The answer says a layout check is not enough (layouts do not re-render on sub-navigation and do not protect Server Actions)",
+        "The answer states that proxy.ts is only an optimistic check and not the authorization boundary",
+        "The answer notes that the current Session type has no role field (userId and accessToken only) and that it must be added and populated from verified claims",
+        "Non-admins get redirect, notFound or a forbidden response rather than rendering the data and hiding it client-side"
+      ]
+    },
+    {
+      "id": 9,
+      "name": "intercepting-modal-refresh",
+      "prompt": "Our case modal works when clicking a row, but on a hard refresh of /cases/123 we get a 404 / broken page in Next 16. Structure: app/(dashboard)/cases/layout.tsx renders {children} and {modal}; app/(dashboard)/cases/@modal/(.)[id]/page.tsx; app/(dashboard)/cases/[id]/page.tsx; app/(dashboard)/cases/page.tsx. What's missing?",
+      "expectations": [
+        "The answer identifies the missing default.tsx for the @modal slot (returning null) as the cause of the failure on hard navigation",
+        "The answer explains that on a hard load the slot's active state cannot be recovered, so default.tsx provides the fallback",
+        "The answer states that the full page at cases/[id]/page.tsx renders on direct visit and refresh while the intercepting route renders only on soft navigation",
+        "The answer shows the modal being closed with router.back() or a Link and keeps the modal UI as a client component composed in app/"
+      ]
+    },
+    {
+      "id": 10,
+      "name": "dynamic-ssr-false-server-component",
+      "prompt": "I wrote `const Chart = dynamic(() => import('./chart'), { ssr: false })` directly in a Server Component page and Next 16 throws an error. How should I lazy-load the heavy chart in this repo?",
+      "expectations": [
+        "The answer explains that ssr: false is not allowed with next/dynamic in a Server Component",
+        "The fix wraps the dynamic call in a 'use client' component (a client wrapper) that the Server Component renders",
+        "A loading fallback (skeleton) is provided for the lazy chart",
+        "The answer keeps the charting library import inside the client-only lazy chunk so it is out of the initial bundle, and passes data to it as props"
+      ]
+    }
+  ]
+}

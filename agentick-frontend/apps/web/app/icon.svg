@@ -1,0 +1,21 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="-1 -1 10 10" shape-rendering="crispEdges">
+  <style>
+    .ink { fill: #18181b } .brand { fill: #52525b } .ember { fill: #a1a1aa }
+    @media (prefers-color-scheme: dark) {
+      .ink { fill: #fafafa } .brand { fill: #a1a1aa } .ember { fill: #52525b }
+    }
+  </style>
+  <g class="ink">
+    <rect x="0" y="1" width="1" height="1"/>
+    <rect x="1" y="2" width="1" height="1"/>
+    <rect x="2" y="3" width="1" height="2"/>
+    <rect x="1" y="5" width="1" height="1"/>
+    <rect x="0" y="6" width="1" height="1"/>
+  </g>
+  <g class="brand">
+    <rect x="5" y="2" width="1" height="1"/>
+    <rect x="4" y="3" width="3" height="1"/>
+    <rect x="5" y="4" width="1" height="1"/>
+  </g>
+  <rect class="ember" x="7" y="1" width="1" height="1"/>
+</svg>
