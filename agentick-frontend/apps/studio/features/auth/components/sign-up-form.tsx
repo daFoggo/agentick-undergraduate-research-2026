@@ -73,6 +73,16 @@ export function SignUpForm({ action }: { action: FormAction<SignUpState> }) {
         />
         <p className="text-xs text-muted-foreground">At least 6 characters</p>
       </div>
+      <div className="flex flex-col gap-1.5">
+        <Label htmlFor="confirmPassword">Confirm password</Label>
+        <PasswordInput
+          id="confirmPassword"
+          name="confirmPassword"
+          autoComplete="new-password"
+          placeholder="••••••••"
+          disabled={pending}
+        />
+      </div>
       <Button
         type="submit"
         size="lg"

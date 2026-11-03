@@ -12,6 +12,12 @@ export type VerifiedKeycloakClaims = {
   exp?: number
 }
 
+export type VerifyKeycloakOptions = {
+  clientId?: string
+  expectedAudience?: string | string[]
+  jwksOverride?: Parameters<typeof jwtVerify>[1]
+}
+
 const jwksCache = new Map<string, ReturnType<typeof createRemoteJWKSet>>()
 
 export function getIssuerJwks(issuer: string) {
@@ -26,7 +32,10 @@ export function getIssuerJwks(issuer: string) {
   return jwks
 }
 
-export function resolveKeycloakRole(claims: Record<string, unknown>): Role {
+export function resolveKeycloakRole(
+  claims: Record<string, unknown>,
+  clientId?: string
+): Role {
   const roleCandidates = new Set<string>()
 
   if (typeof claims.role === "string") {
@@ -43,6 +52,18 @@ export function resolveKeycloakRole(claims: Record<string, unknown>): Role {
   if (realmAccess && Array.isArray(realmAccess.roles)) {
     for (const r of realmAccess.roles) {
       if (typeof r === "string") roleCandidates.add(r)
+    }
+  }
+
+  if (clientId) {
+    const resourceAccess = claims.resource_access as
+      | Record<string, { roles?: unknown }>
+      | undefined
+    const clientRoles = resourceAccess?.[clientId]?.roles
+    if (Array.isArray(clientRoles)) {
+      for (const r of clientRoles) {
+        if (typeof r === "string") roleCandidates.add(r)
+      }
     }
   }
 
@@ -73,17 +94,43 @@ function extractCalendar(
 export async function verifyKeycloakJwt(
   token: string,
   issuer: string,
-  jwksOverride?: Parameters<typeof jwtVerify>[1]
+  optionsOrJwks?: VerifyKeycloakOptions | Parameters<typeof jwtVerify>[1]
 ): Promise<VerifiedKeycloakClaims | null> {
   try {
-    const jwks = jwksOverride ?? getIssuerJwks(issuer)
+    const options: VerifyKeycloakOptions =
+      typeof optionsOrJwks === "function" ||
+      (optionsOrJwks && "keys" in (optionsOrJwks as object))
+        ? { jwksOverride: optionsOrJwks as Parameters<typeof jwtVerify>[1] }
+        : ((optionsOrJwks as VerifyKeycloakOptions) ?? {})
+
+    const jwks = options.jwksOverride ?? getIssuerJwks(issuer)
     const { payload } = await jwtVerify(token, jwks, {
       issuer,
+      ...(options.expectedAudience
+        ? { audience: options.expectedAudience }
+        : {}),
     })
 
     if (!payload.sub) return null
 
-    const role = resolveKeycloakRole(payload as Record<string, unknown>)
+    // Enforce token type: Keycloak access tokens must have typ 'Bearer' if typ is present
+    if (payload.typ && payload.typ !== "Bearer") {
+      return null
+    }
+
+    // Enforce authorized party (azp) binding to client_id if present
+    if (
+      options.clientId &&
+      typeof payload.azp === "string" &&
+      payload.azp !== options.clientId
+    ) {
+      return null
+    }
+
+    const role = resolveKeycloakRole(
+      payload as Record<string, unknown>,
+      options.clientId
+    )
     const name =
       (typeof payload.name === "string" && payload.name) ||
       (typeof payload.preferred_username === "string" &&

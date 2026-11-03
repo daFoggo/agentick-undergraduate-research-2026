@@ -17,7 +17,9 @@ function create(options: AuthOptions) {
     baseURL: cfg?.BETTER_AUTH_URL ?? "http://localhost:3001",
     secret:
       cfg?.BETTER_AUTH_SECRET ??
-      "placeholder-secret-at-least-32-characters-long",
+      (process.env.NODE_ENV === "production"
+        ? ""
+        : "placeholder-secret-at-least-32-characters-long"),
     database: new Pool({
       connectionString: cfg?.DATABASE_URL,
       options: "-c search_path=auth",

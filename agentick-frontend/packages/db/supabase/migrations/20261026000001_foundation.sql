@@ -87,8 +87,15 @@ language plpgsql
 security definer
 set search_path = ''
 as $$
+declare
+  caller_role text;
 begin
-  if not private.is_admin() then
+  select coalesce(raw_app_meta_data ->> 'role', '')
+  into caller_role
+  from auth.users
+  where id = auth.uid();
+
+  if caller_role <> 'admin' then
     raise exception 'forbidden' using errcode = '42501';
   end if;
   if new_role not in ('customer', 'editor', 'admin') then
@@ -106,6 +113,11 @@ begin
   if not found then
     raise exception 'unknown_user' using errcode = 'P0001';
   end if;
+
+  -- Revoke active sessions immediately on demotion to prevent stale token reuse
+  if new_role = 'customer' then
+    delete from auth.sessions where user_id = target;
+  end if;
 end;
 $$;
 
@@ -117,8 +129,15 @@ stable
 security definer
 set search_path = ''
 as $$
+declare
+  caller_role text;
 begin
-  if not private.is_admin() then
+  select coalesce(raw_app_meta_data ->> 'role', '')
+  into caller_role
+  from auth.users
+  where id = auth.uid();
+
+  if caller_role <> 'admin' then
     raise exception 'forbidden' using errcode = '42501';
   end if;
   return query

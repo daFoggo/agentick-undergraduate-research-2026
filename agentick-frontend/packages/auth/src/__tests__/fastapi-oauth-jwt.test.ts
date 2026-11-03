@@ -6,7 +6,10 @@ import { mapFastApiRole, verifyFastApiJwt } from "../fastapi-oauth/jwt"
 const SECRET = "test-secret-at-least-32-characters-long"
 const secretKey = new TextEncoder().encode(SECRET)
 
-async function signToken(claims: Record<string, unknown>, expInSeconds = 3600) {
+async function signToken(
+  claims: Record<string, unknown>,
+  expInSeconds = 3600
+) {
   return new SignJWT({ type: "access", ...claims })
     .setProtectedHeader({ alg: "HS256" })
     .setSubject(String(claims.sub ?? "42"))
@@ -45,7 +48,10 @@ describe("verifyFastApiJwt", () => {
 
   it("rejects a token signed with a different secret", async () => {
     const token = await signToken({ sub: "42" })
-    const claims = await verifyFastApiJwt(token, "a-different-secret-at-least-32-chars")
+    const claims = await verifyFastApiJwt(
+      token,
+      "a-different-secret-at-least-32-chars"
+    )
     expect(claims).toBeNull()
   })
 

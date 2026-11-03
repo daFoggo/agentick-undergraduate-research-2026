@@ -63,7 +63,7 @@ export default function SignInPage({
           </AuthSwitch>
         </AuthHeader>
         <AuthBody>
-          <AuthHeading eyebrow="Sign in" title="Welcome back">
+          <AuthHeading title="Welcome back">
             Sign in to your account.
           </AuthHeading>
           <div className="flex flex-col gap-4">

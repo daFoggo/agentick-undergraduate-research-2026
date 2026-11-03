@@ -9,7 +9,7 @@ export function StackShowcase() {
           Supported stack &amp; integrations
         </span>
         <p className="text-xs text-muted-foreground">
-          Next.js 16 + TanStack Redact base with pluggable auth providers and modular services.
+          Next.js 16.4 base with pluggable auth providers and modular services.
         </p>
       </div>
       <StackGrid variant="compact" />

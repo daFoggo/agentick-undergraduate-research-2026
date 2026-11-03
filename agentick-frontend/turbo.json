@@ -38,8 +38,7 @@
         "KEYCLOAK_ISSUER",
         "KEYCLOAK_CLIENT_ID",
         "KEYCLOAK_CLIENT_SECRET",
-        "JWT_SECRET_KEY",
-        "DISABLE_REDACT"
+        "JWT_SECRET_KEY"
       ]
     },
     "lint": {

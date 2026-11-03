@@ -1,7 +1,7 @@
 # Frontend Performance, Bundle Optimization & Hydration UX
 
-Comprehensive performance optimization guide for `apps/studio` and `apps/web` on **Next.js 16.4.2** with React 19 (server) and **TanStack Redact** (`@tanstack/redact/next`, browser runtime).
-Covers hybrid browser runtime optimization (`withRedact`), code splitting, bundle trimming, state preservation (`<Activity>`), hydration flash prevention, View Transitions, and Core Web Vitals.
+Comprehensive performance optimization guide for `apps/studio` on **Next.js 16.4.2** with React 19.
+Covers code splitting, bundle trimming, state preservation (`<Activity>`), hydration flash prevention, View Transitions, and Core Web Vitals.
 Sources are the docs shipped with the package (`apps/studio/node_modules/next/dist/docs/01-app/`, written `DOCS/` below) and Vercel Engineering best practices (`vercel-react-best-practices`).
 For server data fetching waterfalls and cache directives, see [data-fetching.md](data-fetching.md).
 For Playwright `instant()` regression testing, see [advanced-patterns.md](advanced-patterns.md).
@@ -125,44 +125,6 @@ pnpm --filter=studio next analyze
 # Output diagnostics report to .next/diagnostics/analyze
 pnpm --filter=studio next analyze --output
 ```
-
-### 2.4 Hybrid Browser Runtime with TanStack Redact (`@tanstack/redact/next`)
-
-Both `apps/studio` and `apps/web` wrap their Next.js configuration with `withRedact` from `@tanstack/redact/next`:
-
-```ts
-// apps/studio/next.config.ts & apps/web/next.config.ts
-import type { NextConfig } from 'next'
-import { withRedact } from '@tanstack/redact/next'
-
-const nextConfig: NextConfig = {
-  cacheComponents: true,
-  partialPrefetching: true,
-  // ...
-}
-
-export default process.env.DISABLE_REDACT === '1'
-  ? nextConfig
-  : withRedact(nextConfig)
-```
-
-#### Architecture & Rules
-- **Server-Side (Native React 19.3):** Next.js keeps upstream `react` and `react-dom` on the server to execute React Server Components (RSC), Flight streaming, `"use cache"`, Partial Prerendering (PPR), and Server Actions.
-- **Browser-Side (TanStack Redact):** Turbopack (and Webpack when `--webpack` is passed) uses browser-only loader rules on the resolved React entry files (`react`, `react-dom`, `scheduler`, and `next/dist/compiled/react-experimental`) to replace the client runtime with Redact's synchronous rendering engine.
-- **Keep Standard Imports:** Always keep `react` and `react-dom` installed and continue importing from `'react'`, `'react-dom'`, and `'next/*'`. **Never** set `jsxImportSource` to Redact in `tsconfig.json` because the server requires React's JSX runtime.
-- **A/B Benchmarking Escape Hatch:** Pass `DISABLE_REDACT=1` at build or dev time (`DISABLE_REDACT=1 pnpm build`) to bypass `withRedact` and run native React 19.3 in the browser.
-
-#### Measured Client Bundle Reduction (`next@16.4.2` Turbopack Production Build)
-
-| Metric | `apps/web` (React 19.3) | `apps/web` (`withRedact`) | Delta (`web`) | `apps/studio` (React 19.3) | `apps/studio` (`withRedact`) | Delta (`studio`) |
-| :--- | ---: | ---: | ---: | ---: | ---: | ---: |
-| **DOM Runtime Chunk (Raw)** | 229,843 B | 77,561 B | **-152,282 B (-66.3%)** | 235,404 B | 86,105 B | **-149,299 B (-63.4%)** |
-| **DOM Runtime Chunk (Gzip)** | 71,830 B | 30,013 B | **-41,817 B (-58.2%)** | 73,579 B | 32,060 B | **-41,519 B (-56.4%)** |
-| **DOM Runtime Chunk (Brotli)** | 61,456 B | 26,908 B | **-34,548 B (-56.2%)** | 62,968 B | 28,514 B | **-34,454 B (-54.7%)** |
-| **Total Client `.js` Chunks (Raw)** | 840,887 B | 710,789 B | **-130,098 B (-15.5%)** | 1,441,582 B | 1,304,575 B | **-137,007 B (-9.5%)** |
-| **Total Client `.js` Chunks (Gzip)** | 270,275 B | 235,235 B | **-35,040 B (-13.0%)** | 475,933 B | 440,402 B | **-35,531 B (-7.5%)** |
-| **Total Client `.js` Chunks (Brotli)** | 234,731 B | 206,046 B | **-28,685 B (-12.2%)** | 417,204 B | 387,924 B | **-29,280 B (-7.0%)** |
-| **Turbopack Compile Time** | 5.0 s | 4.1 s | **-0.9 s (-18.0%)** | 8.8 s | 7.7 s | **-1.1 s (-12.5%)** |
 
 ---
 

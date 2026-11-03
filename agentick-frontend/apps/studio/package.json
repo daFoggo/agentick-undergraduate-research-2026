@@ -19,7 +19,6 @@
     "@supabase/ssr": "^0.12.7",
     "@supabase/supabase-js": "^2.118.0",
     "@tabler/icons-react": "^3.49.0",
-    "@tanstack/redact": "0.2.3",
     "@workspace/auth": "workspace:*",
     "@workspace/db": "workspace:*",
     "@workspace/ui": "workspace:*",

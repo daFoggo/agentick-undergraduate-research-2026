@@ -41,9 +41,6 @@ importers:
       '@tabler/icons-react':
         specifier: ^3.49.0
         version: 3.49.0(react@19.3.0)
-      '@tanstack/redact':
-        specifier: 0.2.3
-        version: 0.2.3(next@16.4.2(@babel/core@8.0.6)(@playwright/test@1.64.1)(@types/node@20.19.43)(react-dom@19.3.0(react@19.3.0))(react@19.3.0))(vite@8.3.4(@types/node@20.19.43)(esbuild@0.28.2)(jiti@2.7.0)(yaml@2.9.1))
       '@workspace/auth':
         specifier: workspace:*
         version: link:../../packages/auth
@@ -144,9 +141,6 @@ importers:
       '@tabler/icons-react':
         specifier: ^3.49.0
         version: 3.49.0(react@19.3.0)
-      '@tanstack/redact':
-        specifier: 0.2.3
-        version: 0.2.3(next@16.4.2(@babel/core@8.0.6)(@playwright/test@1.64.1)(@types/node@20.19.43)(react-dom@19.3.0(react@19.3.0))(react@19.3.0))(vite@8.3.4(@types/node@20.19.43)(esbuild@0.28.2)(jiti@2.7.0)(yaml@2.9.1))
       '@workspace/ui':
         specifier: workspace:*
         version: link:../../packages/ui
@@ -2100,23 +2094,6 @@ packages:
 
   '@tailwindcss/postcss@4.3.3':
     resolution: {integrity: sha512-JTSZZGQi1AyKirbLN3azmjVzef92tcX7h+iSqPdaeStyFpGpDlKvvpxeOE8njhbUanbRwr3z8DyzhICWnMtQeg==}
-
-  '@tanstack/redact@0.2.3':
-    resolution: {integrity: sha512-a+KRpHdWPDfM9tOci9k8Oxm3YlEC8thBac8nxN5k7tzLWM6hagz+hZr0A0ZLjRcpHMOEHVxASx33WyUVvfpffw==}
-    peerDependencies:
-      '@cloudflare/vite-plugin': 1.65.0
-      next: ~15.5.0 || ~16.0.0 || ~16.1.0 || ~16.2.0 || ~16.3.0 || ~16.4.0
-      vinext: ~1.3.0
-      vite: '>=5'
-    peerDependenciesMeta:
-      '@cloudflare/vite-plugin':
-        optional: true
-      next:
-        optional: true
-      vinext:
-        optional: true
-      vite:
-        optional: true
 
   '@ts-morph/common@0.27.0':
     resolution: {integrity: sha512-Wf29UqxWDpc+i61k3oIOzcUfQt79PIT9y/MWfAGlrkjg6lBC1hwDECLXPVJAhWjiGbfBCxZd65F/LIZF3+jeJQ==}
@@ -6242,13 +6219,6 @@ snapshots:
       '@tailwindcss/oxide': 4.3.3
       postcss: 8.5.30
       tailwindcss: 4.3.3
-
-  '@tanstack/redact@0.2.3(next@16.4.2(@babel/core@8.0.6)(@playwright/test@1.64.1)(@types/node@20.19.43)(react-dom@19.3.0(react@19.3.0))(react@19.3.0))(vite@8.3.4(@types/node@20.19.43)(esbuild@0.28.2)(jiti@2.7.0)(yaml@2.9.1))':
-    dependencies:
-      magic-string: 0.30.21
-    optionalDependencies:
-      next: 16.4.2(@babel/core@8.0.6)(@playwright/test@1.64.1)(@types/node@20.19.43)(react-dom@19.3.0(react@19.3.0))(react@19.3.0)
-      vite: 8.3.4(@types/node@20.19.43)(esbuild@0.28.2)(jiti@2.7.0)(yaml@2.9.1)
 
   '@ts-morph/common@0.27.0':
     dependencies:

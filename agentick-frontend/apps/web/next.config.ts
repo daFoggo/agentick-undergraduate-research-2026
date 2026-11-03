@@ -1,5 +1,4 @@
 import type { NextConfig } from "next"
-import { withRedact } from "@tanstack/redact/next"
 
 const isDev = process.env.NODE_ENV === "development"
 
@@ -49,6 +48,4 @@ const nextConfig: NextConfig = {
   },
 }
 
-export default process.env.DISABLE_REDACT === "1"
-  ? nextConfig
-  : withRedact(nextConfig)
+export default nextConfig

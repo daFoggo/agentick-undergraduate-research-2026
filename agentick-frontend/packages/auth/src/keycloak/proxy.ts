@@ -48,7 +48,11 @@ export async function updateSession(
 
   // 1. Try existing access token if it has more than 60s left
   if (accessToken) {
-    const claims = await verifyKeycloakJwt(accessToken, oidcConfig.issuer)
+    const claims = await verifyKeycloakJwt(
+      accessToken,
+      oidcConfig.issuer,
+      { clientId: oidcConfig.clientId }
+    )
     if (claims && (!claims.exp || claims.exp - nowSeconds > 60)) {
       return {
         response,
@@ -101,7 +105,8 @@ export async function updateSession(
 
     const newClaims = await verifyKeycloakJwt(
       tokens.access_token,
-      oidcConfig.issuer
+      oidcConfig.issuer,
+      { clientId: oidcConfig.clientId }
     )
 
     if (!newClaims) {

@@ -10,15 +10,9 @@ import {
 const FAQS = [
   {
     id: "pluggable-auth",
-    question: "How do I switch between Keycloak, Better Auth, and Supabase?",
+    question: "How do I switch between Keycloak, Better Auth, Supabase, and FastAPI OAuth2?",
     answer:
-      "All three providers are normalized behind the unified AuthProvider interface in @workspace/auth. Set AUTH_PROVIDER in apps/studio/.env.local (e.g. keycloak, better-auth, or supabase). Server actions, proxy session refreshes, and getSession() calls remain 100% identical without changing any application code.",
-  },
-  {
-    id: "tanstack-redact",
-    question: "How does TanStack Redact work with Next.js 16 Server Components?",
-    answer:
-      "Both apps wrap next.config.ts with withRedact from @tanstack/redact/next. Next.js keeps native React 19.3 on the server for Server Components, Flight serialization, 'use cache', and Server Actions, while Turbopack swaps browser React/DOM entrypoints to Redact's synchronous runtime—cutting the client DOM runtime chunk by ~58% gzip (~35 KB total client JS saved) with zero changes to component imports.",
+      "All four providers are normalized behind the unified AuthProvider interface in @workspace/auth. Set AUTH_PROVIDER in apps/studio/.env.local (keycloak, better-auth, supabase, or fastapi-oauth). Server actions, proxy session refreshes, and getSession() calls remain 100% identical without changing any application code.",
   },
   {
     id: "cache-components",
@@ -36,13 +30,19 @@ const FAQS = [
     id: "pruning-providers",
     question: "Can I use only one provider and prune the others if I don't need them?",
     answer:
-      "Yes. Each provider is completely isolated in packages/auth/src/{keycloak,better-auth,supabase}/. If your team only uses Keycloak or Supabase, the other submodules remain inactive unless configured in your environment.",
+      "Yes. Each provider is completely isolated in packages/auth/src/{keycloak,better-auth,supabase,fastapi-oauth}/. If your team only uses Keycloak, Supabase, or FastAPI OAuth2, the other submodules remain inactive unless configured in your environment.",
   },
   {
     id: "ai-workflows",
     question: "How is this starter base optimized for Claude AI and coding agents?",
     answer:
       "The repository contains strict AGENTS.md rules, exhaustive docs/ architecture guides, and Antigravity/Claude AI skill definitions. AI agents automatically read these rules to generate code that adheres to monorepo boundaries, zero-shadow design system tokens, and strict type safety without hallucination.",
+  },
+  {
+    id: "security-audit",
+    question: "How is security verified and audited in this architecture?",
+    answer:
+      "The codebase is audited using a formal security audit skill with deterministic 10-unit coverage ledgers and parallel hunter agents. Defenses include token-bound tenant isolation, fail-fast production secret validation, least-privilege DAL permissions, PostgreSQL search_path pinning, live DB role checks in RPCs, and strict ESLint client/server boundaries.",
   },
 ]
 

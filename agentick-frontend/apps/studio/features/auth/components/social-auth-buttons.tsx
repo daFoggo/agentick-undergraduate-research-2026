@@ -73,86 +73,88 @@ export function SocialAuthButtons({
         </div>
       </div>
 
-      {/* Keycloak SSO Button */}
-      {isKeycloakActive ? (
-        <form action={keycloakAction}>
+      <div className="flex w-full items-center gap-2">
+        {/* Keycloak SSO Button */}
+        {isKeycloakActive ? (
+          <form action={keycloakAction} className="flex-1">
+            <Button
+              type="submit"
+              variant="outline"
+              size="default"
+              className="w-full gap-2 text-xs sm:text-sm"
+              title={
+                mode === "sign-up"
+                  ? "Create account with Keycloak"
+                  : "Continue with Keycloak SSO"
+              }
+            >
+              <IconShieldLock className="size-4 text-primary shrink-0" />
+              <span className="truncate">Keycloak</span>
+            </Button>
+          </form>
+        ) : (
           <Button
-            type="submit"
+            type="button"
             variant="outline"
-            size="lg"
-            className="w-full gap-2"
+            size="default"
+            className="flex-1 gap-2 text-xs sm:text-sm opacity-75 hover:opacity-100"
+            onClick={handleKeycloakClick}
+            title="Continue with Keycloak SSO"
           >
-            <IconShieldLock className="size-4 text-primary" />
-            <span>
-              {mode === "sign-up"
-                ? "Create account with Keycloak"
-                : "Continue with Keycloak SSO"}
-            </span>
+            <IconShieldLock className="size-4 text-muted-foreground shrink-0" />
+            <span className="truncate">Keycloak</span>
           </Button>
-        </form>
-      ) : (
-        <Button
-          type="button"
-          variant="outline"
-          size="lg"
-          className="w-full gap-2 opacity-75 hover:opacity-100"
-          onClick={handleKeycloakClick}
-        >
-          <IconShieldLock className="size-4 text-muted-foreground" />
-          <span>Continue with Keycloak SSO</span>
-        </Button>
-      )}
+        )}
 
-      {/* Google Button */}
-      {isGoogleActive && googleAction ? (
-        <form action={googleAction}>
+        {/* Google Button */}
+        {isGoogleActive && googleAction ? (
+          <form action={googleAction} className="flex-1">
+            <Button
+              type="submit"
+              variant="outline"
+              size="default"
+              className="w-full gap-2 text-xs sm:text-sm"
+              title="Continue with Google"
+            >
+              <IconBrandGoogle className="size-4 shrink-0" />
+              <span className="truncate">Google</span>
+            </Button>
+          </form>
+        ) : (
           <Button
-            type="submit"
+            type="button"
             variant="outline"
-            size="lg"
-            className="w-full gap-2"
+            size="default"
+            className="flex-1 gap-2 text-xs sm:text-sm opacity-75 hover:opacity-100"
+            onClick={handleGoogleClick}
+            title="Continue with Google"
           >
-            <IconBrandGoogle className="size-4" />
-            <span>Continue with Google</span>
+            <IconBrandGoogle className="size-4 text-muted-foreground shrink-0" />
+            <span className="truncate">Google</span>
           </Button>
-        </form>
-      ) : (
-        <Button
-          type="button"
-          variant="outline"
-          size="lg"
-          className="w-full gap-2 opacity-75 hover:opacity-100"
-          onClick={handleGoogleClick}
-        >
-          <IconBrandGoogle className="size-4 text-muted-foreground" />
-          <span>Continue with Google</span>
-        </Button>
-      )}
+        )}
 
-      {/* Demo Sign-in Button */}
-      {hasDemo && demoAction && mode === "sign-in" ? (
-        <form action={demoFormAction} className="mt-1">
-          <Button
-            type="submit"
-            variant="secondary"
-            size="lg"
-            className="w-full gap-2"
-            disabled={demoPending}
-          >
-            {demoPending ? (
-              <>
-                <Spinner className="mr-2" />
-                Entering demo…
-              </>
-            ) : (
-              <>
-                <IconSparkles className="size-4" />
-                <span>Demo sign in (instant access)</span>
-              </>
-            )}
-          </Button>
-        </form>
-      ) : null}
+        {/* Demo Sign-in Button */}
+        {hasDemo && demoAction ? (
+          <form action={demoFormAction} className="flex-1">
+            <Button
+              type="submit"
+              variant="secondary"
+              size="default"
+              className="w-full gap-2 text-xs sm:text-sm"
+              disabled={demoPending}
+              title="Demo sign in (instant access)"
+            >
+              {demoPending ? (
+                <Spinner className="size-4 shrink-0" />
+              ) : (
+                <IconSparkles className="size-4 shrink-0" />
+              )}
+              <span className="truncate">Demo</span>
+            </Button>
+          </form>
+        ) : null}
+      </div>
     </div>
   )
 }

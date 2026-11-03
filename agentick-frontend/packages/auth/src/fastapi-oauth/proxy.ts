@@ -61,12 +61,18 @@ export async function updateSession(
       return { response, isAuthenticated: false, role: null }
     }
 
-    const accessMaxAge = newClaims.exp ? Math.max(1, newClaims.exp - nowSeconds) : 60 * 30
+    const accessMaxAge = newClaims.exp
+      ? Math.max(1, newClaims.exp - nowSeconds)
+      : 60 * 30
 
     request.cookies.set(cookieNames.access, tokens.access_token)
     request.cookies.set(cookieNames.refresh, tokens.refresh_token)
     response = NextResponse.next({ request })
-    response.cookies.set(cookieNames.access, tokens.access_token, tokenCookieOptions(accessMaxAge))
+    response.cookies.set(
+      cookieNames.access,
+      tokens.access_token,
+      tokenCookieOptions(accessMaxAge)
+    )
     response.cookies.set(
       cookieNames.refresh,
       tokens.refresh_token,

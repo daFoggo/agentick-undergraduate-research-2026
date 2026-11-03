@@ -95,6 +95,74 @@ describe("resolveKeycloakRole & verifyKeycloakJwt", () => {
       },
     })
   })
+
+  it("rejects token with mismatched azp or invalid typ", async () => {
+    const { publicKey, privateKey } = await generateKeyPair("RS256")
+    const jwk = await exportJWK(publicKey)
+    jwk.kid = "k2"
+    jwk.alg = "RS256"
+    jwk.use = "sig"
+    const jwks = createLocalJWKSet({ keys: [jwk] })
+    const issuer = "http://localhost:8080/realms/studio"
+
+    // Mismatched azp
+    const wrongAzpToken = await new SignJWT({
+      azp: "other-client",
+      typ: "Bearer",
+    })
+      .setProtectedHeader({ alg: "RS256", kid: "k2" })
+      .setSubject("user-456")
+      .setIssuer(issuer)
+      .setIssuedAt()
+      .setExpirationTime("5m")
+      .sign(privateKey)
+
+    expect(
+      await verifyKeycloakJwt(wrongAzpToken, issuer, {
+        clientId: "studio-app",
+        jwksOverride: jwks,
+      })
+    ).toBeNull()
+
+    // Invalid typ (e.g. Refresh token used as Access token)
+    const wrongTypToken = await new SignJWT({
+      azp: "studio-app",
+      typ: "Refresh",
+    })
+      .setProtectedHeader({ alg: "RS256", kid: "k2" })
+      .setSubject("user-456")
+      .setIssuer(issuer)
+      .setIssuedAt()
+      .setExpirationTime("5m")
+      .sign(privateKey)
+
+    expect(
+      await verifyKeycloakJwt(wrongTypToken, issuer, {
+        clientId: "studio-app",
+        jwksOverride: jwks,
+      })
+    ).toBeNull()
+
+    // Valid azp and typ passes
+    const validToken = await new SignJWT({
+      azp: "studio-app",
+      typ: "Bearer",
+      resource_access: { "studio-app": { roles: ["editor"] } },
+    })
+      .setProtectedHeader({ alg: "RS256", kid: "k2" })
+      .setSubject("user-456")
+      .setIssuer(issuer)
+      .setIssuedAt()
+      .setExpirationTime("5m")
+      .sign(privateKey)
+
+    const verified = await verifyKeycloakJwt(validToken, issuer, {
+      clientId: "studio-app",
+      jwksOverride: jwks,
+    })
+    expect(verified).not.toBeNull()
+    expect(verified?.role).toBe("editor")
+  })
 })
 
 describe("OIDC URL builder", () => {

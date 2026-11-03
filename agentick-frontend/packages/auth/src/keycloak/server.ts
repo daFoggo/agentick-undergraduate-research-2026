@@ -55,7 +55,11 @@ export function createKeycloakProvider(options: AuthOptions): AuthProvider {
       const accessToken = cookieStore.get(cookieNames.access)?.value
       if (!accessToken) return null
 
-      const claims = await verifyKeycloakJwt(accessToken, oidcConfig.issuer)
+      const claims = await verifyKeycloakJwt(
+        accessToken,
+        oidcConfig.issuer,
+        { clientId: oidcConfig.clientId }
+      )
       if (!claims) return null
 
       return {

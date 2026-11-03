@@ -66,4 +66,34 @@ describe("mock backend", () => {
     expect(error).toBeInstanceOf(ApiError)
     expect((error as ApiError).status).toBe(404)
   })
+
+  it("enforces tenant isolation between caller tokens", async () => {
+    // User A creates their own organization
+    const orgA = await insertOrg("token-user-a", { name: "Tenant A Org" })
+    expect(orgA.slug).toBe("tenant-a-org")
+
+    // User A can see Tenant A Org
+    const orgsA = await fetchOrgs("token-user-a")
+    expect(orgsA.some((o) => o.slug === "tenant-a-org")).toBe(true)
+
+    // User B cannot see Tenant A Org
+    const orgsB = await fetchOrgs("token-user-b")
+    expect(orgsB.some((o) => o.slug === "tenant-a-org")).toBe(false)
+
+    // User B cannot insert projects into Tenant A Org (403 Forbidden)
+    const error = await insertProject("token-user-b", "tenant-a-org", {
+      name: "Tenant B Hijack",
+      region: "us-east-1",
+    }).catch((e: unknown) => e)
+
+    expect(error).toBeInstanceOf(ApiError)
+    expect((error as ApiError).status).toBe(403)
+
+    // User A can successfully insert project into their own org
+    const projectA = await insertProject("token-user-a", "tenant-a-org", {
+      name: "Project A Valid",
+      region: "us-east-1",
+    })
+    expect(projectA.ref).toBe("project-a-valid")
+  })
 })

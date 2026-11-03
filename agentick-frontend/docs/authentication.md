@@ -36,11 +36,11 @@ Browser ─cookie─▶ proxy.ts ─▶ updateSession (Better Auth): decrypt/ref
                      ▼
    Server Component / Action / Route Handler ─▶ lib/dal.ts (getSession · verifySession · verifySessionFresh)
                      ▼
-        getAuthProvider() ─▶ packages/auth/src/{better-auth,supabase}/server.ts
+        getAuthProvider() ─▶ packages/auth/src/{better-auth,supabase,keycloak,fastapi-oauth}/server.ts
                      ▼
          apiFetch ─Bearer JWT─▶ FastAPI Backend (/v1/*)
                                   ▼
-                              JWKS (EdDSA) verification at backend
+                              JWKS (EdDSA) or HS256 verification at backend
 ```
 
 Paths in `apps/studio/` unless they start with `packages/`:

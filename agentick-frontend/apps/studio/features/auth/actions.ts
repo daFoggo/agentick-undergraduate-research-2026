@@ -71,6 +71,7 @@ export async function signUpAction(
   const parsed = SignUpSchema.safeParse({
     ...values,
     password: formData.get("password"),
+    confirmPassword: formData.get("confirmPassword"),
   })
   if (!parsed.success) {
     return {
@@ -79,10 +80,12 @@ export async function signUpAction(
     }
   }
 
+  const { confirmPassword: _, ...signUpData } = parsed.data
+
   const provider = await getAuthProvider()
   let result: SignUpResult
   try {
-    result = await provider.signUp(parsed.data)
+    result = await provider.signUp(signUpData)
   } catch (error) {
     if (!provider.isExpectedError(error)) {
       console.error("[signUpAction] unexpected error:", error)

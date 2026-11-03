@@ -6,7 +6,10 @@ export type FastApiTokenResponse = {
 
 /** Thrown for a 4xx the backend returned (wrong password, duplicate email, ...): safe to show in a form. */
 export class FastApiAuthError extends Error {
-  constructor(readonly status: number, message: string) {
+  constructor(
+    readonly status: number,
+    message: string
+  ) {
     super(message)
     this.name = "FastApiAuthError"
   }

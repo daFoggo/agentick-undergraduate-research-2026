@@ -5,11 +5,13 @@ import { SocialAuthButtons } from "@/features/auth/components/social-auth-button
 
 import { SIGN_IN_PATH } from "@/config/routes"
 import {
+  demoSignInAction,
   signUpAction,
   signInWithGoogleAction,
   signUpWithKeycloakAction,
 } from "@/features/auth/actions"
 import { getActiveAuthProvider } from "@/lib/auth"
+import { demoAuthSecret } from "@/lib/demo-session"
 
 import {
   AuthAside,
@@ -26,6 +28,7 @@ export const metadata: Metadata = { title: "Sign up" }
 
 export default function SignUpPage() {
   const activeProvider = getActiveAuthProvider()
+  const hasDemo = demoAuthSecret() !== null
 
   return (
     <>
@@ -42,7 +45,7 @@ export default function SignUpPage() {
           </AuthSwitch>
         </AuthHeader>
         <AuthBody>
-          <AuthHeading eyebrow="Sign up" title="Create an account">
+          <AuthHeading title="Create an account">
             Create an account to get started.
           </AuthHeading>
           <div className="flex flex-col gap-4">
@@ -50,9 +53,10 @@ export default function SignUpPage() {
             <SocialAuthButtons
               activeProvider={activeProvider}
               mode="sign-up"
-              hasDemo={false}
+              hasDemo={hasDemo}
               keycloakAction={signUpWithKeycloakAction}
               googleAction={signInWithGoogleAction}
+              demoAction={demoSignInAction}
             />
           </div>
         </AuthBody>

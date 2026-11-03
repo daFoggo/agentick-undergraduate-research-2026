@@ -5,7 +5,7 @@ import { IconTerminal2 } from "@tabler/icons-react"
 import { motion } from "motion/react"
 import { CopyButton } from "@workspace/ui/components/animate-ui/buttons/copy"
 
-type ProviderKey = "keycloak" | "better-auth" | "supabase"
+type ProviderKey = "keycloak" | "better-auth" | "supabase" | "fastapi-oauth"
 
 interface ProviderInfo {
   name: string
@@ -45,11 +45,23 @@ BETTER_AUTH_URL="http://localhost:3001"`,
     badge: "Postgres BaaS",
     envSnippet: `AUTH_PROVIDER="supabase"
 NEXT_PUBLIC_SUPABASE_URL="https://your-ref.supabase.co"
-NEXT_PUBLIC_SUPABASE_ANON_KEY="your-anon-key"`,
+NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY="sb_publishable_..."`,
     features: [
       "Supabase Auth & GoTrue SSR cookies integration",
       "Row Level Security (RLS) policies enforcement",
       "PostgreSQL, Storage, and Realtime channels",
+    ],
+  },
+  "fastapi-oauth": {
+    name: "FastAPI OAuth2",
+    badge: "Pure Backend JWT",
+    envSnippet: `AUTH_PROVIDER="fastapi-oauth"
+API_BASE_URL="http://localhost:11030"
+JWT_SECRET_KEY="shared-hs256-secret-at-least-32-chars"`,
+    features: [
+      "FastAPI backend acts as the IdP (OAuth2 password flow)",
+      "Local HS256 JWT verification with shared secret",
+      "Split httpOnly access & refresh cookies with auto-refresh",
     ],
   },
 }
@@ -69,7 +81,7 @@ export function ProviderTabs() {
           </span>
         </div>
 
-        <div className="flex items-center gap-1 rounded-md border border-border/40 bg-background/80 p-1">
+        <div className="flex flex-wrap items-center gap-1 rounded-md border border-border/40 bg-background/80 p-1">
           {(Object.keys(PROVIDERS) as ProviderKey[]).map((key) => {
             const isSelected = active === key
             return (

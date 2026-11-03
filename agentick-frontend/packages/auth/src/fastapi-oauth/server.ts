@@ -36,7 +36,10 @@ function getFastApiConfig() {
 }
 
 /** Seconds left on a token's `exp` claim, or a safe default if it has none. */
-function maxAgeFromExp(exp: number | undefined, fallbackSeconds: number): number {
+function maxAgeFromExp(
+  exp: number | undefined,
+  fallbackSeconds: number
+): number {
   if (!exp) return fallbackSeconds
   return Math.max(1, exp - Math.floor(Date.now() / 1000))
 }
@@ -47,7 +50,9 @@ export function createFastApiOAuthProvider(options: AuthOptions): AuthProvider {
   const cookieNames = getFastApiCookieNames(options.cookieName)
   const { apiBaseUrl, jwtSecretKey } = getFastApiConfig()
 
-  async function sessionFromAccessToken(accessToken: string | undefined): Promise<Session | null> {
+  async function sessionFromAccessToken(
+    accessToken: string | undefined
+  ): Promise<Session | null> {
     if (!accessToken) return null
     const claims = await verifyFastApiJwt(accessToken, jwtSecretKey)
     if (!claims) return null
@@ -65,7 +70,10 @@ export function createFastApiOAuthProvider(options: AuthOptions): AuthProvider {
     cookieStore: Awaited<ReturnType<typeof cookies>>,
     tokens: FastApiTokenResponse
   ): Promise<void> {
-    const accessClaims = await verifyFastApiJwt(tokens.access_token, jwtSecretKey)
+    const accessClaims = await verifyFastApiJwt(
+      tokens.access_token,
+      jwtSecretKey
+    )
     cookieStore.set(
       cookieNames.access,
       tokens.access_token,
@@ -141,7 +149,11 @@ export function createFastApiOAuthProvider(options: AuthOptions): AuthProvider {
     },
 
     isExpectedError(error: unknown): boolean {
-      return error instanceof FastApiAuthError && error.status >= 400 && error.status < 500
+      return (
+        error instanceof FastApiAuthError &&
+        error.status >= 400 &&
+        error.status < 500
+      )
     },
   }
 }

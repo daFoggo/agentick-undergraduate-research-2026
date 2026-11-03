@@ -17,15 +17,16 @@ import {
  * data, so every query and action above it is real. To go live, replace the bodies with
  * `apiFetch` (FastAPI) or `createDataClient` + `unwrap` (Supabase); keep the signatures, the Zod
  * parsing and the errors (`ApiError` 4xx = expected, returned to the form as a message).
- * The `_token` argument is the user's access token, unused by the mock.
+ * The `token` argument represents the user's access token, used here to enforce tenant isolation.
  */
-type Db = { orgs: Org[]; projects: Project[] }
+type DbOrg = Org & { ownerToken?: string }
+type Db = { orgs: DbOrg[]; projects: Project[] }
 
 const SEED: Db = {
   orgs: [
-    { slug: "acme", name: "Acme Inc", plan: "Pro", members: 8 },
-    { slug: "globex", name: "Globex", plan: "Free", members: 3 },
-    { slug: "initech", name: "Initech", plan: "Team", members: 14 },
+    { slug: "acme", name: "Acme Inc", plan: "Pro", members: 8, ownerToken: "*" },
+    { slug: "globex", name: "Globex", plan: "Free", members: 3, ownerToken: "*" },
+    { slug: "initech", name: "Initech", plan: "Team", members: 14, ownerToken: "*" },
   ],
   projects: [
     {
@@ -99,16 +100,25 @@ const SEED: Db = {
 const globalForDb = globalThis as { __workspaceMock?: Db }
 const db = (globalForDb.__workspaceMock ??= structuredClone(SEED))
 
-export async function fetchOrgs(_token: string): Promise<Org[]> {
-  return OrgSchema.array().parse(db.orgs)
+export async function fetchOrgs(token: string): Promise<Org[]> {
+  const visible = db.orgs.filter(
+    (org) => !org.ownerToken || org.ownerToken === "*" || org.ownerToken === token
+  )
+  return OrgSchema.array().parse(visible)
 }
 
-export async function fetchProjects(_token: string): Promise<Project[]> {
-  return ProjectSchema.array().parse(db.projects)
+export async function fetchProjects(token: string): Promise<Project[]> {
+  const visibleOrgSlugs = new Set(
+    db.orgs
+      .filter((org) => !org.ownerToken || org.ownerToken === "*" || org.ownerToken === token)
+      .map((org) => org.slug)
+  )
+  const visible = db.projects.filter((p) => visibleOrgSlugs.has(p.orgSlug))
+  return ProjectSchema.array().parse(visible)
 }
 
 export async function insertOrg(
-  _token: string,
+  token: string,
   input: CreateOrgInput
 ): Promise<Org> {
   const slug = slugify(input.name)
@@ -123,18 +133,32 @@ export async function insertOrg(
     plan: "Free",
     members: 1,
   })
-  db.orgs.push(org)
+  db.orgs.push({ ...org, ownerToken: token })
   return org
 }
 
 export async function insertProject(
-  _token: string,
+  token: string,
   orgSlug: string,
   input: CreateProjectInput
 ): Promise<Project> {
-  if (!db.orgs.some((org) => org.slug === orgSlug)) {
+  const targetOrg = db.orgs.find((org) => org.slug === orgSlug)
+  if (!targetOrg) {
     throw new ApiError(404, "Organization not found")
   }
+
+  // Enforce tenant boundary: caller must have access to the target organization
+  const isAuthorized =
+    !targetOrg.ownerToken ||
+    targetOrg.ownerToken === "*" ||
+    targetOrg.ownerToken === token
+  if (!isAuthorized) {
+    throw new ApiError(
+      403,
+      "You do not have permission to create projects in this organization"
+    )
+  }
+
   const ref = slugify(input.name)
   if (ref.length < 3)
     throw new ApiError(422, "Use letters or numbers in the name")

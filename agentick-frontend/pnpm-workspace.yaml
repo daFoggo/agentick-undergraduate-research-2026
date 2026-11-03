@@ -9,8 +9,6 @@ minimumReleaseAge: 2880
 minimumReleaseAgeExclude:
   # transitive dep of shadcn in the lockfile; reaches 48h on 2026-10-15 08:24 UTC, then remove this entry
   - "@hono/node-server@2.1.5"
-  # published 2026-10-28 17:15 UTC with React 19.3 useId & hydration recovery fixes; remove after 48h
-  - "@tanstack/redact@0.2.3"
 
 allowBuilds:
   esbuild: true
