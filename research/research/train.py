@@ -12,7 +12,7 @@ from pathlib import Path
 import joblib
 import numpy as np
 import pandas as pd
-from catboost import CatBoostClassifier
+from catboost import CatBoostClassifier, CatBoostRanker, Pool
 from sklearn.compose import ColumnTransformer
 from sklearn.impute import SimpleImputer
 from sklearn.linear_model import LogisticRegression
@@ -53,6 +53,11 @@ def prepare(data,columns):
     return x,categories
 
 
+def is_ranker(name):
+    """Group-wise ranking models (group = sprint): the metric only depends on order inside a sprint."""
+    return name.endswith('_rank')
+
+
 def make_model(name,columns,categories,config):
     if name=='static_lr':
         numeric = [c for c in columns if c not in categories]
@@ -60,8 +65,30 @@ def make_model(name,columns,categories,config):
             ('numeric',Pipeline([('impute',SimpleImputer(strategy='median',keep_empty_features=True)),('scale',StandardScaler())]),numeric),
             ('categorical',OneHotEncoder(handle_unknown='ignore'),categories)])
         return Pipeline([('preprocess',transform),('model',LogisticRegression(C=1,max_iter=2000,random_state=config['seed']))])
+    if is_ranker(name):
+        return CatBoostRanker(**config['catboost'],random_seed=config['seed'],loss_function='YetiRank',
+                              cat_features=categories,verbose=False,allow_writing_files=False)
     return CatBoostClassifier(**config['catboost'],random_seed=config['seed'],loss_function='Logloss',
                               cat_features=categories,verbose=False,allow_writing_files=False)
+
+
+def fit_model(model,name,train,columns,categories):
+    """Fit on `train`; rankers need rows of one sprint to be contiguous, so they are ordered by sprint first."""
+    if is_ranker(name):
+        train = train.sort_values('sprint_id',kind='stable')
+        x,_ = prepare(train,columns)
+        model.fit(Pool(x,train.y,cat_features=categories,group_id=train.sprint_id.values))
+    else:
+        x,_ = prepare(train,columns)
+        model.fit(x,train.y)
+    return model
+
+
+def predict_scores(model,name,x):
+    """Probability for classifiers; sigmoid of the ranking score for rankers (monotone, so order is unchanged)."""
+    if is_ranker(name):
+        return 1/(1+np.exp(-model.predict(x)))
+    return model.predict_proba(x)[:,1]
 
 
 def logit(p):
@@ -120,12 +147,11 @@ def main():
                     pv,pt = rule(val),rule(test)
                 else:
                     columns = feature_columns(train,name)
-                    xt,categories = prepare(train,columns)
+                    _,categories = prepare(train,columns)
                     xv,_ = prepare(val,columns)
                     xe,_ = prepare(test,columns)
-                    model = make_model(name,columns,categories,config)
-                    model.fit(xt,train.y)
-                    pv,pt = model.predict_proba(xv)[:,1],model.predict_proba(xe)[:,1]
+                    model = fit_model(make_model(name,columns,categories,config),name,train,columns,categories)
+                    pv,pt = predict_scores(model,name,xv),predict_scores(model,name,xe)
                 calibrator = None
                 if val.y.nunique()==2 and min(val.y.value_counts())>=5:
                     calibrator = LogisticRegression(C=1e6,max_iter=1000).fit(logit(pv),val.y)
