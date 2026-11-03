@@ -2,6 +2,10 @@
 
 Ngày 2026-11-03. Đây là bổ sung ngoài protocol gốc, chưa phải kết quả xác nhận cuối cùng.
 
+## Quyết định
+
+**Mô hình chính vẫn là `dynamic_catboost` (bộ phân loại).** `dynamic_catboost_rank` được giữ trong repo như mô hình bổ sung, không chạy mặc định. Căn cứ: trên validation (tập chưa dùng để chọn biến thể), ranker chỉ có tác dụng nhỏ ở cross-project (+0,3 đến +0,6 điểm) và không có tác dụng ở temporal; kết luận H1 không đổi giữa hai thuật toán. Chi tiết ở các mục dưới.
+
 ## Lý do
 
 Metric chính (Recall@ceil(20%) trong từng sprint) chỉ phụ thuộc thứ tự xếp hạng bên trong một sprint. `dynamic_catboost` là bộ phân loại trộn mọi sprint vào một bảng nên phải học cả mức rủi ro chung của sprint. Đo trên landmark 0, trung bình 31% phương sai nhãn nằm giữa các sprint (từ 12% ở DM đến 43% ở CONFSERVER; tỉ lệ SSB/SST theo project), phần này không giúp xếp hạng trong sprint.
@@ -68,12 +72,35 @@ Mô hình `static_catboost_rank` (cùng ranker, chỉ feature tĩnh) được hu
 - **Tác dụng riêng của ranker nhỏ và chỉ có ý nghĩa ở 3/8 ô** (temporal .25 và .75, cross-project .5). Với phía static, ranker cũng cho điểm ước lượng dương nhưng không có ý nghĩa (temporal +.019 [−.004, +.042], cross-project +.006 [−.000, +.013]).
 - Khoảng tin cậy coi các sprint là độc lập. Sprint trong cùng một project có thể tương quan nên khoảng này có thể hẹp hơn thực tế.
 
+## Rủi ro chọn biến thể trên tập test và kiểm chứng trên validation
+
+Khoảng 6 biến thể (feature cấu trúc thô, ép số âm, ranker, ba biến thể feature tương đối) đã được đánh giá trên **tập test** ở các pilot, rồi biến thể tốt nhất (ranker) được đưa vào benchmark full cũng trên đúng các sprint test đó. Vì vậy benchmark full không phải xác nhận độc lập và kết quả của ranker có thể bị thổi phồng do chọn người thắng (winner's curse). Siêu tham số không được tune; validation chỉ dùng để hiệu chỉnh xác suất, không ảnh hưởng thứ tự xếp hạng.
+
+Để kiểm chứng, các mô hình đã lưu (chỉ huấn luyện trên train) được nạp lại và đo trên **tập validation**, là tập chưa từng được dùng để chọn biến thể. Chênh lệch Recall@20%, khoảng tin cậy 95% theo sprint, trung bình qua 3 seed:
+
+| Thí nghiệm | Landmark | Ranker: rank − dynamic | H1 gốc: dynamic − static |
+|---|---|---|---|
+| temporal | 0 | +.004 [−.012, +.020] | +.009 [+.002, +.017] |
+| temporal | .25 | +.003 [−.008, +.015] | **+.034** [+.016, +.053] |
+| temporal | .5 | −.000 [−.013, +.012] | **+.072** [+.050, +.094] |
+| temporal | .75 | −.002 [−.015, +.011] | **+.116** [+.089, +.143] |
+| cross-project | 0 | **+.006** [+.002, +.010] | +.002 [−.001, +.004] |
+| cross-project | .25 | **+.004** [+.001, +.007] | **+.042** [+.037, +.046] |
+| cross-project | .5 | **+.006** [+.003, +.009] | **+.078** [+.073, +.083] |
+| cross-project | .75 | **+.003** [+.001, +.005] | **+.129** [+.123, +.135] |
+
+- **H1 tái lập hoàn toàn** trên validation, cùng chiều và cùng độ lớn với test, ở cả temporal và cross-project.
+- **Ranker, cross-project:** tái lập (+0,3 đến +0,6 điểm, khoảng tin cậy không chứa 0), cùng độ lớn với test.
+- **Ranker, temporal:** **không tái lập.** Trên validation chênh lệch gần 0 (−0,002 đến +0,004), trong khi trên test là +0,014 đến +0,025. Phần lớn lợi ích temporal quan sát trên test nhiều khả năng là do chọn biến thể và nhiễu. Không nên nêu lợi ích temporal của ranker trong báo cáo.
+- Khoảng tin cậy cross-project trên validation hẹp hơn thực tế vì các project validation lặp lại ở nhiều fold (10.331 đơn vị là tương quan, không độc lập).
+
 ## Kiểm tra tái lập
 
 Mô hình đối chứng (`static_catboost`, `dynamic_catboost`) khớp từng bit với lần rerun sạch trước: temporal 168/168 tệp ở mỗi mô hình và mỗi seed; cross-project seed 0 khớp. Cross-project seed 1 và 2 khác vì lần rerun trước dùng lại cách chia của seed 0 cho mọi seed (chỉ đổi seed CatBoost), còn lần này đổi cả cách chia theo seed. So sánh rank với dynamic luôn là so sánh cặp trong cùng một workspace nên không bị ảnh hưởng.
 
 ## Hạn chế
 
+- Biến thể được chọn sau khi xem kết quả test của các pilot (xem mục rủi ro chọn biến thể); số liệu test của ranker là cận trên lạc quan.
 - Mới có 3 seed. Bootstrap theo sprint chưa tính tương quan giữa các sprint cùng project (chưa bootstrap theo project).
 - Chưa thử ranker với loss khác (PairLogit, QueryCrossEntropy) và chưa tune; chọn YetiRank trước khi xem kết quả.
 - Pilot chỉ chạy landmark 0 trên vài project; quyết định đưa vào full dựa trên các tập đó.
