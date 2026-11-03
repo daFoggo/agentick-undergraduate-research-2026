@@ -25,7 +25,7 @@ import { verifyFastApiJwt } from "./jwt"
 function getFastApiConfig() {
   if (authConfig.AUTH_PROVIDER !== "fastapi-oauth") {
     return {
-      apiBaseUrl: "http://localhost:8000",
+      apiBaseUrl: "http://localhost:11030",
       jwtSecretKey: "change-me-to-a-random-64-char-secret",
     }
   }

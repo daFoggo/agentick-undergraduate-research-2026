@@ -41,7 +41,7 @@ Paths relative to `apps/studio/`.
 
 ### 2.1 Better Auth + FastAPI
 1. `apps/studio/.env.local`: the `better-auth` block of `.env.example`.
-2. `docker compose up -d` in `your FastAPI backend` (Postgres on host port 5433, API on 8000).
+2. `docker compose up -d` in `your FastAPI backend` (Postgres on host port 11031, API on 11030).
 3. `pnpm --filter studio dev`.
 
 ### 2.2 A new project on Supabase (from this base)
@@ -80,7 +80,7 @@ No Better Auth: the backend hashes passwords (`bcrypt`), stores its own `users` 
 own JWTs (`PyJWT`, HS256). There is no JWKS endpoint — issuer and verifier are the same service, so the frontend
 verifies the signature with a secret it must be given, not a published public key.
 1. `docker compose up -d` in `your FastAPI backend` (same backend as the `better-auth` stack).
-2. `apps/studio/.env.local`: `AUTH_PROVIDER=fastapi-oauth`, `API_BASE_URL=http://localhost:8000`,
+2. `apps/studio/.env.local`: `AUTH_PROVIDER=fastapi-oauth`, `API_BASE_URL=http://localhost:11030`,
    `JWT_SECRET_KEY=<same value as the backend's own JWT_SECRET_KEY>`.
 3. `pnpm --filter studio dev`.
 No social login: the backend doesn't implement any, so `SocialAuthButtons` shows both buttons disabled on this stack.

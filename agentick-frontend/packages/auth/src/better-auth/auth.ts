@@ -65,7 +65,7 @@ function create(options: AuthOptions) {
       jwt({
         jwt: {
           issuer: cfg?.BETTER_AUTH_URL ?? "http://localhost:3001",
-          audience: cfg?.API_AUDIENCE ?? "http://localhost:8000",
+          audience: cfg?.API_AUDIENCE ?? "http://localhost:11030",
           definePayload: ({ user }) =>
             jwtPayload(user as { role?: string; name: string; email: string }),
         },
