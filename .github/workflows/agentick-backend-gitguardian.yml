@@ -1,0 +1,26 @@
+name: agentick-backend GitGuardian
+
+on:
+  push:
+    paths:
+      - "agentick-backend/**"
+  pull_request:
+    paths:
+      - "agentick-backend/**"
+
+defaults:
+  run:
+    working-directory: agentick-backend
+
+jobs:
+  secret-scan:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: pip install ggshield
+      - run: ggshield secret scan path . --recursive --yes
+        env:
+          GITGUARDIAN_API_KEY: ${{ secrets.GITGUARDIAN_API_KEY }}
