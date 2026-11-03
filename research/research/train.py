@@ -26,11 +26,17 @@ PREDICTIONS = Path('artifacts/predictions')
 PROTOCOL = Path('artifacts/protocol')
 
 
+V2_FEATURES = ('dynamic_status_changes_3d','dynamic_status_changes_7d','dynamic_events_3d','dynamic_events_7d')
+
+
 def feature_columns(data,model):
-    static = [c for c in data if c.startswith('static_') and not c.endswith('timestamp')]
+    static = [c for c in data if c.startswith('static_') and not c.endswith('timestamp')
+              and not c.endswith(('_3d','_7d'))]  # momentum is dynamic-only; static baseline must not see it
     if model.startswith('static_'):
         return static+['cohort_size']
     dynamic = [c for c in data if c.startswith('dynamic_') and not c.endswith('timestamp')]
+    if model!='dynamic_catboost_v2':
+        dynamic = [c for c in dynamic if c not in V2_FEATURES]
     columns = static+dynamic+['cohort_size']
     if model=='dynamic_no_cohort':
         columns = [c for c in columns if 'cohort' not in c]

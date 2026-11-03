@@ -12,7 +12,7 @@ CONFIG = {
     'min_test_sprints':10,'min_train_class':10,'min_validation_class':5,'min_test_class':5,
     'temporal_split':[.6,.2,.2], 'budget_rates':[.1,.2,.3],
     'budget_rounding':'ceil; report realized fraction; floor sensitivity',
-    'models':['frequency','business_rule','static_lr','static_catboost','dynamic_catboost','dynamic_no_cohort'],
+    'models':['frequency','business_rule','static_lr','static_catboost','dynamic_catboost','dynamic_no_cohort','dynamic_catboost_v2'],
     'catboost':{'iterations':400,'depth':5,'learning_rate':.05,'l2_leaf_reg':5,'thread_count':4},
     'calibration':'sigmoid on validation only; identity fallback if insufficient validation classes',
     'cross_project':'leave-one-project-out; held-out validation projects deterministic by seed',

@@ -86,10 +86,11 @@ class Timeline:
         types = [event for event in events if event.field == 'issuetype']
         estimates = [event for event in events if event.field == 'Story Points']
         try:
-            estimate = float(estimates[-1].after) if estimates and estimates[-1].after else None
+            estimate = float(estimates[-1].after_text) if estimates and estimates[-1].after_text else None
         except ValueError:
             estimate = None
         days = lambda delta: delta.total_seconds() / 86400
+        window = lambda items, n: sum((at-event.at).total_seconds() <= n*86400 for event in items)
         return {
             'age_days': days(at-created), 'duration_days': days(end-start),
             'status': current, 'is_done': int(current in DONE),
@@ -103,5 +104,8 @@ class Timeline:
             'priority': normalize(priority[-1].after_text) if priority else 'unknown',
             'issue_type': normalize(types[-1].after_text) if types else 'unknown',
             'estimate': estimate,
+            # v2 momentum/rolling-window features (Protocol_feature_v2_momentum.md); as-of via self.before(at) only.
+            'status_changes_3d': window(changes, 3), 'status_changes_7d': window(changes, 7),
+            'events_3d': window(events, 3), 'events_7d': window(events, 7),
             'feature_max_timestamp': events[-1].at.isoformat() if events else created.isoformat(),
         }
