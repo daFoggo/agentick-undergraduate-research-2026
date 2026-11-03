@@ -9,7 +9,7 @@ class Settings(BaseSettings):
     environment: str = "local"
     debug: bool = True
 
-    database_url: str = "postgresql+psycopg://agentick:agentick_local_dev@localhost:5432/agentick"
+    database_url: str = "postgresql+psycopg://agentick:agentick_local_dev@localhost:11031/agentick"
 
     internal_admin_token: str = "change-me"
 

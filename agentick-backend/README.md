@@ -26,9 +26,9 @@ cp .env.example .env
 docker compose up --build
 ```
 
-- API: http://localhost:8000
-- Swagger UI: http://localhost:8000/docs
-- OpenAPI schema: http://localhost:8000/api/v1/openapi.json
+- API: http://localhost:11030
+- Swagger UI: http://localhost:11030/docs
+- OpenAPI schema: http://localhost:11030/api/v1/openapi.json
 
 On container start, `alembic upgrade head` runs automatically before `uvicorn`.
 
@@ -65,16 +65,16 @@ OAuth2 password flow + JWT, owned entirely by this backend (see `AGENTS.md` for 
 design decisions — HS256, bcrypt, access/refresh token split):
 
 ```bash
-curl -X POST localhost:8000/api/v1/auth/register \
+curl -X POST localhost:11030/api/v1/auth/register \
   -H 'Content-Type: application/json' \
   -d '{"email":"jane@example.com","password":"correct-password","name":"Jane"}'
 
-curl -X POST localhost:8000/api/v1/auth/token \
+curl -X POST localhost:11030/api/v1/auth/token \
   -d 'username=jane@example.com&password=correct-password'
 
-curl localhost:8000/api/v1/me -H "Authorization: Bearer <access_token>"
+curl localhost:11030/api/v1/me -H "Authorization: Bearer <access_token>"
 
-curl -X POST localhost:8000/api/v1/auth/refresh \
+curl -X POST localhost:11030/api/v1/auth/refresh \
   -H 'Content-Type: application/json' -d '{"refresh_token":"<refresh_token>"}'
 ```
 
