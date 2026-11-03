@@ -49,6 +49,12 @@ Changelog toàn nguồn TAWOS: 9.253.419 dòng / 458.232 issue ≈ 20 event/issu
 
 Hướng "mở rộng feature trong khung tabular hiện tại" do đó **chưa tìm được cải tiến nào vượt baseline CatBoost hiện tại** sau khi test cụ thể hướng dễ nhất (momentum). Quyết định giữ CatBoost ở mục trên vẫn đúng; chỉ riêng đề xuất cải tiến feature cụ thể này bị bác bỏ bằng thực nghiệm, không còn là "đề xuất chưa test".
 
+**Cập nhật sau rà soát (2026-11-03)**: kết quả v2 ở trên được tạo trước khi sửa hai lỗi (baseline tĩnh nhiễm feature momentum; story points luôn rỗng). Chạy lại sạch với 3 seed cho cùng kết luận: v2 − dynamic nằm trong ±0,004, trong dao động giữa các seed. Chi tiết và số liệu: `Protocol_feature_v2_momentum.md` mục "Bổ sung 2026-11-03". Hệ quả cho các hướng tiếp theo:
+
+- Metric Recall@20% có trần thấp (oracle 0,598 temporal; 0,637 cross-project do ~57% issue rủi ro so với ngân sách 20%), và cuối sprint mô hình đã đạt 0,89–0,91 của trần. Cải tiến tiếp theo nên báo cáo thêm recall/oracle và đường recall theo ngân sách, và đặt `Rule` (luật đơn giản theo `is_done`) làm baseline ở mọi landmark.
+- Dư địa nằm ở **đầu sprint** (landmark 0: dynamic ≈ static, 0,70–0,76 của oracle). Hướng thêm feature cần nhắm vào giai đoạn này.
+- Các ý tưởng đã thử nhanh và không cho tín hiệu: carry-over (trùng feature hiện có), lịch sử đội (hằng số trong sprint), tỉ lệ tải (không tín hiệu), trộn mô hình pooled/local (0,4952 so với 0,4922 ở landmark 0; 0,5879 so với 0,5878 ở landmark 0,5). Các kết quả này là thăm dò, chưa lặp seed.
+
 ## Điều kiện revisit quyết định này
 
 Không coi đây là quyết định vĩnh viễn. Revisit khi: (a) dữ liệu sản xuất thật từ Agentick vượt đáng kể quy mô ~10K instance đã dẫn ở mục 1, hoặc (b) xuất hiện loại dữ liệu không thể nén hợp lý thành feature tabular (ví dụ ảnh, audio, log hệ thống phi cấu trúc lớn). Không thiết kế trước cho dữ liệu giả định chưa tồn tại.

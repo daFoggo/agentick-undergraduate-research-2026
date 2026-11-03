@@ -52,3 +52,35 @@ Probability metrics (raw score, landmark 0.5): AP và Brier đều **xấu hơn 
 - 1 lần chạy, không lặp/bootstrap CI như phase 4 → kết luận chỉ là tín hiệu ban đầu, không phải bằng chứng thống kê chặt.
 - issue_link bị loại hoàn toàn khỏi scope v2 (lý do: thiếu timestamp).
 - Dữ liệu được migrate lại từ TAWOS gốc (không phải data/processed gốc đã mất trên máy này) — cohort/exclusion log sẽ được tạo lại, cần so khớp số lượng (project/sprint/instance) với `Data_card_TAWOS.md` trước khi tin tưởng kết quả.
+
+
+## Bổ sung 2026-11-03 (sau rà soát): hai lỗi và chạy lại sạch
+
+Phần "Kết quả" ở trên được tạo **trước** khi sửa hai lỗi sau; giữ nguyên để truy vết, nhưng kết luận cuối dựa trên bản chạy lại dưới đây.
+
+**Lỗi 1 — baseline tĩnh bị nhiễm feature momentum.** `Timeline.features` tính cột momentum cho cả snapshot tĩnh (at=start) lẫn động, nên dữ liệu có thêm `static_status_changes_3d/_7d`, `static_events_3d/_7d`. `feature_columns()` lấy mọi cột `static_*` nên `static_catboost`, `dynamic_catboost` và `dynamic_catboost_v2` đều nhận 4 cột này, trái với thiết kế ("baseline không nhận cột mới"). Sửa: `feature_columns()` loại cột `static_*_3d/_7d` khỏi mọi mô hình; chỉ `dynamic_catboost_v2` nhận 4 cột `dynamic_*`.
+
+**Lỗi 2 — story points luôn rỗng.** `replay.py` đọc `.after` (từ `to_value`, luôn NULL) thay vì `.after_text` (từ `to_string`). `static_estimate`/`dynamic_estimate` có độ phủ 0%. Sau sửa: 47,8% (static) và 50,7% (dynamic); số dòng (88.588) và tỉ lệ nhãn dương (0,458) không đổi.
+
+**Chạy lại sạch** (workspace tách biệt, không động tới artifact đã khóa): dựng lại snapshot từ PostgreSQL, giữ nguyên split (seed 20261008), 3 seed mô hình (20261008–20261010), 4 mô hình, 4 landmark, temporal và cross-project. Metric: Recall@ceil(20%) trung bình theo sprint. Oracle là trần của metric (xếp hạng theo nhãn thật); Rule là xếp hạng theo `1 − is_done`.
+
+| Experiment | Landmark | Static | Dynamic (±sd) | Dynamic v2 (±sd) | Rule | Oracle | v2 − dynamic |
+|---|---|---:|---:|---:|---:|---:|---:|
+| cross_project | 0 | 0.442 | 0.446 (±0.001) | 0.442 (±0.001) | 0.367 | 0.637 | -0.0040 |
+| cross_project | 0.25 | 0.443 | 0.485 (±0.003) | 0.486 (±0.002) | 0.418 | 0.637 | +0.0010 |
+| cross_project | 0.5 | 0.442 | 0.521 (±0.001) | 0.520 (±0.000) | 0.466 | 0.637 | -0.0003 |
+| cross_project | 0.75 | 0.442 | 0.574 (±0.000) | 0.574 (±0.002) | 0.535 | 0.637 | +0.0001 |
+| temporal | 0 | 0.461 | 0.456 (±0.007) | 0.457 (±0.007) | 0.405 | 0.598 | +0.0004 |
+| temporal | 0.25 | 0.462 | 0.503 (±0.008) | 0.499 (±0.002) | 0.451 | 0.598 | -0.0035 |
+| temporal | 0.5 | 0.462 | 0.533 (±0.013) | 0.530 (±0.007) | 0.481 | 0.598 | -0.0028 |
+| temporal | 0.75 | 0.462 | 0.543 (±0.004) | 0.544 (±0.004) | 0.525 | 0.598 | +0.0007 |
+
+Dữ liệu từng seed và script (lưu cục bộ, không đưa vào git vì `.gitignore` chặn `artifacts/*`): `artifacts/rerun_v2_clean/` (`summary_by_seed.csv`, `analyze.py`, `config_seed0.json`).
+
+**Kết luận sau chạy lại**: chênh lệch v2 − dynamic nằm trong ±0,004, nhỏ hơn hoặc ngang độ lệch chuẩn giữa các seed (temporal: 0,002–0,013) → **không có cải thiện**, khớp kết luận cũ nay trên baseline sạch. Sửa story points cũng không đổi bức tranh (dynamic temporal landmark 0,5: 0,533, so với 0,5336 đã công bố).
+
+**Phát hiện thêm**:
+- Trần của metric thấp: tỉ lệ rủi ro khoảng 57% so với ngân sách 20% → Recall@20% tối đa là oracle (0,598 temporal; 0,637 cross-project).
+- Cuối sprint mô hình gần trần (dynamic/oracle 0,89–0,91 ở landmark 0,5–0,75 temporal) và hơn luật đơn giản `Rule` khoảng 5 điểm (0,5) và 2 điểm (0,75). Đầu sprint còn dư địa (landmark 0: 0,70–0,76 của oracle), và dynamic xấp xỉ static.
+- Giới hạn: seed chỉ thay đổi tính ngẫu nhiên của CatBoost, split cố định; chưa có bootstrap CI cho v2 − dynamic ở bản chạy lại.
+- `data/processed/snapshots.parquet`, `lock.json` và các artifact đã khóa trong repo **chưa** được tái tạo (làm vậy sẽ vô hiệu kết quả lưu trữ).
