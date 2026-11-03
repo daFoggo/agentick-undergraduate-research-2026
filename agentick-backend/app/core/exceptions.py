@@ -16,3 +16,14 @@ class NotFoundError(AppError):
 class DuplicatedError(AppError):
     def __init__(self, detail: Any = "Resource already exists.") -> None:
         super().__init__(status.HTTP_409_CONFLICT, detail)
+
+
+class UnauthorizedError(AppError):
+    def __init__(self, detail: Any = "Could not validate credentials.") -> None:
+        super().__init__(status.HTTP_401_UNAUTHORIZED, detail)
+        self.headers = {"WWW-Authenticate": "Bearer"}
+
+
+class ForbiddenError(AppError):
+    def __init__(self, detail: Any = "Not enough permissions.") -> None:
+        super().__init__(status.HTTP_403_FORBIDDEN, detail)

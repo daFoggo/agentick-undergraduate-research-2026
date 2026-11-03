@@ -13,6 +13,11 @@ class Settings(BaseSettings):
 
     internal_admin_token: str = "change-me"
 
+    jwt_secret_key: str = "change-me-to-a-random-64-char-secret"
+    jwt_algorithm: str = "HS256"
+    access_token_expire_minutes: int = 30
+    refresh_token_expire_days: int = 7
+
     cors_origins: list[str] = ["http://localhost:3000"]
 
     # Environments where interactive docs (/docs, /redoc, /openapi.json) are served.

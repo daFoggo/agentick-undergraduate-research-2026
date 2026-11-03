@@ -1,4 +1,5 @@
 .env
+compose.override.yaml
 .venv/
 __pycache__/
 *.py[cod]
@@ -9,12 +10,12 @@ __pycache__/
 htmlcov/
 data/raw/
 data/processed/
+backups/
 postgres-data/
 *.log
-artifacts/models/
-artifacts/predictions/
-artifacts/agent_extension/*/alert_log.csv
-artifacts/agent_extension/*/sprint_metrics.csv
+# Generated results: keep only scripts + protocol config in git
+artifacts/*
+!artifacts/protocol/
 catboost_info/
 *.aux
 *.fls

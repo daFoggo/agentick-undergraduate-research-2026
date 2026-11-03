@@ -12,9 +12,10 @@ app/
   db/                 # SQLAlchemy engine/session/declarative base
   models/              # ORM models
   schemas/             # Pydantic request/response schemas
-  routers/             # public path operations (health, items)
+  routers/             # public path operations (health, items, auth, /me)
   internal/            # internal/admin-only routers
-  dependencies.py       # shared dependencies (e.g. X-Token header check)
+  core/security.py     # password hashing + JWT issuing/decoding
+  dependencies.py       # shared dependencies (X-Token check, get_current_user, require_role)
 migrations/            # Alembic environment + versions
 ```
 
@@ -57,6 +58,25 @@ docker stop agentick-backend-testdb
 ```
 
 `tests/conftest.py` creates/drops the schema per session and truncates tables between tests.
+
+## Auth
+
+OAuth2 password flow + JWT, owned entirely by this backend (see `AGENTS.md` for the
+design decisions — HS256, bcrypt, access/refresh token split):
+
+```bash
+curl -X POST localhost:8000/api/v1/auth/register \
+  -H 'Content-Type: application/json' \
+  -d '{"email":"jane@example.com","password":"correct-password","name":"Jane"}'
+
+curl -X POST localhost:8000/api/v1/auth/token \
+  -d 'username=jane@example.com&password=correct-password'
+
+curl localhost:8000/api/v1/me -H "Authorization: Bearer <access_token>"
+
+curl -X POST localhost:8000/api/v1/auth/refresh \
+  -H 'Content-Type: application/json' -d '{"refresh_token":"<refresh_token>"}'
+```
 
 ## Creating a migration
 

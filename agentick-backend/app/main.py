@@ -13,6 +13,7 @@ from app.schemas.error import ErrorDetail
 openapi_tags = [
     {"name": "health", "description": "Service liveness and readiness checks."},
     {"name": "items", "description": "CRUD operations over items."},
+    {"name": "auth", "description": "Registration, login, token refresh, and the current user."},
     {
         "name": "admin",
         "description": "Internal administrative operations, requires `X-Token` header.",

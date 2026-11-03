@@ -31,7 +31,8 @@
     "static_lr",
     "static_catboost",
     "dynamic_catboost",
-    "dynamic_no_cohort"
+    "dynamic_no_cohort",
+    "dynamic_catboost_v2"
   ],
   "catboost": {
     "iterations": 400,
