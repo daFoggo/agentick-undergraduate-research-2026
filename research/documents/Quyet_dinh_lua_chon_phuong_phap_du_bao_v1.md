@@ -68,7 +68,7 @@ Hướng "mở rộng feature trong khung tabular hiện tại" do đó **chưa 
 | Feature momentum v2 | v2 − dynamic trong ±0,004 (3 seed, baseline sạch) |
 | Feature cấu trúc issue thô | Tụt ở CONFSERVER (−0,062) và TISTUD (−0,028); nguyên nhân là dữ liệu trôi theo thời gian |
 | Feature tương đối trong sprint | Không vượt ranker ở đa số tập pilot |
-| Văn bản issue (TF-IDF + LR) | Validation: C − B = −0,0004 [−0,011, +0,010] |
+| Văn bản issue (TF-IDF + LR; embedding câu đóng băng `paraphrase-multilingual-MiniLM-L12-v2` + LR) | Validation, chỉ 8.090 issue chưa sửa văn bản: TF-IDF C − B = −0,0004 [−0,011, +0,010]; embedding C − B = +0,016 [−0,006, +0,038]. Cả hai khoảng tin cậy chứa 0; chỉ-văn-bản kém hơn feature tĩnh (embedding −0,056 [−0,102, −0,009]) |
 | Ranker theo nhóm sprint | Giữ làm mô hình bổ sung: cross-project +0,3 đến +0,6 điểm (tái lập trên validation), temporal không tái lập |
 | TabPFN | Loại từ tài liệu (mục 3), chưa chạy |
 
@@ -89,7 +89,25 @@ Precision gần như phẳng theo ngân sách: ở landmark 0, tăng ngân sách
 
 **Khuyến nghị vận hành (không phải kết luận thực nghiệm):** lịch sử chỉ có giá trị từ landmark .25, nên cảnh báo ở đầu sprint chỉ nên coi là thứ tự ưu tiên thô (dynamic ≈ static). Mốc ngân sách phụ thuộc năng lực xử lý cảnh báo của đội; protocol không chứng minh một mốc tối ưu.
 
-**Chưa làm, để mở:** (1) ngân sách thích ứng theo sprint, vì 31% phương sai nhãn nằm giữa các sprint; hướng này đổi định nghĩa bài toán nên cần quyết định và sửa protocol trước; (2) embedding văn bản mạnh hơn TF-IDF; thăm dò đơn giản không cho tín hiệu nên ưu tiên thấp.
+**Embedding văn bản (đã thử):** một mô hình câu đóng băng, chọn trước (có sẵn trong cache, không chọn qua kết quả), max 128 token, logistic regression out-of-fold nhóm theo issue. Điểm ước lượng dương (+0,016) nhưng khoảng tin cậy chứa 0, và đây là biểu diễn văn bản thứ hai sau TF-IDF, nên không coi là tín hiệu. Tập test không được dùng. Kết luận: không dùng văn bản làm feature.
+
+**Ngân sách thích ứng theo sprint (đã thử, tham số tự do bằng 0, mô hình `dynamic_catboost`):** 31% phương sai nhãn nằm giữa các sprint, nên thử phân bổ cảnh báo xuyên sprint thay vì cố định ceil(20% × n) cho mỗi sprint.
+- **B1** (cận trên, không khả thi vận hành): cùng tổng số cảnh báo như chính sách hiện tại ở mỗi fold, chọn các issue có xác suất cao nhất xuyên sprint.
+- **B2** (khả thi): ngưỡng xác suất chọn trên validation sao cho tỉ lệ cảnh báo bằng chính sách hiện tại, rồi áp lên test.
+
+| Test, cùng tổng cảnh báo (ngân sách 20%) | Landmark 0 | .25 | .5 | .75 |
+|---|---|---|---|---|
+| Cross-project: recall gộp, hiện tại → B1 | .327 → .360 | .354 → .397 | .381 → .429 | .412 → .464 |
+| Chênh lệch B1 − hiện tại [CI 95%] | **+.033** [+.015, +.052] | **+.043** [+.021, +.064] | **+.048** [+.026, +.070] | **+.053** [+.030, +.074] |
+| Temporal: chênh lệch B1 − hiện tại | +.016 [−.013, +.044] | +.017 [−.017, +.049] | +.017 [−.017, +.051] | +.027 [−.009, +.065] |
+| Cross-project, precision gộp, hiện tại → B1 | .618 → .682 | .670 → .751 | .722 → .812 | .780 → .879 |
+
+- Trên validation, B1 cũng cao hơn: cross-project +.045 đến +.065, temporal +.010 đến +.027 (ước lượng điểm). Hướng tác dụng tái lập; temporal có khoảng tin cậy chứa 0 trên test.
+- **Cái giá:** khoảng 30% sprint bị 0 cảnh báo, và recall trung bình theo sprint (chỉ số chính của protocol) giảm 5 đến 8 điểm. Lợi ích đến từ việc ưu tiên sprint rủi ro cao, không phải từ xếp hạng tốt hơn bên trong sprint, nên không giải quyết vấn đề đầu sprint.
+- B2: lượng cảnh báo thực tế lệch so với mục tiêu (cross-project 26,6% đến 30,0% so với 24,9%; temporal 21,8% đến 23,4% so với 25,8%) do xác suất hiệu chỉnh trôi giữa validation và test; 32% đến 44% sprint bị 0 cảnh báo. Nếu dùng phải theo dõi lượng cảnh báo.
+- **Kết luận:** không thay chỉ số chính. Đây là lựa chọn dành cho đội có năng lực triage chung cho nhiều sprint và chấp nhận có sprint không có cảnh báo; không phải cải tiến mặc định. Nếu muốn bảo đảm tối thiểu cảnh báo cho mỗi sprint thì phải thêm một tham số (mức tối thiểu), việc này chưa làm vì cần quyết định của người dùng.
+
+Script và số liệu cục bộ: `artifacts/rerun_v3_rank/adaptive_budget.py`, `embed_probe.py`.
 
 **Giới hạn:** 3 seed; bootstrap theo sprint chưa tính tương quan giữa các sprint cùng project; dữ liệu TAWOS, chưa kiểm chứng trên dữ liệu Agentick thực.
 
