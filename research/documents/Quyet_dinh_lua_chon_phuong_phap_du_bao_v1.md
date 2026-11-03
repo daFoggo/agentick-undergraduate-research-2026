@@ -52,8 +52,46 @@ Hướng "mở rộng feature trong khung tabular hiện tại" do đó **chưa 
 **Cập nhật sau rà soát (2026-11-03)**: kết quả v2 ở trên được tạo trước khi sửa hai lỗi (baseline tĩnh nhiễm feature momentum; story points luôn rỗng). Chạy lại sạch với 3 seed cho cùng kết luận: v2 − dynamic nằm trong ±0,004, trong dao động giữa các seed. Chi tiết và số liệu: `Protocol_feature_v2_momentum.md` mục "Bổ sung 2026-11-03". Hệ quả cho các hướng tiếp theo:
 
 - Metric Recall@20% có trần thấp (oracle 0,598 temporal; 0,637 cross-project do ~57% issue rủi ro so với ngân sách 20%), và cuối sprint mô hình đã đạt 0,89–0,91 của trần. Cải tiến tiếp theo nên báo cáo thêm recall/oracle và đường recall theo ngân sách, và đặt `Rule` (luật đơn giản theo `is_done`) làm baseline ở mọi landmark.
-- Dư địa nằm ở **đầu sprint** (landmark 0: dynamic ≈ static, 0,70–0,76 của oracle). Hướng thêm feature cần nhắm vào giai đoạn này.
+- Dư địa nằm ở **đầu sprint** (landmark 0: dynamic ≈ static, 0,70–0,76 của oracle). Các hướng thêm feature nhắm vào giai đoạn này đã được thử và không thắng (xem mục "Chốt phương pháp" bên dưới).
 - Các ý tưởng đã thử nhanh và không cho tín hiệu: carry-over (trùng feature hiện có), lịch sử đội (hằng số trong sprint), tỉ lệ tải (không tín hiệu), trộn mô hình pooled/local (0,4952 so với 0,4922 ở landmark 0; 0,5879 so với 0,5878 ở landmark 0,5). Các kết quả này là thăm dò, chưa lặp seed.
+
+## Chốt phương pháp (2026-11-03)
+
+**Mô hình chính: `dynamic_catboost`** (CatBoost phân loại, feature lịch sử as-of; baseline gồm `static_catboost` và `Rule` theo `is_done`). Số liệu và quy trình: `Protocol_feature_v2_momentum.md`, `Protocol_ranker_v3.md`.
+
+**Kết luận H1 (lịch sử thực thi có giá trị):** được ủng hộ ở landmark .25, .5, .75 trên cả test và validation, cho cả bộ phân loại lẫn ranker (+3 đến +13 điểm Recall@20%, khoảng tin cậy 95% không chứa 0). Ở landmark 0 không có chênh lệch, vì chưa có lịch sử.
+
+**Đã thử và loại (kèm bằng chứng):**
+
+| Hướng | Kết quả |
+|---|---|
+| Feature momentum v2 | v2 − dynamic trong ±0,004 (3 seed, baseline sạch) |
+| Feature cấu trúc issue thô | Tụt ở CONFSERVER (−0,062) và TISTUD (−0,028); nguyên nhân là dữ liệu trôi theo thời gian |
+| Feature tương đối trong sprint | Không vượt ranker ở đa số tập pilot |
+| Văn bản issue (TF-IDF + LR) | Validation: C − B = −0,0004 [−0,011, +0,010] |
+| Ranker theo nhóm sprint | Giữ làm mô hình bổ sung: cross-project +0,3 đến +0,6 điểm (tái lập trên validation), temporal không tái lập |
+| TabPFN | Loại từ tài liệu (mục 3), chưa chạy |
+
+**Cách báo cáo:** nêu Recall@20% cùng recall/oracle và khoảng tin cậy bootstrap; báo cáo đường ngân sách bên dưới thay vì chỉ một mốc 20%; không nêu lợi ích temporal của ranker; mọi biến thể mới phải chọn bằng validation, không bằng test (bài học từ rủi ro chọn biến thể ở `Protocol_ranker_v3.md`).
+
+**Đường ngân sách của `dynamic_catboost`** (temporal, test, trung bình 3 seed; mô tả, không dùng để chọn mô hình). Ngân sách thực tế cao hơn mức danh nghĩa (17,3% / 25,8% / 35,9%) vì làm tròn lên ở các sprint nhỏ. Tỉ lệ issue rủi ro là 57%.
+
+| Landmark | Ngân sách | Precision | Precision oracle | Recall |
+|---|---|---|---|---|
+| 0 | 10% | .696 | .841 | .387 |
+| 0 | 20% | .674 | .826 | .456 |
+| 0 | 30% | .657 | .802 | .549 |
+| .25 | 20% | .715 | .826 | .503 |
+| .5 | 20% | .752 | .826 | .533 |
+| .75 | 10% / 20% / 30% | .778 / .765 / .746 | .841 / .826 / .802 | .452 / .543 / .649 |
+
+Precision gần như phẳng theo ngân sách: ở landmark 0, tăng ngân sách từ 20% lên 30% làm recall tăng 9,3 điểm trong khi precision giảm 1,7 điểm. Bảng đầy đủ: `artifacts/rerun_v3_rank/budget_table.csv` (cục bộ).
+
+**Khuyến nghị vận hành (không phải kết luận thực nghiệm):** lịch sử chỉ có giá trị từ landmark .25, nên cảnh báo ở đầu sprint chỉ nên coi là thứ tự ưu tiên thô (dynamic ≈ static). Mốc ngân sách phụ thuộc năng lực xử lý cảnh báo của đội; protocol không chứng minh một mốc tối ưu.
+
+**Chưa làm, để mở:** (1) ngân sách thích ứng theo sprint, vì 31% phương sai nhãn nằm giữa các sprint; hướng này đổi định nghĩa bài toán nên cần quyết định và sửa protocol trước; (2) embedding văn bản mạnh hơn TF-IDF; thăm dò đơn giản không cho tín hiệu nên ưu tiên thấp.
+
+**Giới hạn:** 3 seed; bootstrap theo sprint chưa tính tương quan giữa các sprint cùng project; dữ liệu TAWOS, chưa kiểm chứng trên dữ liệu Agentick thực.
 
 ## Điều kiện revisit quyết định này
 

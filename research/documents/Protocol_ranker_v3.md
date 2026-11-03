@@ -28,6 +28,7 @@ Metric chính (Recall@ceil(20%) trong từng sprint) chỉ phụ thuộc thứ t
 |---|---|---|
 | Feature cấu trúc issue thô (link, component, nhãn, epic, rank, bình luận, độ dài mô tả) | CONFSERVER −0,062 (0/10 sprint tốt hơn), TISTUD −0,028, DM ≈ 0, cross-project ≈ 0 | Loại. Nguyên nhân: feature trôi theo thời gian (CONFSERVER: tỉ lệ có epic 33% → 82%, bình luận trung bình 3,4 → 12,2 giữa train và test). Ép số âm về 0 kèm cờ không cứu được |
 | Feature tương đối trong sprint (phần trăm thứ hạng trong cùng sprint, cùng landmark), kèm hoặc không kèm feature cấu trúc | Không vượt `rank` ở đa số tập; temporal tụt ở CONFSERVER, XD, APIKIT; cross-project hơn `rank` +0,003 (DM) và +0,013 (XD) | Loại |
+| Văn bản issue (TF-IDF tiêu đề + mô tả, logistic regression, điểm out-of-fold nhóm theo issue) làm feature thêm cho mô hình tĩnh ở landmark 0 | Trên **validation** (281 sprint, 8.090 issue chưa từng sửa tiêu đề/mô tả nên văn bản gốc đúng thời điểm, 3 seed): static .4604, static + văn bản .4600, chỉ văn bản .4247. Chênh lệch C − B = −.0004 [−.011, +.010] | Loại ở mức thăm dò này: không thêm tín hiệu so với feature tĩnh. Hạn chế: chỉ 52,5% issue, 6.093 dòng train, mô hình văn bản đơn giản; embedding mạnh hơn chưa thử |
 | TabPFN | Không chạy | Đã loại trong `Quyet_dinh_lua_chon_phuong_phap_du_bao_v1.md` dựa trên tài liệu |
 
 Số âm trong `n_components` (1.552 dòng), `n_fix_versions` (772), `n_attachments` (56) xuất hiện khi lịch sử thiếu sự kiện "thêm". Ghi nhận là hạn chế của nhóm feature cấu trúc, nhóm này không được dùng tiếp.
