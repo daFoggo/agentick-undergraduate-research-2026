@@ -142,3 +142,19 @@ def test_a_long_change_line_from_real_data_is_accepted(client, plane):
     assert 600 < len(long_line) < 1000
     body = {**ALERT, "changes": [long_line]}
     assert client.put("/api/v1/alerts", json=[body], headers=INGEST).status_code == 200
+
+
+def test_retiring_an_alert_needs_the_token_and_removes_a_pending_alert(seeded):
+    assert seeded.delete(f"/api/v1/alerts/{W1}").status_code == 401
+    assert seeded.delete(f"/api/v1/alerts/{W1}", headers=INGEST).status_code == 204
+    assert seeded.get(f"/api/v1/alerts/{W1}", headers=OK).status_code == 404
+    assert (
+        seeded.delete(f"/api/v1/alerts/{W1}", headers=INGEST).status_code == 204
+    )  # already gone: still fine
+
+
+def test_an_alert_a_person_already_decided_on_is_not_retired(seeded):
+    """The decision is the live evaluation data: the job may not delete it."""
+    seeded.post(f"/api/v1/alerts/{W1}/decision", json={"decision": "reject"}, headers=OK)
+    assert seeded.delete(f"/api/v1/alerts/{W1}", headers=INGEST).status_code == 409
+    assert seeded.get(f"/api/v1/alerts/{W1}", headers=OK).json()["state"] == "dismissed"

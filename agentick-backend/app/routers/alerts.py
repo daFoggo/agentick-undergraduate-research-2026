@@ -78,6 +78,31 @@ def publish(body: list[AlertIn], db: Annotated[Session, Depends(get_db)]) -> dic
     return {"stored": len(body)}
 
 
+@router.delete(
+    "/{work_item_id}",
+    status_code=204,
+    summary="Retire an alert nobody decided on",
+    operation_id="retireAlert",
+    dependencies=[Depends(require_ingest_token)],
+    responses={
+        401: {"model": ErrorDetail, "description": "Missing or wrong ingest token."},
+        409: {"model": ErrorDetail, "description": "A person already decided on this alert."},
+    },
+)
+def retire(work_item_id: uuid.UUID, db: Annotated[Session, Depends(get_db)]) -> None:
+    """The offline job drops an alert that stopped being valid (the issue was cancelled, say).
+    A decision is evaluation data, so an alert somebody approved or dismissed is kept."""
+    alert = db.scalars(
+        select(Alert).where(Alert.work_item_id == work_item_id).with_for_update()
+    ).first()
+    if alert is None:
+        return
+    if last_event(db, work_item_id) is not None:
+        raise DuplicatedError("A person already decided on this alert; it is kept.")
+    db.delete(alert)
+    db.commit()
+
+
 @router.get(
     "/{work_item_id}",
     response_model=AlertRead,
