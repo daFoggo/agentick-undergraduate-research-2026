@@ -133,6 +133,16 @@ Protocol khóa trước ở [Protocol_stuck_E7_gate.md](Protocol_stuck_E7_gate.m
 
 **Hệ quả:** chưa có bằng chứng rằng đọc ngữ nghĩa comment giúp phân loại "kẹt thật"; cổng qua chủ yếu nhờ số lượng comment. Agent LLM đọc comment (A1/A2) **chưa được biện minh** bởi kết quả này; nếu thử thì phải so với baseline đếm comment, không phải với baseline không có comment. Hạn chế: `y=1` gồm cả issue bị rút khỏi sprint; dùng lại dữ liệu E1; từ khóa tiếng Anh; liên kết không cắt as-of.
 
+## 5e. Sửa luồng cảnh báo: không báo cho issue đã hủy hoặc đã xong (2026-11-05)
+
+Khi định nối policy giới hạn K vào luồng, đo thực trạng cho thấy vấn đề thật không phải con số K mà là **tính đủ điều kiện**:
+- Luồng cũ xếp hạng mọi issue của sprint rồi lấy top ceil(20%), không loại issue đã xong hay đã hủy. Trong 95 cảnh báo đang chạy có 7 cảnh báo cho issue `invalid` (Plane hiểu là Cancelled) và 1 cho issue `complete`. Policy E1 thì loại issue đã xong (`dynamic_is_done`).
+- Trên toàn bộ 15.153 issue đang mở tại mốc 50%, hai trạng thái `invalid` (210) và `won't fix` (154) cộng 364 issue, **100% cuối cùng không hoàn thành**: điểm cao cho chúng là đúng một cách tầm thường và cảnh báo là nhiễu.
+- Sửa: `research/research/alert_selection.py` (5 test, có đối chứng) chỉ xếp hạng và gắn cờ issue chưa xong và chưa bị hủy, giới hạn số cảnh báo tính trên số issue đủ điều kiện (mặc định ceil20 như cũ; có thể đặt `k1`, `k2`, `k3`, `floor20` theo E1). `score_sprints.py` dùng hàm này; `post_briefs.py` gỡ nhãn, comment của bot và bản ghi cảnh báo của issue không còn được gắn cờ (backend có `DELETE /alerts/{id}` bằng token ingest, từ chối nếu đã có quyết định của người).
+- Kết quả trên Plane thật (IS): 107 work item xử lý, 83 cảnh báo được đăng, 24 gỡ, 0 cảnh báo nằm trên issue Cancelled hoặc Done; 2 cảnh báo mỗi sprint (trung vị), tối đa 5.
+
+**Hệ quả cho nghiên cứu (chưa tính lại):** E1 và các chỉ số recall dùng nhãn `y` trên mọi issue chưa xong, gồm cả các issue `invalid` và `won't fix`: 3,6% số trường hợp dương (364 trên 10.125) là các issue đã bị hủy mà y = 1 gần như theo định nghĩa. Các con số E1 (recall, precision) có thể hơi lạc quan; chưa tách riêng và chưa tính lại.
+
 ## 6. Nguồn ngoài (chỉ đọc tóm tắt, cần đọc toàn văn)
 
 - [Agile Story-Point Estimation: Is RAG a Better Way to Go?](https://arxiv.org/html/2604.03443v1)

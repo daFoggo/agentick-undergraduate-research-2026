@@ -16,6 +16,8 @@ Ngày 2026-11-05, sau review chặng "cảnh báo rủi ro + Việc giống th�
 - [x] **Lỗi tôi gây ra khi triển khai**: chạy `docker compose` trong shell có `DATABASE_URL` trỏ vào Postgres test làm `plane-api-1` bị tạo lại với địa chỉ sai (Plane API chết khoảng 4 phút). Đã tạo lại đúng; ghi cảnh báo vào README của backend.
 - [x] **Giới hạn độ dài dòng thay đổi 300 ký tự do tôi tự đặt** từ chối dữ liệu thật (dòng dài 708); nâng lên 1000 và có test hồi quy.
 
+- [x] **Cảnh báo cho issue đã hủy hoặc đã xong** (mục 5e): quy tắc chọn cảnh báo thành hàm có test, luồng đăng gỡ cảnh báo cũ, backend có `DELETE /alerts/{id}`; trên Plane thật 0 cảnh báo ở trạng thái Cancelled hoặc Done.
+
 ## P2. Sửa sớm
 
 - [x] **Định dạng và lint Plane** (đã chạy `oxfmt@0.35.0` và `oxlint@1.51.0`, đúng phiên bản của Plane: hai tệp sai định dạng đã sửa, lint 0 lỗi 0 cảnh báo; kiểm kiểu TypeScript vẫn chưa chạy): `activity-comment-root.tsx` (Fragment chưa thụt lề, import chưa đúng thứ tự), `main-content.tsx`, `peek-overview/view.tsx`, `similar-cases.tsx`, `risk-decision.tsx`. Chưa chạy prettier và oxlint vì repo chưa có `node_modules`; build Docker không kiểm kiểu và định dạng. Cần một lần chạy thật.
@@ -39,6 +41,7 @@ Ngày 2026-11-05, sau review chặng "cảnh báo rủi ro + Việc giống th�
 
 ## Hạn chế khoa học cần nhắc khi viết luận văn
 
+- [ ] **E1 tính cả issue `invalid` và `won't fix`** là trường dương (364, tức 3,6% số trường hợp dương, y = 1,00): các con số recall và precision có thể hơi lạc quan. Tính lại E1 sau khi loại chúng (cần protocol mới hoặc amendment).
 - [ ] Kết quả E6 mới là **smoke 5 dự án** (MAE 1,61 so với 1,71, thắng 3/5 dự án, CI chứa 0, quy tắc go ≥4/5 không đạt); chưa chạy E6 đầy đủ 39 dự án. Cần GPU hoặc chạy nền lâu.
 - [ ] Pool case giới hạn 1.000 mới nhất mỗi dự án, nên "toàn dự án" thực ra là pool; case cũ hơn không được xét.
 - [ ] Ngưỡng nhỏ/vừa/lớn (P33/P80) và ngưỡng độ chắc (≥70%) do người làm đặt, chưa kiểm chứng.
@@ -52,7 +55,7 @@ Ngày 2026-11-05, sau review chặng "cảnh báo rủi ro + Việc giống th�
 
 - [ ] **Năng lực 2: phân loại "kẹt thật hay chờ ngoài hệ thống"** (protocol E7): định nghĩa nhãn từ dữ liệu sau mốc, thêm tool đọc comment và liên kết vào `AgentContext`, so A0 đến A3. Khảo sát: 60,5% issue mở tại mốc 50% có ≥1 comment; link kiểu chặn phủ khoảng 15% (không có thời gian tạo).
   - Đã chạy cổng E7 không LLM (xem mục 5d của `Mo_rong_tro_ly_sprint.md`): qua theo quy tắc khóa trước (ΔAUC +0,016) nhưng chủ yếu nhờ số comment, không bền theo nhãn phụ (−0,073); chưa biện minh agent LLM đọc comment.
-- [ ] **Policy giới hạn K cảnh báo mỗi sprint** nối vào luồng đăng brief (hiện đăng cả 95 issue).
+- [x] **Policy giới hạn cảnh báo mỗi sprint** nối vào luồng (mặc định ceil20 của issue đủ điều kiện, tùy chọn k1 đến k3 và floor20); chưa có giao diện chọn K.
 - [ ] **Ledger chống báo lặp, snooze, dry-run** (Task 6 của kế hoạch agent).
 - [ ] **Chọn hành động theo ngữ cảnh** thay vì chỉ nâng priority.
 - [ ] **Chip "N cảnh báo" ở trang cycle.**
