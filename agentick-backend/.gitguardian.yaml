@@ -1,0 +1,5 @@
+version: 2
+secret:
+  ignored-matches:
+    - name: local dev Postgres placeholder password
+      match: agentick_local_dev
