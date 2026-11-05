@@ -41,7 +41,7 @@ Ngày 2026-11-05, sau review chặng "cảnh báo rủi ro + Việc giống th�
 
 ## Hạn chế khoa học cần nhắc khi viết luận văn
 
-- [ ] **E1 tính cả issue `invalid` và `won't fix`** là trường dương (364, tức 3,6% số trường hợp dương, y = 1,00): các con số recall và precision có thể hơi lạc quan. Tính lại E1 sau khi loại chúng (cần protocol mới hoặc amendment).
+- [x] **E1 tính cả issue `invalid` và `won't fix`**: đã đo lại cho chính sách đang chạy ở E8 (mục 5f): lift 1,14 so với tỉ lệ nền 0,67. E1 gốc chưa tính lại. Mục gốc: **E1 tính cả issue `invalid` và `won't fix`** là trường dương (364, tức 3,6% số trường hợp dương, y = 1,00): các con số recall và precision có thể hơi lạc quan. Tính lại E1 sau khi loại chúng (cần protocol mới hoặc amendment).
 - [ ] Kết quả E6 mới là **smoke 5 dự án** (MAE 1,61 so với 1,71, thắng 3/5 dự án, CI chứa 0, quy tắc go ≥4/5 không đạt); chưa chạy E6 đầy đủ 39 dự án. Cần GPU hoặc chạy nền lâu.
 - [ ] Pool case giới hạn 1.000 mới nhất mỗi dự án, nên "toàn dự án" thực ra là pool; case cũ hơn không được xét.
 - [ ] Ngưỡng nhỏ/vừa/lớn (P33/P80) và ngưỡng độ chắc (≥70%) do người làm đặt, chưa kiểm chứng.
@@ -50,6 +50,8 @@ Ngày 2026-11-05, sau review chặng "cảnh báo rủi ro + Việc giống th�
 - [ ] Nguồn ngoài (RAG story point, CoGEE, replication GPT2SP, Llama3SP, ProactiveBench...) chỉ đọc qua tóm tắt tìm kiếm; đọc toàn văn trước khi trích.
 - [ ] Các con số E1 và E3 (recall ~59%, precision ~77–80%, A0 100%, A1 và A2 98%) lấy từ tài liệu tiến độ, chưa đối chiếu với báo cáo gốc.
 - [ ] Trùng lặp (duplicate) giữa các issue cùng dự án có thể làm kNN lạc quan; chưa kiểm soát.
+
+- [ ] **Brief và thẻ cảnh báo chưa nêu tỉ lệ nền**: 67% issue chưa xong ở mốc 50% cuối cùng không hoàn thành; cảnh báo chỉ hơn mức đó 14% (lift 1,14). Sửa lời của brief để không ngụ ý chắc chắn trễ (mục 5f).
 
 ## Roadmap tiếp theo (chưa làm)
 

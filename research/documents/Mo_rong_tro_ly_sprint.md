@@ -143,6 +143,21 @@ Khi định nối policy giới hạn K vào luồng, đo thực trạng cho th�
 
 **Hệ quả cho nghiên cứu (chưa tính lại):** E1 và các chỉ số recall dùng nhãn `y` trên mọi issue chưa xong, gồm cả các issue `invalid` và `won't fix`: 3,6% số trường hợp dương (364 trên 10.125) là các issue đã bị hủy mà y = 1 gần như theo định nghĩa. Các con số E1 (recall, precision) có thể hơi lạc quan; chưa tách riêng và chưa tính lại.
 
+## 5f. Chất lượng cảnh báo như đang vận hành (E8, 2026-11-05)
+
+Protocol khóa trước ở [Protocol_alert_quality_E8.md](Protocol_alert_quality_E8.md); mã `research/research/alert_eval.py`, 2 test. Replay đúng chính sách đang chạy trên Plane (chỉ issue chưa xong và chưa bị hủy, tối đa ceil(20%) số issue đủ điều kiện mỗi sprint, mốc 50%), 14 dự án mà mô hình chưa từng thấy, 1.962 sprint, 3.339 cảnh báo (1,7 cảnh báo mỗi sprint).
+
+| | Precision | Tỉ lệ nền | Lift [CI 95% theo sprint] | Recall |
+|---|---|---|---|---|
+| Mô hình đang dùng (`dynamic_catboost`) | 0,763 | 0,670 | **1,14 [1,12; 1,16]** | 0,308 |
+| Quy tắc đơn giản (`business_rule`) | 0,693 | 0,670 | 1,03 [1,01; 1,05] | 0,280 |
+
+Mô hình trừ quy tắc đơn giản: **+0,119 cảnh báo đúng mỗi sprint [+0,091; +0,148]** (cùng số cảnh báo); theo quy tắc khóa trước, mô hình hơn quy tắc. Với chính sách chặt hơn (k2) kết quả tương tự: lift 1,10, mô hình hơn quy tắc +0,102 [+0,078; +0,127]. Mô hình có precision cao hơn tỉ lệ nền ở cả 14 dự án (mô tả, không kiểm định từng dự án).
+
+**Điều cần nói thẳng:** trong các issue chưa xong tại mốc 50%, **67% cuối cùng không hoàn thành** (tỉ lệ nền). Một cảnh báo đúng 76% so với mức chung 67%: lift 1,14, chỉ hơn chọn ngẫu nhiên 14%. Mô hình có giá trị thống kê thật nhưng độ phân biệt trong thực tế khiêm tốn, và quy tắc đơn giản gần như bằng chọn ngẫu nhiên (lift 1,03). Hệ quả cho sản phẩm: thẻ không nên ngụ ý "issue này sẽ trễ"; nên nêu mức chung ("khoảng hai phần ba issue chưa xong ở giữa sprint kết thúc không hoàn thành"). Hệ quả cho luận văn: chỉ số chính nên là lift so với tỉ lệ nền, không phải precision đơn thuần.
+
+Hạn chế: thăm dò, dùng lại dữ liệu E1, `y = 1` gồm cả issue bị rút khỏi sprint, `business_rule` là một quy tắc đơn giản duy nhất nên "hơn quy tắc đơn giản" chỉ nói về quy tắc đó. Sự cải thiện của quy tắc chọn so với E1 (loại issue đã hủy) chưa được tách riêng.
+
 ## 6. Nguồn ngoài (chỉ đọc tóm tắt, cần đọc toàn văn)
 
 - [Agile Story-Point Estimation: Is RAG a Better Way to Go?](https://arxiv.org/html/2604.03443v1)
