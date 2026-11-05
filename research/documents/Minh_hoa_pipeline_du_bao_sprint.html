@@ -1,0 +1,452 @@
+<!doctype html>
+<html lang="vi">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Dự báo rủi ro sprint</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@400;500;600;800&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<style>
+  /* Layout: một cột đọc, ba phần (luồng 5 bước, sprint thật tương tác, kết quả); số liệu từ sprint 12 của XD */
+  :root {
+    --bg: #f4f6fa; --surface: #ffffff; --ink: #162033; --muted: #5a6679; --line: #dce2ec;
+    --accent: #3347c9; --accent-soft: #e6e9fb; --risk: #b83a26; --risk-soft: #fbe8e3; --ok: #0b7f6c; --ok-soft: #dff3ee;
+    --bar-a: #aab4c6; --bar-b: #6f7f9c; --code-bg: #eef1f7;
+    --f-body: "Be Vietnam Pro", "Segoe UI", system-ui, sans-serif; --f-mono: "IBM Plex Mono", ui-monospace, Menlo, Consolas, monospace;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --bg: #0f141c; --surface: #172030; --ink: #e5eaf3; --muted: #9aa6ba; --line: #2a3547;
+      --accent: #93a3ff; --accent-soft: #232c52; --risk: #ff8068; --risk-soft: #3a2420; --ok: #45c9ae; --ok-soft: #14332d;
+      --bar-a: #4a566c; --bar-b: #7d8db0; --code-bg: #1d2738; color-scheme: dark;
+    }
+  }
+  :root[data-theme="dark"] {
+    --bg: #0f141c; --surface: #172030; --ink: #e5eaf3; --muted: #9aa6ba; --line: #2a3547;
+    --accent: #93a3ff; --accent-soft: #232c52; --risk: #ff8068; --risk-soft: #3a2420; --ok: #45c9ae; --ok-soft: #14332d;
+    --bar-a: #4a566c; --bar-b: #7d8db0; --code-bg: #1d2738; color-scheme: dark;
+  }
+  * { box-sizing: border-box; }
+  body { background: var(--bg); color: var(--ink); font-family: var(--f-body); font-size: 15px; line-height: 1.6; }
+  .wrap { max-width: 900px; margin: 0 auto; padding-block: 36px 72px; padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); }
+  h1 { font-size: clamp(30px, 6vw, 46px); line-height: 1.08; font-weight: 800; letter-spacing: -0.02em; margin: 0 0 14px; text-wrap: balance; }
+  h2 { font-size: 22px; line-height: 1.25; font-weight: 700; margin: 56px 0 6px; text-wrap: balance; }
+  h3 { font-size: 16px; margin: 0 0 4px; font-weight: 600; }
+  p { margin: 0 0 12px; max-width: 68ch; }
+  .lead { font-size: 17px; color: var(--muted); max-width: 62ch; }
+  .sub { color: var(--muted); margin-bottom: 18px; }
+  .def { display: flex; flex-wrap: wrap; gap: 8px 20px; margin-top: 20px; padding: 14px 16px; background: var(--surface); border: 1px solid var(--line); border-radius: 10px; font-size: 14px; }
+  .def b { font-weight: 600; }
+  code, .mono { font-family: var(--f-mono); font-size: 0.88em; }
+  .tag { display: inline-block; padding: 1px 8px; border-radius: 99px; font-size: 12px; font-weight: 600; border: 1px solid var(--line); background: var(--code-bg); white-space: nowrap; }
+  .tag.risk { background: var(--risk-soft); color: var(--risk); border-color: transparent; }
+  .tag.ok { background: var(--ok-soft); color: var(--ok); border-color: transparent; }
+  .tag.alert { background: var(--accent-soft); color: var(--accent); border-color: transparent; }
+
+  /* luồng 5 bước */
+  .steps { list-style: none; margin: 22px 0 0; padding: 0; display: grid; gap: 14px; counter-reset: s; }
+  .step { display: grid; grid-template-columns: 40px minmax(0, 1fr); gap: 14px; position: relative; }
+  .step:not(:last-child)::after { content: ""; position: absolute; left: 19px; top: 44px; bottom: -14px; width: 2px; background: var(--line); }
+  .num { width: 40px; height: 40px; border-radius: 50%; background: var(--accent); color: var(--bg); font-weight: 800; display: grid; place-items: center; font-size: 16px; }
+  .card { background: var(--surface); border: 1px solid var(--line); border-radius: 12px; padding: 16px 18px; min-width: 0; }
+  .io { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 10px; margin: 6px 0 10px; font-size: 13px; color: var(--muted); }
+  .io .arrow { color: var(--accent); font-weight: 800; }
+  .io span.chip { background: var(--code-bg); border-radius: 6px; padding: 2px 8px; color: var(--ink); }
+  .data { background: var(--code-bg); border-radius: 8px; padding: 10px 12px; font-family: var(--f-mono); font-size: 12.5px; line-height: 1.7; overflow-x: auto; white-space: pre; margin: 0; }
+  .data .dim { color: var(--muted); }
+  .data .hot { color: var(--accent); font-weight: 500; }
+  table.f { border-collapse: collapse; width: 100%; font-size: 13.5px; }
+  table.f td { padding: 5px 0; border-bottom: 1px solid var(--line); }
+  table.f td:last-child { text-align: right; font-family: var(--f-mono); font-weight: 500; }
+  .imp { display: grid; gap: 6px; margin-top: 12px; }
+  .imp div { display: grid; grid-template-columns: minmax(0, 1fr) 54px; gap: 10px; align-items: center; font-size: 13px; }
+  .imp .t { grid-column: 1 / -1; color: var(--muted); font-size: 12.5px; }
+  .imp .l { display: grid; gap: 3px; min-width: 0; }
+  .imp .l i { display: block; height: 8px; border-radius: 4px; background: var(--accent); }
+  .imp .v { font-family: var(--f-mono); text-align: right; }
+
+  /* phần tương tác */
+  .seg { display: flex; flex-wrap: wrap; gap: 6px; margin: 14px 0 6px; }
+  .seg button { font: inherit; font-weight: 600; font-size: 14px; padding: 8px 16px; border-radius: 99px; border: 1px solid var(--line); background: var(--surface); color: var(--ink); cursor: pointer; }
+  .seg button[aria-pressed="true"] { background: var(--accent); border-color: var(--accent); color: var(--bg); }
+  .seg button:focus-visible { outline: 3px solid var(--accent); outline-offset: 2px; }
+  .scroll { overflow-x: auto; }
+  svg text { font-family: var(--f-body); fill: var(--ink); }
+  svg .m { fill: var(--muted); }
+  svg .acc { fill: var(--accent); font-weight: 700; }
+  svg .rk { fill: var(--risk); font-weight: 600; }
+  .tl { display: block; width: 100%; height: auto; }
+  .tl-list, .chart-bars { display: none; }
+  .prog { position: relative; height: 10px; border-radius: 6px; background: var(--code-bg); margin: 26px 8px 34px; }
+  .prog .fill { position: absolute; inset: 0 auto 0 0; background: var(--accent); border-radius: 6px; }
+  .prog .tk { position: absolute; top: -6px; width: 2px; height: 22px; background: var(--muted); transform: translateX(-1px); }
+  .prog .tk.on { background: var(--accent); width: 4px; transform: translateX(-2px); }
+  .prog .tk span { position: absolute; top: 26px; left: 50%; transform: translateX(-50%); font-size: 12px; white-space: nowrap; color: var(--muted); }
+  .prog .tk.on span { color: var(--accent); font-weight: 700; }
+  .evl { list-style: none; margin: 0; padding: 0; display: grid; gap: 6px; }
+  .evl li { display: grid; grid-template-columns: 92px minmax(0, 1fr) auto; gap: 8px; align-items: center; padding: 8px 10px; background: var(--surface); border: 1px solid var(--line); border-radius: 8px; font-size: 13.5px; }
+  .evl li.unseen { opacity: .55; border-style: dashed; }
+  .evl .mono { color: var(--muted); font-size: 12px; }
+  .cb { margin-bottom: 14px; }
+  .cb h4 { margin: 0 0 6px; font-size: 14px; }
+  .cr { display: grid; grid-template-columns: 124px minmax(0, 1fr) 46px; gap: 8px; align-items: center; font-size: 12.5px; margin-bottom: 4px; }
+  .cr .tr2 { position: relative; height: 16px; background: var(--code-bg); border-radius: 4px; }
+  .cr .tr2 i { position: absolute; inset: 0 auto 0 0; border-radius: 4px; }
+  .cr .tr2::after { content: ""; position: absolute; top: -2px; bottom: -2px; left: 85.4%; border-left: 2px dashed var(--risk); }
+  .cr b { font-family: var(--f-mono); font-weight: 500; text-align: right; }
+  .panel { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 10px; margin: 14px 0 18px; }
+  .kv { background: var(--surface); border: 1px solid var(--line); border-radius: 10px; padding: 10px 12px; }
+  .kv small { display: block; color: var(--muted); font-size: 12px; }
+  .kv b { font-size: 20px; font-family: var(--f-mono); font-weight: 500; }
+  .rank { list-style: none; padding: 0; margin: 10px 0 0; display: grid; gap: 4px; }
+  .row { display: grid; grid-template-columns: 150px minmax(0, 1fr) 96px 112px; grid-template-areas: "who bar tr fl"; gap: 10px; align-items: center; padding: 6px 10px; border-radius: 8px; border: 1px solid transparent; font-size: 13.5px; }
+  .row.is-alert { background: var(--accent-soft); }
+  .row .who { grid-area: who; display: flex; flex-wrap: wrap; gap: 4px 8px; align-items: center; min-width: 0; }
+  .row .tr { grid-area: tr; } .row .fl { grid-area: fl; }
+  .row .who .mono { color: var(--muted); }
+  .barw { grid-area: bar; position: relative; height: 22px; background: var(--code-bg); border-radius: 5px; min-width: 0; }
+  .barw span { position: absolute; inset: 0 auto 0 0; background: var(--bar-b); border-radius: 5px; }
+  .row.is-alert .barw span { background: var(--accent); }
+  .barw b { position: absolute; right: 6px; top: 0; line-height: 22px; font-size: 12px; font-family: var(--f-mono); font-weight: 500; }
+  .hdr { font-size: 12px; color: var(--muted); font-weight: 600; padding-block: 0; }
+  .summary { margin-top: 14px; padding: 12px 14px; background: var(--surface); border: 1px solid var(--line); border-radius: 10px; }
+  .note { color: var(--muted); font-size: 13.5px; }
+  @media (max-width: 700px) {
+    .tl-svg, .chart-svg { display: none; }
+    .tl-list, .chart-bars { display: block; }
+    .row { grid-template-columns: minmax(0, 1fr) auto auto; grid-template-areas: "who tr fl" "bar bar bar"; gap: 6px 8px; padding: 8px 10px; }
+    .hdr { display: none; }
+    .evl li { grid-template-columns: 82px minmax(0, 1fr); }
+    .evl li .tag { grid-column: 2; justify-self: start; }
+    .step { grid-template-columns: 34px minmax(0, 1fr); gap: 10px; }
+    .num { width: 34px; height: 34px; font-size: 14px; }
+    .step:not(:last-child)::after { left: 16px; top: 38px; }
+  }
+  .legend { display: flex; flex-wrap: wrap; gap: 6px 18px; font-size: 13px; margin: 8px 0 6px; }
+  .legend i { display: inline-block; width: 12px; height: 12px; border-radius: 3px; margin-right: 6px; vertical-align: -1px; }
+  ul.plain { padding-left: 18px; margin: 8px 0; max-width: 68ch; }
+  ul.plain li { margin-bottom: 6px; }
+  @media (prefers-reduced-motion: no-preference) { .barw span { transition: width .35s ease; } }
+  .tree-list { display: none; }
+  .tr-ul { list-style: none; margin: 6px 0 0; padding-left: 14px; border-left: 2px solid var(--line); display: grid; gap: 8px; }
+  .tr-ul.root { padding-left: 0; border-left: 0; }
+  .tn { background: var(--surface); border: 1px solid var(--line); border-radius: 8px; padding: 8px 10px; font-size: 13.5px; }
+  .tn.path { border-color: var(--accent); background: var(--accent-soft); }
+  .tn small { color: var(--muted); display: block; font-size: 12px; }
+  .tb { display: inline-block; font-size: 12px; font-weight: 700; margin: 6px 0 0; color: var(--muted); }
+  .tb.yes { color: var(--ok); } .tb.no { color: var(--risk); }
+  svg .nodeb { fill: var(--surface); stroke: var(--line); stroke-width: 1.5; }
+  svg .nodeb.path { stroke: var(--accent); stroke-width: 3; fill: var(--accent-soft); }
+  svg .edge { stroke: var(--bar-a); stroke-width: 2; fill: none; }
+  svg .elab { paint-order: stroke; stroke: var(--bg); stroke-width: 4px; stroke-linejoin: round; }
+  svg .edge.path { stroke: var(--accent); stroke-width: 4; }
+  @media (max-width: 700px) { .tree-svg { display: none; } .tree-list { display: block; } }
+  .dot { display: inline-block; width: 12px; height: 12px; border-radius: 50%; border: 2px solid var(--ink); vertical-align: -2px; margin: 0 4px 0 2px; }
+  .dot.on { background: var(--ink); }
+  .dot.off { background: var(--surface); }
+  table.f td small { display: block; color: var(--muted); font-size: 12px; font-weight: 400; font-family: var(--f-body); line-height: 1.4; }
+  table.f td:first-child { padding-right: 14px; }
+  .why { margin-top: 12px; color: var(--muted); font-size: 14px; max-width: 68ch; }
+  .why b { color: var(--ink); }
+</style>
+
+</head>
+<body>
+<div class="wrap">
+  <h1>Đoán trước issue nào sẽ trễ trong sprint</h1>
+  <p class="lead">Mỗi sprint có nhiều issue, và hết sprint vẫn có issue chưa xong. Mô hình này xem diễn biến của từng issue trên Jira, rồi chỉ ra vài issue dễ trễ nhất để đội xử lý sớm.</p>
+  <div class="def">
+    <span><b>Đoán gì:</b> hết sprint, issue này đã xong chưa</span>
+    <span><b>Báo bao nhiêu:</b> 1/5 số issue của sprint, làm tròn lên (sprint 15 issue thì báo 3)</span>
+    <span><b>Chấm điểm:</b> trong số issue thật sự trễ, mô hình bắt được bao nhiêu %</span>
+  </div>
+
+  <div class="why">
+    <p style="margin:0 0 6px"><b>Vì sao báo 1/5?</b> Đây là mức nhóm nghiên cứu chọn để mô phỏng việc đội chỉ có thời gian xem nhanh một phần nhỏ danh sách. Nó <b>không phải con số tìm ra từ dữ liệu</b>. Báo nhiều hơn thì bắt được nhiều hơn, nhưng cũng nhiều cảnh báo hơn. Ở giữa sprint:</p>
+    <ul class="plain" style="margin:0 0 8px">
+      <li>Đặt mức 1/10 (thực tế báo khoảng 17% số issue): bắt được <b>45%</b> issue trễ</li>
+      <li>Đặt mức 1/5 (thực tế khoảng 26%): bắt được <b>53%</b></li>
+      <li>Đặt mức 3/10 (thực tế khoảng 36%): bắt được <b>64%</b></li>
+    </ul>
+    <p style="margin:0">"Làm tròn lên" nghĩa là sprint 12 issue thì 1/5 = 2,4 nên báo 3, để sprint nhỏ vẫn có ít nhất 1 cảnh báo. Vì vậy trung bình thực tế báo khoảng 1/4 số issue.</p>
+  </div>
+
+  <h2>Từ dữ liệu đến cảnh báo, năm bước</h2>
+  <p class="sub">Ví dụ xuyên suốt: <b>issue 753</b> trong <b>sprint 12 của project XD</b> (từ 05/08 đến 19/08/2015, có 15 issue). Đây là dữ liệu thật.</p>
+
+  <ol class="steps">
+    <li class="step"><div class="num">1</div><div class="card">
+      <h3>Lấy nhật ký thay đổi trên Jira</h3>
+      <div class="io"><span class="chip">nhật ký thay đổi</span><span class="arrow">→</span><span class="chip">diễn biến theo thời gian của từng issue</span></div>
+      <p>Mỗi lần ai đó đổi trạng thái, đổi sprint hay sửa điểm ước lượng, Jira ghi lại kèm giờ. Mô hình chỉ dựa vào những dòng ghi này, không dùng trạng thái hiện tại của issue.</p>
+<pre class="data"><span class="dim">28/07 11:27</span>  trạng thái    Done → <span class="hot">In Progress</span>   <span class="dim">(mở lại, vào Sprint 55)</span>
+<span class="dim">05/08 10:56</span>  điểm ước lượng  5 → 8
+<span class="dim">07/08 11:15</span>  trạng thái    In Progress → <span class="hot">In PR</span>
+<span class="dim">17/08 07:48</span>  trạng thái    In PR → Done          <span class="dim">(chỉ dùng để chấm điểm)</span></pre>
+    </div></li>
+
+    <li class="step"><div class="num">2</div><div class="card">
+      <h3>Chọn issue và lấy đáp án</h3>
+      <div class="io"><span class="chip">diễn biến của issue</span><span class="arrow">→</span><span class="chip">danh sách issue cần đoán + đáp án</span></div>
+      <p>Chỉ lấy những issue <b>đã nằm trong sprint từ lúc sprint bắt đầu</b> (05/08 lúc 17:57). Đáp án là tình trạng lúc hết sprint: xong thì là "kịp", chưa xong thì là "trễ". Đáp án chỉ dùng để chấm điểm, mô hình không bao giờ được thấy.</p>
+<pre class="data">issue 753 nằm trong Sprint 55 từ 05/08   → <span class="hot">được chọn</span>
+hết sprint (19/08) đã Done từ 17/08       → <span class="hot">đáp án: kịp</span></pre>
+    </div></li>
+
+    <li class="step"><div class="num">3</div><div class="card">
+      <h3>Chụp lại tình trạng tại lúc đoán</h3>
+      <div class="io"><span class="chip">diễn biến + thời điểm đoán</span><span class="arrow">→</span><span class="chip">một bảng thông tin cho mỗi issue</span></div>
+      <p>Ta đoán ở 4 thời điểm: đầu sprint, 1/4, giữa và 3/4 sprint. Tại mỗi thời điểm, mô hình chỉ biết những gì đã xảy ra <b>trước đó</b>. Ví dụ giữa sprint (12/08 lúc 9:22), nó chưa hề biết chuyện ngày 17/08. Phần chạy thử bên dưới cho bạn kéo qua từng thời điểm.</p>
+      <table class="f">
+        <tr><td>Đang ở trạng thái<small>"in pr" thường nghĩa là code đã gửi và đang chờ người khác duyệt</small></td><td>in pr</td></tr>
+        <tr><td>Số lần đã đổi trạng thái</td><td>5</td></tr>
+        <tr><td>Số ngày kể từ thay đổi gần nhất<small>lần gần nhất là chuyển sang In PR ngày 07/08</small></td><td>4,9</td></tr>
+        <tr><td>Tổng số thay đổi đã ghi cho issue này<small>gồm đổi trạng thái, đổi sprint, đổi người làm, đổi điểm ước lượng…</small></td><td>16</td></tr>
+        <tr><td>Tuổi issue<small>số ngày từ lúc issue được tạo đến thời điểm đang xem</small></td><td>85 ngày</td></tr>
+        <tr><td>Điểm ước lượng (story points)<small>độ lớn công việc do đội tự chấm, số càng lớn việc càng to</small></td><td>8</td></tr>
+      </table>
+    </div></li>
+
+    <li class="step"><div class="num">4</div><div class="card">
+      <h3>Mô hình chấm điểm rủi ro</h3>
+      <div class="io"><span class="chip">bảng thông tin của issue</span><span class="arrow">→</span><span class="chip">điểm rủi ro từ 0 đến 1</span></div>
+      <p>Mô hình học từ các sprint đã qua: issue có dấu hiệu nào thì hay trễ. Rồi nó cho mỗi issue một điểm rủi ro từ 0 đến 1, càng cao càng dễ trễ. Có thể hiểu gần như khả năng trễ: 0,47 là khoảng 47%. Issue 753 giữa sprint được <b>0,47</b>.</p>
+      <p>Mô hình học từ 60% sprint cũ nhất, tự chỉnh lại bằng 20% kế tiếp, và chỉ bị chấm trên 20% sprint mới nhất mà nó chưa từng thấy. (Thuật toán dùng là CatBoost.)</p>
+      <p>Những dấu hiệu nó dựa vào nhiều nhất, đo thật từ các mô hình đã học (trung bình 14 project, giữa sprint):</p>
+      <div class="imp" id="imp"></div>
+    </div></li>
+
+    <li class="step"><div class="num">5</div><div class="card">
+      <h3>Xếp thứ tự và báo</h3>
+      <div class="io"><span class="chip">điểm rủi ro của cả sprint</span><span class="arrow">→</span><span class="chip">vài issue được báo</span></div>
+      <p>Sprint này có 15 issue nên báo 3 issue (1/5, làm tròn lên). Mô hình xếp 15 issue từ điểm cao xuống thấp, lấy 3 issue đầu, rồi ta so với đáp án thật.</p>
+    </div></li>
+  </ol>
+
+  <h2>Chạy thử trên sprint 12</h2>
+  <p class="sub">Chọn thời điểm đoán. Càng về sau, mô hình biết càng nhiều và thứ tự thay đổi theo.</p>
+  <div class="seg" id="seg" role="group" aria-label="Thời điểm đoán"></div>
+  <p class="note" style="margin:0 0 6px">Mỗi chấm trên đường thời gian là một thay đổi của issue 753 trên Jira. <span class="dot on"></span><b>Chấm đặc</b>: đã xảy ra trước thời điểm bạn chọn, nên mô hình biết. <span class="dot off"></span><b>Chấm rỗng</b>: xảy ra sau thời điểm đó, mô hình chưa biết.</p>
+  <div class="tl-svg"><svg id="tl" class="tl" viewBox="0 0 760 272" role="img" aria-label="Diễn biến của issue 753 trong sprint"></svg></div>
+  <div class="tl-list" id="tlList"></div>
+  <div class="panel" id="panel"></div>
+  <div class="hdr row" aria-hidden="true"><span class="who">Issue · trạng thái</span><span class="barw" style="background:none">Điểm rủi ro (0 đến 1)</span><span class="tr">Thực tế</span><span class="fl">Mô hình báo</span></div>
+  <ol class="rank" id="rank"></ol>
+  <p class="note" style="margin:10px 0 0"><b>Báo đúng</b>: mô hình báo và issue đó thật sự trễ. <b>Báo nhầm</b>: mô hình báo nhưng thực tế issue vẫn kịp. <b>Bỏ sót</b>: issue trễ nhưng mô hình không báo.</p>
+  <div class="summary" id="summary"></div>
+  <p class="note" style="margin-top:12px">Sprint này là ví dụ không đẹp: đầu sprint mô hình đoán đúng cả 3, nhưng càng về sau càng kém. Issue 753 bị đẩy lên đầu vì từng bị mở lại và lâu không có thay đổi mới, nhưng thực tế vẫn xong trước hạn 2 ngày. Một sprint chưa nói lên điều gì, xu hướng thật nằm ở phần kết quả bên dưới.</p>
+
+  <h2>Mô hình nghĩ thế nào: xem qua một cây quyết định</h2>
+  <p class="sub">CatBoost thật ra là <b>400 cây quyết định nhỏ cộng lại</b>. Mỗi cây hỏi vài câu có/không rồi cho một điểm, cây sau sửa lỗi cho cây trước. Vẽ cả 400 cây thì không ai đọc nổi, nên dưới đây là <b>một cây tóm tắt</b>: một cây 3 tầng được dạy bắt chước điểm của mô hình thật (project XD, giữa sprint).</p>
+  <p id="treeFid" class="note" style="margin:0 0 10px"></p>
+  <div class="tree-svg"><svg id="treeSvg" class="tl" role="img" aria-label="Cây quyết định tóm tắt"></svg></div>
+  <div class="tree-list" id="treeList"></div>
+  <ul class="plain">
+    <li><b>Cách đọc:</b> đi từ trên xuống, trả lời có/không cho từng câu. Ô cuối cùng ghi điểm rủi ro trung bình của những issue rơi vào đó, tỉ lệ thật sự trễ trong số đó ("trễ thật"), và số issue. Đường màu xanh là đường đi của issue 753.</li>
+    <li>Cây này <b>không phải chính mô hình</b>, chỉ là bản rút gọn. Nó bắt chước khá sát nên dùng để hiểu được: các issue đã Done gần như đều điểm rất thấp, còn issue đang làm dở thì điểm tăng theo số lần đổi trạng thái và độ trễ của cả sprint.</li>
+    <li>Câu "sprint dài hơn 7,5 ngày?" thực chất tách các sprint ngắn (có sprint chỉ 3 ngày) ở giai đoạn đầu của XD ra khỏi các sprint về sau. Mọi sprint kiểm tra đều dài hơn 8 ngày nên đều trả lời "có". Cây chỉ dùng nó như dấu hiệu về giai đoạn của dự án.</li>
+  </ul>
+
+  <h2>Kết quả trên 397 sprint kiểm tra</h2>
+  <p class="sub">Khi mỗi sprint chỉ báo khoảng 1/5 số issue, mô hình bắt được bao nhiêu % issue thật sự trễ. Trung bình trên 397 sprint mới nhất của 14 project, chạy 3 lần. Sprint không có issue trễ nào (61 sprint) thì không có gì để bắt nên bị bỏ qua khi tính trung bình.</p>
+  <div class="legend">
+    <span><i style="background:var(--bar-a)"></i>Luật đơn giản (chưa xong là có rủi ro)</span>
+    <span><i style="background:var(--bar-b)"></i>Chỉ dùng thông tin lúc bắt đầu sprint</span>
+    <span><i style="background:var(--accent)"></i>Dùng cả diễn biến trong sprint (mô hình chính)</span>
+  </div>
+  <div class="chart-svg"><svg id="chart" class="tl" viewBox="0 0 760 330" role="img" aria-label="Tỉ lệ bắt được issue trễ theo thời điểm đoán"></svg></div>
+  <div class="chart-bars" id="chartBars"></div>
+  <ul class="plain">
+    <li>Từ 1/4 sprint trở đi, dùng diễn biến trong sprint bắt được nhiều hơn hẳn: thêm <b>4,1; 7,1 và 8,1 điểm %</b> ở 1/4, giữa và 3/4 sprint. Đã kiểm tra thống kê, chênh lệch này không phải do ngẫu nhiên.</li>
+    <li>Đầu sprint hai cách bằng nhau vì chưa có diễn biến nào để xem. Đây là chỗ yếu nhất: bắt được khoảng 46% so với mức tối đa 60%.</li>
+    <li><b>Vì sao mức tối đa chỉ khoảng 60%?</b> Vì mỗi sprint chỉ được báo ít issue (khoảng 1/5, làm tròn lên) trong khi hơn một nửa số issue (57%) cuối sprint vẫn trễ. Ví dụ sprint 12 ở trên: 5 issue trễ nhưng chỉ được báo 3, nên dù đoán hoàn hảo cũng chỉ bắt được 3/5 = 60%. Sprint ít issue trễ thì có thể bắt 100% (khoảng 1/3 số sprint), sprint nhiều issue trễ thì mức tối đa thấp hơn nhiều (khoảng 6/10 số sprint có mức tối đa từ 50% trở xuống). Lấy trung bình ra khoảng 60%. Đây là giới hạn của cách chấm điểm, không phải lỗi của mô hình.</li>
+  </ul>
+
+  <h2>Vì sao tin được số liệu</h2>
+  <ul class="plain">
+    <li><b>Không nhìn trước tương lai.</b> Ở mỗi thời điểm, mô hình chỉ biết những gì đã xảy ra, và có kiểm tra tự động cho việc này.</li>
+    <li><b>Học từ cũ, chấm trên mới.</b> Mô hình học từ sprint cũ rồi chấm trên sprint mới hơn mà nó chưa từng thấy.</li>
+    <li><b>So sánh công bằng.</b> Có luật đơn giản, có cách chỉ dùng thông tin lúc bắt đầu sprint, và có mức tối đa để đối chiếu.</li>
+  </ul>
+  <p class="note"><b>Giới hạn:</b> mới thử trên dữ liệu TAWOS (dự án mã nguồn mở), chưa thử trên dữ liệu thật của Agentick; đầu sprint vẫn yếu; mới chạy 3 lần.</p>
+</div>
+
+<script>
+  const DATA = {"landmarks": {"0": {"k": 3, "tp": 3, "pos": 5, "n": 15, "rows": [{"id": 535, "p": 0.263, "y": 1, "alert": true, "status": "in progress", "changes": 1, "quiet": 1.2, "events": 5}, {"id": 549, "p": 0.26, "y": 1, "alert": true, "status": "in progress", "changes": 1, "quiet": 1.2, "events": 4}, {"id": 906, "p": 0.182, "y": 1, "alert": true, "status": "to do", "changes": 2, "quiet": 0.3, "events": 5}, {"id": 613, "p": 0.178, "y": 0, "alert": false, "status": "done", "changes": 9, "quiet": 0.2, "events": 19}, {"id": 527, "p": 0.164, "y": 0, "alert": false, "status": "unknown", "changes": 0, "quiet": 1.1, "events": 2}, {"id": 514, "p": 0.163, "y": 1, "alert": false, "status": "unknown", "changes": 0, "quiet": 0.3, "events": 2}, {"id": 564, "p": 0.156, "y": 0, "alert": false, "status": "unknown", "changes": 0, "quiet": 0.3, "events": 4}, {"id": 560, "p": 0.154, "y": 0, "alert": false, "status": "unknown", "changes": 0, "quiet": 0.3, "events": 3}, {"id": 486, "p": 0.152, "y": 0, "alert": false, "status": "unknown", "changes": 0, "quiet": 0.3, "events": 2}, {"id": 572, "p": 0.148, "y": 0, "alert": false, "status": "unknown", "changes": 0, "quiet": 0.3, "events": 2}, {"id": 513, "p": 0.145, "y": 0, "alert": false, "status": "in progress", "changes": 3, "quiet": 1.1, "events": 6}, {"id": 753, "p": 0.139, "y": 0, "alert": false, "status": "in progress", "changes": 4, "quiet": 0.3, "events": 15}, {"id": 498, "p": 0.137, "y": 0, "alert": false, "status": "in pr", "changes": 2, "quiet": 1.1, "events": 6}, {"id": 533, "p": 0.13, "y": 0, "alert": false, "status": "in progress", "changes": 1, "quiet": 1.3, "events": 5}, {"id": 524, "p": 0.115, "y": 1, "alert": false, "status": "in progress", "changes": 1, "quiet": 1.1, "events": 4}]}, "0.25": {"k": 3, "tp": 2, "pos": 5, "n": 15, "rows": [{"id": 535, "p": 0.403, "y": 1, "alert": true, "status": "in progress", "changes": 1, "quiet": 4.5, "events": 5}, {"id": 906, "p": 0.395, "y": 1, "alert": true, "status": "to do", "changes": 2, "quiet": 3.6, "events": 5}, {"id": 753, "p": 0.354, "y": 0, "alert": true, "status": "in pr", "changes": 5, "quiet": 1.6, "events": 16}, {"id": 549, "p": 0.31, "y": 1, "alert": false, "status": "to do", "changes": 2, "quiet": 1.7, "events": 6}, {"id": 572, "p": 0.228, "y": 0, "alert": false, "status": "in pr", "changes": 4, "quiet": 2.4, "events": 7}, {"id": 514, "p": 0.203, "y": 1, "alert": false, "status": "unknown", "changes": 0, "quiet": 3.6, "events": 2}, {"id": 527, "p": 0.187, "y": 0, "alert": false, "status": "in progress", "changes": 1, "quiet": 3.2, "events": 4}, {"id": 486, "p": 0.173, "y": 0, "alert": false, "status": "in progress", "changes": 1, "quiet": 1.7, "events": 3}, {"id": 533, "p": 0.164, "y": 0, "alert": false, "status": "in progress", "changes": 3, "quiet": 2.5, "events": 7}, {"id": 613, "p": 0.144, "y": 0, "alert": false, "status": "done", "changes": 9, "quiet": 3.5, "events": 19}, {"id": 524, "p": 0.143, "y": 1, "alert": false, "status": "in progress", "changes": 1, "quiet": 4.4, "events": 4}, {"id": 513, "p": 0.084, "y": 0, "alert": false, "status": "done", "changes": 5, "quiet": 3.3, "events": 9}, {"id": 498, "p": 0.068, "y": 0, "alert": false, "status": "done", "changes": 3, "quiet": 2.5, "events": 8}, {"id": 560, "p": 0.058, "y": 0, "alert": false, "status": "done", "changes": 3, "quiet": 3.2, "events": 8}, {"id": 564, "p": 0.056, "y": 0, "alert": false, "status": "done", "changes": 3, "quiet": 2.8, "events": 8}]}, "0.5": {"k": 3, "tp": 2, "pos": 5, "n": 15, "rows": [{"id": 753, "p": 0.468, "y": 0, "alert": true, "status": "in pr", "changes": 5, "quiet": 4.9, "events": 16}, {"id": 535, "p": 0.409, "y": 1, "alert": true, "status": "in progress", "changes": 1, "quiet": 7.8, "events": 5}, {"id": 549, "p": 0.402, "y": 1, "alert": true, "status": "to do", "changes": 2, "quiet": 5.0, "events": 6}, {"id": 906, "p": 0.333, "y": 1, "alert": false, "status": "in progress", "changes": 3, "quiet": 1.6, "events": 7}, {"id": 527, "p": 0.244, "y": 0, "alert": false, "status": "in progress", "changes": 1, "quiet": 6.5, "events": 4}, {"id": 524, "p": 0.234, "y": 1, "alert": false, "status": "in progress", "changes": 1, "quiet": 7.7, "events": 4}, {"id": 486, "p": 0.223, "y": 0, "alert": false, "status": "in progress", "changes": 1, "quiet": 5.0, "events": 3}, {"id": 514, "p": 0.207, "y": 1, "alert": false, "status": "unknown", "changes": 0, "quiet": 6.9, "events": 2}, {"id": 613, "p": 0.045, "y": 0, "alert": false, "status": "done", "changes": 9, "quiet": 6.9, "events": 19}, {"id": 513, "p": 0.042, "y": 0, "alert": false, "status": "done", "changes": 5, "quiet": 6.6, "events": 9}, {"id": 564, "p": 0.036, "y": 0, "alert": false, "status": "done", "changes": 3, "quiet": 6.1, "events": 8}, {"id": 560, "p": 0.033, "y": 0, "alert": false, "status": "done", "changes": 3, "quiet": 6.5, "events": 8}, {"id": 498, "p": 0.029, "y": 0, "alert": false, "status": "done", "changes": 3, "quiet": 5.8, "events": 8}, {"id": 572, "p": 0.028, "y": 0, "alert": false, "status": "done", "changes": 5, "quiet": 2.1, "events": 9}, {"id": 533, "p": 0.027, "y": 0, "alert": false, "status": "done", "changes": 5, "quiet": 1.8, "events": 10}]}, "0.75": {"k": 3, "tp": 1, "pos": 5, "n": 15, "rows": [{"id": 753, "p": 0.594, "y": 0, "alert": true, "status": "in pr", "changes": 5, "quiet": 8.2, "events": 16}, {"id": 535, "p": 0.506, "y": 1, "alert": true, "status": "in progress", "changes": 1, "quiet": 11.1, "events": 5}, {"id": 486, "p": 0.504, "y": 0, "alert": true, "status": "in pr", "changes": 2, "quiet": 3.3, "events": 4}, {"id": 549, "p": 0.482, "y": 1, "alert": false, "status": "in progress", "changes": 3, "quiet": 2.4, "events": 7}, {"id": 514, "p": 0.472, "y": 1, "alert": false, "status": "in pr", "changes": 2, "quiet": 1.1, "events": 5}, {"id": 906, "p": 0.358, "y": 1, "alert": false, "status": "in progress", "changes": 3, "quiet": 4.9, "events": 7}, {"id": 524, "p": 0.15, "y": 1, "alert": false, "status": "in progress", "changes": 1, "quiet": 11.0, "events": 4}, {"id": 613, "p": 0.013, "y": 0, "alert": false, "status": "done", "changes": 9, "quiet": 10.2, "events": 19}, {"id": 513, "p": 0.008, "y": 0, "alert": false, "status": "done", "changes": 5, "quiet": 9.9, "events": 9}, {"id": 498, "p": 0.008, "y": 0, "alert": false, "status": "done", "changes": 3, "quiet": 9.1, "events": 8}, {"id": 572, "p": 0.007, "y": 0, "alert": false, "status": "done", "changes": 5, "quiet": 5.4, "events": 9}, {"id": 564, "p": 0.006, "y": 0, "alert": false, "status": "done", "changes": 3, "quiet": 9.4, "events": 8}, {"id": 560, "p": 0.006, "y": 0, "alert": false, "status": "done", "changes": 3, "quiet": 9.8, "events": 8}, {"id": 527, "p": 0.005, "y": 0, "alert": false, "status": "done", "changes": 3, "quiet": 1.3, "events": 7}, {"id": 533, "p": 0.003, "y": 0, "alert": false, "status": "done", "changes": 5, "quiet": 5.1, "events": 10}]}}, "importance": {"dynamic_is_done": 24.3, "dynamic_status": 16.3, "static_inactive_days": 5.0, "dynamic_status_age_days": 4.8, "dynamic_inactive_days": 4.3, "cohort_size": 3.7, "dynamic_cohort_done_fraction": 3.7, "dynamic_age_days": 3.5}, "importance_rest": {"n": 27, "max": 3.4}, "tree": {"root": {"leaf": false, "q": "Đang ở trạng thái “done”?", "n": 991, "path": true, "yes": {"leaf": false, "q": "Lúc sprint bắt đầu, hơn 1% issue của sprint đã xong?", "n": 464, "path": false, "yes": {"leaf": false, "q": "Nằm ở trạng thái này hơn 6,2 ngày?", "n": 382, "path": false, "yes": {"leaf": true, "p": 0.037, "n": 103, "path": false, "late": 0.0}, "no": {"leaf": true, "p": 0.029, "n": 279, "path": false, "late": 0.0}}, "no": {"leaf": false, "q": "Nằm ở trạng thái này hơn 8,7 ngày?", "n": 82, "path": false, "yes": {"leaf": true, "p": 0.416, "n": 2, "path": false, "late": 1.0}, "no": {"leaf": true, "p": 0.041, "n": 80, "path": false, "late": 0.0}}}, "no": {"leaf": false, "q": "Sprint dài hơn 7,5 ngày?", "n": 527, "path": true, "yes": {"leaf": false, "q": "Đã đổi trạng thái hơn 1 lần?", "n": 409, "path": true, "yes": {"leaf": true, "p": 0.412, "n": 55, "path": true, "late": 0.436}, "no": {"leaf": true, "p": 0.247, "n": 354, "path": false, "late": 0.263}}, "no": {"leaf": false, "q": "Lúc sprint bắt đầu, đã nằm ở trạng thái đó hơn 5,3 ngày?", "n": 118, "path": false, "yes": {"leaf": true, "p": 0.702, "n": 13, "path": false, "late": 1.0}, "no": {"leaf": true, "p": 0.426, "n": 105, "path": false, "late": 0.571}}}}, "spearman": 0.89, "recall_tree": 0.535, "recall_model": 0.568, "n_fit": 991, "p753": 0.47}};
+  const fmt = (n, d = 2) => n.toFixed(d).replace('.', ',');
+  const pct = (v, d = 1) => fmt(v * 100, d) + '%';
+  // [mã, tỉ lệ thời gian, nhãn ngắn, nhãn dài]
+  const LM = [['0', 0, 'đầu', 'Đầu sprint'], ['0.25', .25, '1/4', '1/4 sprint'], ['0.5', .5, 'giữa', 'Giữa sprint'], ['0.75', .75, '3/4', '3/4 sprint']];
+  let cur = '0.5';
+
+  // --- các dấu hiệu quan trọng nhất (đo thật từ mô hình đã lưu)
+  const IMP_LABEL = {
+    dynamic_is_done: 'Issue đã xong chưa', dynamic_status: 'Đang ở trạng thái nào',
+    static_inactive_days: 'Lúc sprint bắt đầu, đã bao lâu kể từ thay đổi gần nhất', dynamic_status_age_days: 'Đã nằm ở trạng thái này bao lâu',
+    dynamic_inactive_days: 'Đã bao lâu kể từ thay đổi gần nhất', cohort_size: 'Sprint có bao nhiêu issue',
+    dynamic_cohort_done_fraction: 'Bao nhiêu % issue của sprint đã xong', dynamic_age_days: 'Issue đã tồn tại bao lâu'
+  };
+  (function () {
+    const el = document.getElementById('imp'); const items = Object.entries(DATA.importance);
+    const sum = items.reduce((a, [, v]) => a + v, 0), rest = 100 - sum, R = DATA.importance_rest;
+    const mx = Math.max(...items.map(([, v]) => v), rest);
+    const row = (label, v, c) => `<div><span class="l"><span>${label}</span><i style="width:${(v / mx * 100).toFixed(0)}%;background:${c}"></i></span><span class="v">${fmt(v, 1)}</span></div>`;
+    el.innerHTML = '<div class="t">Mỗi dấu hiệu đóng góp bao nhiêu % vào quyết định của mô hình (cộng lại đủ 100%)</div>' +
+      items.map(([k, v]) => row(IMP_LABEL[k] || k, v, 'var(--accent)')).join('') +
+      row(`Còn lại: ${R.n} dấu hiệu nhỏ khác (mỗi dấu hiệu không quá ${fmt(R.max, 1)}%)`, rest, 'var(--bar-a)');
+  })();
+
+  // --- diễn biến của issue 753
+  const T = s => Date.parse(s + 'Z');
+  const START = T('2015-08-05T17:57:29'), END = T('2015-08-19T00:47:00');
+  const T0 = T('2015-07-26T00:00:00'), T1 = T('2015-08-20T12:00:00');
+  const EVENTS = [
+    { t: T('2015-07-28T11:27:00'), lab: 'Mở lại, vào Sprint 55', dy: -70 },
+    { t: T('2015-08-05T10:56:00'), lab: 'Đội tăng độ lớn việc: 5 → 8 điểm', dy: -44 },
+    { t: T('2015-08-07T11:15:00'), lab: 'Chuyển sang In PR', dy: 38 },
+    { t: T('2015-08-17T07:48:00'), lab: 'Xong (đáp án)', dy: -70 }
+  ];
+  const X0 = 40, X1 = 730, AX = 140, BAND_TOP = 30, BAND_BOT = AX + 92, RY = AX + 62;
+  const x = t => X0 + (t - T0) / (T1 - T0) * (X1 - X0);
+  const pad2 = n => String(n).padStart(2, '0');
+  const fmtT = t => { const d = new Date(t); return `${pad2(d.getUTCDate())}/${pad2(d.getUTCMonth() + 1)} lúc ${pad2(d.getUTCHours())}:${pad2(d.getUTCMinutes())}`; };
+  const curLM = () => LM.find(l => l[0] === cur);
+  function drawTimeline() {
+    const f = curLM()[1]; const at = START + f * (END - START); let s = '';
+    s += `<text x="${X0}" y="16" font-size="12.5" class="m">Issue 753 · đã rút gọn 14 thay đổi cũ (từ 21/05)</text>`;
+    s += `<rect x="${x(START)}" y="${BAND_TOP}" width="${x(END) - x(START)}" height="${BAND_BOT - BAND_TOP}" rx="6" fill="var(--accent-soft)"/>`;
+    s += `<text x="${x(START) + 8}" y="${BAND_TOP + 17}" font-size="12" class="m">Sprint 55 (13,3 ngày)</text>`;
+    s += `<rect x="${x(at)}" y="${BAND_TOP}" width="${Math.max(0, X1 + 8 - x(at))}" height="${BAND_BOT - BAND_TOP}" fill="var(--bg)" opacity=".6"/>`;
+    s += `<line x1="${X0}" y1="${AX}" x2="${X1}" y2="${AX}" stroke="var(--line)" stroke-width="2"/>`;
+    s += `<line x1="${x(START)}" y1="${RY}" x2="${x(END)}" y2="${RY}" stroke="var(--line)" stroke-width="1.5"/>`;
+    s += `<line x1="${x(at)}" y1="${RY - 9}" x2="${x(at)}" y2="${RY + 9}" stroke="var(--accent)" stroke-width="4"/>`;
+    LM.forEach(([k, ff, short]) => {
+      const xx = x(START + ff * (END - START)), on = k === cur;
+      s += `<line x1="${xx}" y1="${RY - 6}" x2="${xx}" y2="${RY + 6}" stroke="${on ? 'var(--accent)' : 'var(--muted)'}" stroke-width="${on ? 4 : 1.5}"/>`;
+      s += `<text x="${xx}" y="${BAND_BOT - 8}" font-size="12.5" text-anchor="middle" class="${on ? 'acc' : 'm'}">${short}</text>`;
+    });
+    EVENTS.forEach(e => {
+      const seen = e.t <= at, xx = x(e.t), ly = AX + e.dy, anchor = xx > 600 ? 'end' : 'start';
+      const y1 = e.dy < 0 ? ly + 5 : AX + 8, y2 = e.dy < 0 ? AX - 8 : ly - 12;
+      s += `<line x1="${xx}" y1="${y1}" x2="${xx}" y2="${y2}" stroke="var(--muted)" stroke-width="1" ${seen ? '' : 'stroke-dasharray="3 3"'}/>`;
+      s += `<circle cx="${xx}" cy="${AX}" r="6" fill="${seen ? 'var(--ink)' : 'var(--surface)'}" stroke="var(--ink)" stroke-width="2"/>`;
+      s += `<text x="${xx}" y="${ly}" font-size="12" text-anchor="${anchor}" class="${seen ? '' : 'm'}">${e.lab}</text>`;
+    });
+    s += `<text x="${X0}" y="${BAND_BOT + 28}" font-size="13" class="acc">Đang xem: ${curLM()[3].toLowerCase()} · ${fmtT(at)}</text>`;
+    s += `<text x="${X1}" y="${BAND_BOT + 28}" font-size="12" text-anchor="end" class="m">${f >= .75 ? 'Chuyện "Xong" (17/08) không lúc nào mô hình được biết' : 'Vùng mờ bên phải: mô hình chưa biết'}</text>`;
+    document.getElementById('tl').innerHTML = s;
+  }
+  function drawTlList() {
+    const f = curLM()[1], at = START + f * (END - START);
+    const ticks = LM.map(([k, ff, short]) => `<span class="tk ${k === cur ? 'on' : ''}" style="left:${ff * 100}%"><span>${short}</span></span>`).join('');
+    const items = EVENTS.map(e => { const seen = e.t <= at;
+      return `<li class="${seen ? 'seen' : 'unseen'}"><span class="mono">${fmtT(e.t).replace(' lúc', '')}</span><span>${e.lab}</span><span class="tag ${seen ? 'ok' : ''}">${seen ? 'đã biết' : 'chưa xảy ra'}</span></li>`; }).join('');
+    document.getElementById('tlList').innerHTML =
+      `<p class="note" style="margin:0 0 4px">Issue 753 · sprint từ 05/08 đến 19/08. Thanh dưới là tiến độ của sprint.</p>` +
+      `<div class="prog"><i class="fill" style="width:${f * 100}%"></i>${ticks}</div>` +
+      `<p style="margin:0 0 8px"><b style="color:var(--accent)">Đang xem: ${curLM()[3].toLowerCase()} · ${fmtT(at)}</b>. Mô hình chỉ biết những việc đã ghi "đã biết".</p><ul class="evl">${items}</ul>`;
+  }
+
+  function drawRank() {
+    const L = DATA.landmarks[cur]; const r753 = L.rows.find(r => r.id === 753);
+    document.getElementById('panel').innerHTML = [
+      ['Trạng thái của 753', r753.status], ['Số lần đổi trạng thái', r753.changes],
+      ['Ngày kể từ thay đổi gần nhất', fmt(r753.quiet, 1)], ['Số thay đổi đã biết', r753.events], ['Điểm rủi ro của 753', fmt(r753.p)]
+    ].map(([a, b]) => `<div class="kv"><small>${a}</small><b>${b}</b></div>`).join('');
+    const SC = 0.7;
+    document.getElementById('rank').innerHTML = L.rows.map(r => {
+      const truth = r.y ? '<span class="tag risk">trễ</span>' : '<span class="tag ok">kịp</span>';
+      let flag = '';
+      if (r.alert) flag = r.y ? '<span class="tag alert">báo đúng</span>' : '<span class="tag alert" style="background:var(--risk-soft);color:var(--risk)">báo nhầm</span>';
+      else if (r.y) flag = '<span class="tag" title="Issue này trễ nhưng mô hình không báo">bỏ sót</span>';
+      return `<li class="row ${r.alert ? 'is-alert' : ''}"><span class="who"><span class="mono">#${r.id}</span><span class="tag">${r.status}</span></span>` +
+        `<span class="barw"><span style="width:${Math.min(r.p / SC, 1) * 100}%"></span><b>${fmt(r.p)}</b></span><span class="tr">${truth}</span><span class="fl">${flag}</span></li>`;
+    }).join('');
+    const prec = L.tp / L.k, rec = L.tp / L.pos;
+    document.getElementById('summary').innerHTML = `Mô hình báo <b>${L.k} issue</b>, trong đó <b>${L.tp}</b> đúng (${pct(prec, 0)}). ` +
+      `Sprint có <b>${L.pos}</b> issue thật sự trễ, mô hình bắt được <b>${L.tp}</b> (${pct(rec, 0)}). ` +
+      `<span class="note">Hàng nền xanh là ${L.k} issue mô hình báo. Cột "Thực tế" là đáp án cuối sprint, mô hình không được thấy.</span>`;
+  }
+
+  const seg = document.getElementById('seg');
+  seg.innerHTML = LM.map(l => `<button type="button" data-k="${l[0]}" aria-pressed="${l[0] === cur}">${l[3]}</button>`).join('');
+  seg.addEventListener('click', e => {
+    const b = e.target.closest('button'); if (!b) return; cur = b.dataset.k;
+    seg.querySelectorAll('button').forEach(x => x.setAttribute('aria-pressed', x.dataset.k === cur));
+    drawTimeline(); drawTlList(); drawRank();
+  });
+  drawTimeline(); drawTlList(); drawRank();
+
+
+  // --- cây quyết định tóm tắt
+  (function () {
+    const T = DATA.tree; const root = T.root;
+    document.getElementById('treeFid').innerHTML = `Cây tóm tắt bắt chước khá sát: thứ hạng giống mô hình thật tới <b>${fmt(T.spearman)}</b> (1 là giống hệt), và bắt được <b>${pct(T.recall_tree)}</b> issue trễ so với <b>${pct(T.recall_model)}</b> của mô hình thật trên các sprint kiểm tra của XD. Issue 753 rơi vào ô có điểm ${fmt(findPath(root).p)} (mô hình thật cho ${fmt(T.p753)}).`;
+    function findPath(n) { if (n.leaf) return n; return findPath(n.yes.path ? n.yes : n.no); }
+    const wrap = (s, w) => { const out = []; let line = ''; s.split(' ').forEach(wd => { if ((line + ' ' + wd).trim().length > w) { out.push(line); line = wd; } else line = (line + ' ' + wd).trim(); }); if (line) out.push(line); return out; };
+    const leafFill = p => `color-mix(in srgb, var(--risk) ${Math.round(p * 60)}%, var(--surface))`;
+    // bố cục: lá chia đều, nút trong ở giữa các con
+    let li = 0; const LW = 94, X0 = 28, YS = [14, 140, 268, 400];
+    function lay(n, d) { n.d = d; if (n.leaf) { n.x = X0 + li++ * LW + LW / 2; return; } lay(n.yes, d + 1); lay(n.no, d + 1); n.x = (n.yes.x + n.no.x) / 2; }
+    // thứ tự: "Không" bên trái, "Có" bên phải
+    (function swap(n) { if (!n.leaf) { const a = n.no, b = n.yes; n._l = a; n._r = b; swap(a); swap(b); } })(root);
+    function lay2(n, d) { n.d = d; if (n.leaf) { n.x = X0 + li++ * LW + LW / 2; return; } lay2(n._l, d + 1); lay2(n._r, d + 1); n.x = (n._l.x + n._r.x) / 2; }
+    li = 0; lay2(root, 0);
+    let s = '', boxes = '';
+    const bw = d => d === 0 ? 214 : d === 1 ? 190 : 168;
+    (function draw(n) {
+      const y = YS[n.d];
+      if (n.leaf) {
+        const lines = [`Điểm ${fmt(n.p)}`, `trễ thật ${pct(n.late, 0)}`, `${n.n} issue`];
+        boxes += `<rect class="nodeb ${n.path ? 'path' : ''}" x="${n.x - 44}" y="${y}" width="88" height="62" rx="8" style="fill:${n.path ? '' : leafFill(n.p)}"/>` +
+          lines.map((l, i) => `<text x="${n.x}" y="${y + 18 + i * 17}" font-size="${i === 0 ? 13.5 : 11.5}" font-weight="${i === 0 ? 700 : 400}" text-anchor="middle">${l}</text>`).join('');
+        return;
+      }
+      const lines = wrap(n.q, 26), h = lines.length * 18 + 14, w = bw(n.d);
+      [[n._l, 'Không', 'no'], [n._r, 'Có', 'yes']].forEach(([c, lab, cls]) => {
+        const cy = YS[c.d], onp = n.path && c.path;
+        s += `<line class="edge ${onp ? 'path' : ''}" x1="${n.x}" y1="${y + h}" x2="${c.x}" y2="${cy}" stroke-linecap="round"/>`;
+        s += `<text class="elab" x="${(n.x + c.x) / 2 + (cls === 'yes' ? 16 : -16)}" y="${(y + h + cy) / 2 + 4}" font-size="12" font-weight="700" text-anchor="middle" style="fill:var(--${cls === 'yes' ? 'ok' : 'risk'})">${lab}</text>`;
+        draw(c);
+      });
+      boxes += `<rect class="nodeb ${n.path ? 'path' : ''}" x="${n.x - w / 2}" y="${y}" width="${w}" height="${h}" rx="8"/>` +
+        lines.map((l, i) => `<text x="${n.x}" y="${y + 21 + i * 18}" font-size="12.5" text-anchor="middle">${l}</text>`).join('');
+    })(root);
+    const svg = document.getElementById('treeSvg'); svg.setAttribute('viewBox', `0 0 ${X0 * 2 + LW * 8} 478`); svg.innerHTML = s + boxes;
+    // bản dọc cho điện thoại
+    function list(n, cls) {
+      if (n.leaf) return `<li><div class="tn ${n.path ? 'path' : ''}"><b>Điểm rủi ro ${fmt(n.p)}</b><small>${n.n} issue · trễ thật ${pct(n.late, 0)}${n.path ? ' · đường đi của issue 753' : ''}</small></div></li>`;
+      return `<li><div class="tn ${n.path ? 'path' : ''}"><b>${n.q}</b></div>` +
+        `<ul class="tr-ul"><li><span class="tb yes">Có</span><ul class="tr-ul">${list(n.yes)}</ul></li><li><span class="tb no">Không</span><ul class="tr-ul">${list(n.no)}</ul></li></ul></li>`;
+    }
+    document.getElementById('treeList').innerHTML = `<ul class="tr-ul root">${list(root)}</ul>`;
+  })();
+
+  // --- biểu đồ kết quả (test theo thời gian, trung bình 3 lần chạy)
+  (function () {
+    const S = { rule: [.405, .451, .481, .525], static: [.461, .462, .462, .462], dyn: [.456, .503, .533, .543] }; const ORACLE = .598;
+    const W = 760, H = 330, L = 52, R = 20, TOP = 20, B = 52, ph = H - TOP - B, pw = W - L - R, ymax = .7;
+    const y = v => TOP + ph - v / ymax * ph; let s = '';
+    for (let v = 0; v <= .7001; v += .1) { s += `<line x1="${L}" x2="${W - R}" y1="${y(v)}" y2="${y(v)}" stroke="var(--line)"/><text x="${L - 8}" y="${y(v) + 4}" font-size="12" text-anchor="end" class="m">${Math.round(v * 100)}%</text>`; }
+    const gw = pw / 4, bw = 40, cols = ['var(--bar-a)', 'var(--bar-b)', 'var(--accent)'], keys = ['rule', 'static', 'dyn'];
+    ['Đầu sprint', '1/4 sprint', 'Giữa sprint', '3/4 sprint'].forEach((lab, i) => {
+      const cx = L + gw * i + gw / 2;
+      keys.forEach((k, j) => {
+        const v = S[k][i], bx = cx + (j - 1) * (bw + 6) - bw / 2;
+        s += `<rect x="${bx}" y="${y(v)}" width="${bw}" height="${y(0) - y(v)}" rx="4" fill="${cols[j]}"/>`;
+        s += `<text x="${bx + bw / 2}" y="${y(v) - 6}" font-size="12" text-anchor="middle" font-weight="${j === 2 ? 700 : 400}">${fmt(v * 100, 1)}</text>`;
+      });
+      s += `<text x="${cx}" y="${H - 22}" font-size="13.5" text-anchor="middle" font-weight="600">${lab}</text>`;
+    });
+    s += `<line x1="${L}" x2="${W - R}" y1="${y(ORACLE)}" y2="${y(ORACLE)}" stroke="var(--risk)" stroke-width="2" stroke-dasharray="7 5"/>`;
+    s += `<text x="${W - R}" y="${y(ORACLE) - 7}" font-size="12.5" text-anchor="end" class="rk">Mức tối đa ~60% (nếu biết trước đáp án)</text>`;
+    document.getElementById('chart').innerHTML = s;
+    const names = [['rule', 'Luật đơn giản', 'var(--bar-a)'], ['static', 'Chỉ dùng thông tin đầu sprint', 'var(--bar-b)'], ['dyn', 'Dùng cả diễn biến', 'var(--accent)']];
+    document.getElementById('chartBars').innerHTML = ['Đầu sprint', '1/4 sprint', 'Giữa sprint', '3/4 sprint'].map((lab, i) =>
+      `<div class="cb"><h4>${lab}</h4>` + names.map(([k, n, c]) =>
+        `<div class="cr"><span>${n}</span><span class="tr2"><i style="width:${S[k][i] / .7 * 100}%;background:${c}"></i></span><b>${fmt(S[k][i] * 100, 1)}%</b></div>`).join('') + `</div>`).join('') +
+      `<p class="note"><span style="color:var(--risk)">┆</span> Vạch đỏ đứt nét: mức tối đa khoảng 60% (nếu biết trước đáp án).</p>`;
+  })();
+</script>
+</body>
+</html>
