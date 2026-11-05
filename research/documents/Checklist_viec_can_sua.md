@@ -51,6 +51,7 @@ Ngày 2026-11-05, sau review chặng "cảnh báo rủi ro + Việc giống th�
 ## Roadmap tiếp theo (chưa làm)
 
 - [ ] **Năng lực 2: phân loại "kẹt thật hay chờ ngoài hệ thống"** (protocol E7): định nghĩa nhãn từ dữ liệu sau mốc, thêm tool đọc comment và liên kết vào `AgentContext`, so A0 đến A3. Khảo sát: 60,5% issue mở tại mốc 50% có ≥1 comment; link kiểu chặn phủ khoảng 15% (không có thời gian tạo).
+  - Đã chạy cổng E7 không LLM (xem mục 5d của `Mo_rong_tro_ly_sprint.md`): qua theo quy tắc khóa trước (ΔAUC +0,016) nhưng chủ yếu nhờ số comment, không bền theo nhãn phụ (−0,073); chưa biện minh agent LLM đọc comment.
 - [ ] **Policy giới hạn K cảnh báo mỗi sprint** nối vào luồng đăng brief (hiện đăng cả 95 issue).
 - [ ] **Ledger chống báo lặp, snooze, dry-run** (Task 6 của kế hoạch agent).
 - [ ] **Chọn hành động theo ngữ cảnh** thay vì chỉ nâng priority.

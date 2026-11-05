@@ -117,6 +117,22 @@ Thiết kế theo người dùng (không dùng thuật ngữ nghiên cứu): m�
 - Web: thẻ dưới mô tả issue ở trang đầy đủ và peek view.
 - Hạn chế: pool 1.000 case mới nhất mỗi dự án; số ngày chỉ có với khoảng một phần tư issue; trang case trong PCA mới có mô tả, chưa ghi cỡ và số ngày; chưa giải thích vì sao hai issue được coi là giống nhau; không ước lượng điểm.
 
+## 5d. Kết quả cổng E7 (2026-11-05): comment và liên kết có giúp phân biệt "kẹt thật" không?
+
+Protocol khóa trước ở [Protocol_stuck_E7_gate.md](Protocol_stuck_E7_gate.md); mã `research/research/stuck_gate.py`, 5 test. Dùng điểm rủi ro của 14 dự án mà mô hình chưa từng thấy, 10.454 issue "im lặng" tại mốc 50% (chưa xong, không hoạt động ≥3 ngày), bỏ-một-dự-án-ra, không LLM. 62,5% có ít nhất một comment trước mốc; 14,2% có liên kết kiểu chặn; 70,8% cuối cùng không hoàn thành (`y=1`).
+
+| | AUC chỉ điểm rủi ro | AUC thêm comment và liên kết | ΔAUC [CI 95%] | Dự án thắng |
+|---|---|---|---|---|
+| Chính (`y`) | 0,684 | 0,700 | **+0,016 [+0,005; +0,025]** | 11/14 |
+| Phụ (`y_closed_only`) | | | **−0,073 [−0,140; −0,021]** | 2/10 |
+
+**Theo quy tắc đã khóa, cổng qua** (CI chính nằm hẳn trên 0). **Nhưng kết luận thực chất yếu và không bền:**
+- Mức tăng là 1,6 điểm AUC.
+- Với nhãn phụ, thêm đặc trưng làm **kém đi** có ý nghĩa thống kê: lợi ích phụ thuộc vào định nghĩa nhãn.
+- Phân tích sau khi xem kết quả (không nằm trong protocol, chỉ thăm dò): hệ số chuẩn hóa lớn nhất là **số comment** (+2,20); các cờ từ khóa (chờ, bị chặn, review, câu hỏi) đều nhỏ (|hệ số| ≤ 0,25). Tức tín hiệu chủ yếu là mức độ thảo luận, không phải ý nghĩa "đang chờ" hay "bị chặn". Issue có liên kết kiểu chặn có tỉ lệ không hoàn thành cao hơn (78,5% so với 69,5%), nhưng chỉ khoảng 14% issue có liên kết và liên kết không cắt theo thời gian.
+
+**Hệ quả:** chưa có bằng chứng rằng đọc ngữ nghĩa comment giúp phân loại "kẹt thật"; cổng qua chủ yếu nhờ số lượng comment. Agent LLM đọc comment (A1/A2) **chưa được biện minh** bởi kết quả này; nếu thử thì phải so với baseline đếm comment, không phải với baseline không có comment. Hạn chế: `y=1` gồm cả issue bị rút khỏi sprint; dùng lại dữ liệu E1; từ khóa tiếng Anh; liên kết không cắt as-of.
+
 ## 6. Nguồn ngoài (chỉ đọc tóm tắt, cần đọc toàn văn)
 
 - [Agile Story-Point Estimation: Is RAG a Better Way to Go?](https://arxiv.org/html/2604.03443v1)
