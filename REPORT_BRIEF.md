@@ -20,10 +20,10 @@ hành động ở cấp issue và cấp sprint; con người luôn là người 
 | Duyệt / Bỏ qua / Hoàn tác | Người bấm thì Plane mới thay đổi (đổi ưu tiên, nhắc người phụ trách, chuyển sprint sau) | M4 đến M7 | xong |
 | Thống kê giám sát | Tab Analytics "Delivery risk", widget Home, danh sách Your work, view đã lưu | M9 đến M12 | xong |
 | Đo chất lượng chẩn đoán | Bộ nhãn độc lập, độ đồng thuận với chẩn đoán của mô hình | M13 | đang làm |
-| Kế hoạch sprint | Đề xuất chuyển nhiều issue cùng lúc dựa trên sức chứa suy từ lịch sử và tình trạng cả sprint | M14 | chưa |
-| Duyệt theo lô | Chọn từng dòng của kế hoạch, duyệt một lần, hoàn tác cả lô | M15 | chưa |
+| Kế hoạch sprint | Đề xuất chuyển nhiều issue cùng lúc dựa trên sức chứa suy từ lịch sử và tình trạng cả sprint | M14 | xong: planner, backtest, job `post_plans.py`, bảng `plans`, thẻ trong tab Delivery risk; kiểm trong trình duyệt |
+| Duyệt theo lô | Chọn từng dòng của kế hoạch, duyệt một lần, hoàn tác cả lô | M15 | xong: kiểm trong trình duyệt, 5 issue được chuyển sang cycle sau (Plane xác nhận), hoàn tác đưa về cycle cũ; test backend cho lỗi từng dòng |
 | Hỏi đáp về rủi ro | Hỏi bằng ngôn ngữ tự nhiên; agent gọi công cụ chỉ đọc, trả lời kèm mã issue | M16 | chưa |
-| Sổ cảnh báo tối thiểu | Trạng thái giữa các lần chạy, tạm hoãn, ghi nhận hồi phục sau khi duyệt | M17 | chưa |
+| Sổ cảnh báo tối thiểu | Đếm số lần chạy và nhớ điểm lần trước; alert đã Bỏ qua được mở lại khi điểm tăng từ 0,15 trở lên | M17 | xong (đã bỏ ý "ghi nhận hồi phục sau khi Duyệt": chỉ đo được trên dữ liệu sống, ghi vào hạn chế) |
 
 ## 3. Stack
 
@@ -139,3 +139,33 @@ thư mục `research/documents/`: `Deep_research_AI_agent_canh_bao_som.md`, `Lit
 Sơ đồ ba khối (job ngoại tuyến, dịch vụ risk, Plane), và một ví dụ đi qua từng bước với một alert thật (ví dụ ISP-449),
 vì sơ đồ trừu tượng khó hiểu. Ảnh chụp trình duyệt: thẻ chẩn đoán, tab Delivery risk, (sau này) thẻ kế hoạch sprint và
 panel hỏi đáp.
+
+## 11. Cập nhật 2026-11-06 (tối): trạng thái mã và lần chạy sau khi sửa
+
+- Mã trên nhánh `feat/sprint-assistant` (chưa gộp vào `main`): M13 `4313472`, M14 và backend M15 `bc1ace6`, giao diện M15 `1b4156b`,
+  M17 `52eba6a`. Test: research 92, backend 76 xanh. M16 (agent hỏi đáp) chưa làm.
+- **Demo kế hoạch sprint:** các cycle nhập từ TAWOS đều đã kết thúc và Plane từ chối chuyển issue vào cycle đã xong, nên
+  `post_plans.py --demo` phát lại một sprint cũ như đang chạy (tạo hai cycle hiện tại trong Plane và đặt các issue của sprint
+  vào cycle đầu). Đây là hạn chế của bản demo, cần nêu: trên dữ liệu thật dùng cycle của sprint đang chạy và cycle kế tiếp.
+- **Kế hoạch mẫu:** sprint "LibINDY 18.04 Revocation", mốc 50%, 13 issue còn mở; trong 15 sprint trước 45% issue còn mở ở
+  mốc này đã không xong; ngân sách 6; đề xuất chuyển 6 issue (IS-546, 482, 556, 521, 464, 431). Chi phí tạo kế hoạch
+  0,00074 USD. Lý do từng dòng lấy từ chẩn đoán đã qua verifier.
+- **Duyệt theo lô đã kiểm:** bỏ chọn IS-546, duyệt 5 issue còn lại: cả 5 sang cycle kế tiếp (đọc lại qua API của Plane),
+  IS-546 vẫn ở cycle cũ; Hoàn tác đưa cả 5 về cycle cũ, trạng thái về "chờ".
+- **Chạy lại `post_briefs` sau khi sửa thứ tự (lần 2, 81 alert):** nguyên nhân đứng đầu trên thẻ: `carry_over` 37,
+  `pulled_away` 18, không rõ 17, `unclear_scope` 3, `waiting_person` 2, `blocked` 2, `needs_decision` 2; chi phí 0,0103 USD,
+  0 lỗi. **Ảnh chụp màn hình (hình 5.2, 5.3, 5.4, 5.6, 5.7) lấy từ lần chạy này**, còn hình 7.3 và 7.4 lấy từ lần đo M13 (lần 1,
+  trước khi sửa); chú thích hình phải nói rõ như vậy. Tab Delivery risk hiện thêm "Decisions undone: 3" là các lần hoàn tác
+  khi thử nghiệm trước đó.
+- **Ví dụ IS-1119 (ISP-401) trong lần chạy 2:** điểm 0,759, hạng 2/7, mốc 25%, trạng thái code review, 3,3 ngày im lặng, 12 sự kiện.
+  Mô hình trả hai giả thuyết (waiting_person trích c-550736; carry_over trích h-carry-203241) và **chính mô hình đề xuất
+  `nudge_owner` kèm câu nhắc**, verifier chấp nhận (bỏ 0). Chi phí 0,000136 USD. Ghi chú khác với bản hình 5.9 cũ trong
+  `assets/NEEDED.md` ("action null, nhắc theo quy tắc"): bản hiện tại đúng theo lần chạy 2.
+- **Điểm lạ trong dữ liệu cần ghi vào hạn chế:** sự kiện tình trạng sprint của IS-1119 (`s-2584`) nói "100% of the sprint
+  elapsed, 16 of 17 issues resolved" dù mốc cảnh báo là 25%, vì thành viên sprint tại t được suy từ cột `sprint_id` cuối
+  cùng (hạn chế số 2 trong `BACKLOG.md`). Không nêu sự kiện này như bằng chứng bình thường.
+- **M17:** alert lưu `seen_count` và `prev_score`; thẻ hiện "Checked N times. Risk score X in the run before, Y now."
+  Alert đã Bỏ qua tự mở lại khi điểm mới >= điểm lần trước + 0,15 (hằng `REOPEN_RISE`, chọn bằng mắt, chưa hiệu chỉnh);
+  alert đã Duyệt không bao giờ tự mở lại. Việc mở lại do dịch vụ ghi (decided_by "risk service: ...") không tính là hoàn tác của người.
+- **Ảnh và biểu đồ:** đã đặt vào `research/documents/assets/` đúng tên trong `NEEDED.md`, trừ 5.8 (chờ M16). Nguồn LaTeX và
+  script nằm ở `research/documents/assets/src/` và `research/scripts/make_report_figures.py`. Hình 5.1 vẽ M16 nét đứt vì chưa xong.
