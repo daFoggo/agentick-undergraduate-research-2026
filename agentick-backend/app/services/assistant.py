@@ -39,8 +39,9 @@ SYSTEM = (
     "cannot change anything; if asked to approve, move, edit or delete, say that a person "
     "must do it in Plane. If a question is about anything else, say in one sentence that "
     "you only answer about delivery risk and give two examples of what you can answer. "
-    "Lead with the answer, then at most five lines of support. Reply in the language of "
-    "the question."
+    "Plain text only: no markdown, no asterisks; a dash starts a list line. "
+    "Lead with the answer, then at most five lines of support. Always reply in the language "
+    "of the question (Vietnamese question: Vietnamese answer; English: English)."
 )
 
 
@@ -237,12 +238,20 @@ def decision_summary(db: Session, visible: list[str], args: NoArgs) -> dict:
 
 
 def search_alerts(db: Session, visible: list[str], args: SearchArgs) -> dict:
-    like = "%" + args.query.replace("%", "").replace("_", "") + "%"
+    query = args.query.replace("%", "").replace("_", " ").strip()
+    # causes are stored as snake_case ("carry_over"), people type "carry over": try both spellings
+    likes = {f"%{query}%", f"%{query.replace(' ', '_')}%"}
     found = db.scalars(
         select(Alert)
         .where(
             Alert.project_id.in_(visible),
-            or_(Alert.issue_key.ilike(like), cast(Alert.diagnosis, String).ilike(like)),
+            or_(
+                *(
+                    c.ilike(like)
+                    for like in likes
+                    for c in (Alert.issue_key, cast(Alert.diagnosis, String))
+                )
+            ),
         )
         .order_by(Alert.score.desc())
         .limit(args.limit)

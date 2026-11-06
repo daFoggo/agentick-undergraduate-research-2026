@@ -11,6 +11,7 @@ import AnalyticsWrapper from "../analytics-wrapper";
 import AnalyticsSectionWrapper from "../analytics-section-wrapper";
 import { fetchRiskInsights } from "./risk-insights";
 import type { TRiskSummary } from "./risk-insights";
+import { AskPanel } from "./ask-panel";
 import { SprintPlans } from "./sprint-plans";
 
 function Kpi(props: { label: string; value: string; hint?: string }) {
@@ -105,6 +106,8 @@ export const DeliveryRisk = observer(function DeliveryRisk() {
         </div>
 
         <SprintPlans />
+
+        <AskPanel />
 
         <div className="grid grid-cols-1 gap-14 lg:grid-cols-2">
           <AnalyticsSectionWrapper title={t("risk_insights.sec_causes")}>

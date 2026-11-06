@@ -1,13 +1,13 @@
 # Hình cần cho báo cáo v2
 
-Trạng thái 2026-11-06 tối: mọi hình đã có và đã chèn vào báo cáo, trừ 5.8 (chờ M16). Người làm code chụp màn hình và dựng biểu đồ (LaTeX, xuất ảnh PNG, rộng tối thiểu 1600 px), đặt vào thư mục này với đúng tên
+Trạng thái 2026-11-06 tối: mọi hình đã có và đã chèn vào báo cáo, kể cả 5.8 (đã chụp). Người làm code chụp màn hình và dựng biểu đồ (LaTeX, xuất ảnh PNG, rộng tối thiểu 1600 px), đặt vào thư mục này với đúng tên
 tệp dưới đây. Trong `Bao_cao_tong_ket_de_tai_v2.md` mỗi hình có một dòng giữ chỗ "[HÌNH x.y: ...]" ngay trên chú thích;
 khi có ảnh, thay dòng giữ chỗ bằng ảnh và giữ nguyên chú thích. Không dùng dấu gạch dài trong nhãn hình.
 
 | Id | Tệp | Mục | Phải thể hiện | Số liệu / màn hình |
 |---|---|---|---|---|
 | 3.1 | `fig_3_1_moc_t.png` | 3.1 | Dòng thời gian một sprint: ngày bắt đầu, bốn mốc 0/25/50/75%, ngày kết thúc. Tại một mốc t: vùng bên trái tô màu "sự kiện được dùng", vùng bên phải gạch chéo "bị cắt". Một hàng nhỏ minh họa vài sự kiện (comment, đổi trạng thái) hai bên t | Không có số; nhãn tiếng Việt |
-| 5.1 | `fig_5_1_kien_truc.png` | 5.1 | Sáu khối, mỗi khối có số thứ tự và tên, mã module (chữ nhỏ, xám), chức năng một hai câu, công nghệ (nghiêng), đúng như bảng 5.1: 1 Dữ liệu và phát hiện (M0, M1, nền E1-E9); 2 Bằng chứng và chẩn đoán (M2, M3, M5, M8); 3 Kế hoạch sprint (M14); 4 Dịch vụ risk (M4, M9, M15, M16, M17); 5 Giao diện Plane (M6, M10, M11, M12); 6 Đánh giá và vận hành (M13, M7). Mũi tên xanh 1->2->3, 2->4, 3->4, 4->5. Ô "API của Plane" là hệ thống bên ngoài; mũi tên đỏ: 5 -> (người bấm Duyệt) -> 4 -> API của Plane | Không có số |
+| 5.1 | `fig_5_1_kien_truc.png` (nguồn `assets/src/fig_5_1.svg`) | 5.1 | Sáu khối có icon, đánh số 1-6, không có mã module, tên và công nghệ khớp bảng 5.1: 1 Dữ liệu và phát hiện; 2 Bằng chứng và chẩn đoán; 3 Kế hoạch sprint; 4 Dịch vụ risk; 5 Giao diện Plane; 6 Đánh giá và vận hành. Mũi tên xanh 1->2->3, 2->4, 3->4, 4->5. Ô "API của Plane" nét đứt (hệ thống bên ngoài); mũi tên đỏ từ 4 sang API của Plane, ghi "chỉ khi người bấm Duyệt" | Không có số |
 | 5.2 | `fig_5_2_the_canh_bao.png` | 5.2 | Ảnh chụp thẻ cảnh báo trên trang issue ISP-401 (IS-1119 "POA: DIDDoc support"): điểm 0,759, thứ hạng 2/7, giả thuyết "waiting for a person" với comment được trích, "carried over" xếp sau, phần "Still unknown", hành động nhắc người phụ trách, ba nút Duyệt / Bỏ qua / Hoàn tác | Plane local, project ISP |
 | 5.3 | `fig_5_3_delivery_risk.png` | 5.2 | Ảnh chụp tab Analytics "Delivery risk" của ISP: ô KPI, nguyên nhân, hành động và quyết định, độ bám bằng chứng, chi phí, theo ngày | Plane local |
 | 5.4 | `fig_5_4_home_widget.png` | 5.2 | Ảnh chụp widget Home: danh sách cảnh báo đang chờ quyết định | Plane local |

@@ -88,3 +88,21 @@ export async function postRiskPlan(planId: string, action: "decision" | "undo", 
   if (!response.ok) throw new Error(String(response.status));
   return (await response.json()) as TRiskPlan;
 }
+
+export type TRiskAnswer = {
+  answer: string;
+  tools: { name: string; arguments: Record<string, unknown>; ok: boolean }[]; // every lookup the answer rests on
+  cost_usd: number;
+  unverified: boolean;
+};
+
+export async function askRisk(question: string): Promise<TRiskAnswer> {
+  const response = await fetch(`${RISK_API}/assistant/ask`, {
+    method: "POST",
+    credentials: "same-origin",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ question }),
+  });
+  if (!response.ok) throw new Error(String(response.status));
+  return (await response.json()) as TRiskAnswer;
+}

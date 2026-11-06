@@ -188,3 +188,12 @@ def test_without_a_key_the_assistant_says_it_is_not_configured(client, monkeypat
     fake.projects = [VISIBLE]
     app.dependency_overrides[get_plane] = lambda: fake.client
     assert ask(client).status_code == 503
+
+
+def test_search_finds_a_cause_typed_with_a_space(client):
+    carried = diagnosis("added to a sprint 7 times before now")
+    carried["hypotheses"][0]["cause"] = "carry_over"
+    chat = FakeChat(call("search_alerts", query="carry over"), say("Done."))
+    setup(client, chat, [alert("IS-7", diagnosis=carried), alert("IS-8")])
+    ask(client)
+    assert "IS-7" in tool_text(chat, 1) and "IS-8" not in tool_text(chat, 1)

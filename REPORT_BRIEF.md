@@ -22,7 +22,7 @@ hành động ở cấp issue và cấp sprint; con người luôn là người 
 | Đo chất lượng chẩn đoán | Bộ nhãn độc lập, độ đồng thuận với chẩn đoán của mô hình | M13 | đang làm |
 | Kế hoạch sprint | Đề xuất chuyển nhiều issue cùng lúc dựa trên sức chứa suy từ lịch sử và tình trạng cả sprint | M14 | xong: planner, backtest, job `post_plans.py`, bảng `plans`, thẻ trong tab Delivery risk; kiểm trong trình duyệt |
 | Duyệt theo lô | Chọn từng dòng của kế hoạch, duyệt một lần, hoàn tác cả lô | M15 | xong: kiểm trong trình duyệt, 5 issue được chuyển sang cycle sau (Plane xác nhận), hoàn tác đưa về cycle cũ; test backend cho lỗi từng dòng |
-| Hỏi đáp về rủi ro | Hỏi bằng ngôn ngữ tự nhiên; agent gọi công cụ chỉ đọc, trả lời kèm mã issue | M16 | chưa |
+| Hỏi đáp về rủi ro | Hỏi bằng ngôn ngữ tự nhiên; agent gọi công cụ chỉ đọc, trả lời kèm mã issue | M16 | có (`2e11209` và commit sau) |
 | Sổ cảnh báo tối thiểu | Đếm số lần chạy và nhớ điểm lần trước; alert đã Bỏ qua được mở lại khi điểm tăng từ 0,15 trở lên | M17 | xong (đã bỏ ý "ghi nhận hồi phục sau khi Duyệt": chỉ đo được trên dữ liệu sống, ghi vào hạn chế) |
 
 ## 3. Stack
@@ -106,7 +106,7 @@ hành động đóng. Chi tiết ở `intent.md`.
   mỗi sprint (4,22) cao hơn số issue không xong thật (3,33), tức điểm chưa hiệu chuẩn ở mốc này. **Số "precision 77 đến
   80%" trong báo cáo cũ không khớp** với ISP ở mốc này: kiểm lại trước khi trích.
 - Kiểm thử: research 92, backend 64 test xanh (sau M13 và backend M14). [ĐÃ ĐO]
-- Bộ câu hỏi của agent hỏi đáp: [SẼ ĐO M16]. Duyệt theo lô: [SẼ ĐO M15]. Sổ cảnh báo: [SẼ ĐO M17].
+- Agent hỏi đáp (M16), 25 câu chạy thật qua phiên Plane đã đăng nhập, mô hình `openai/gpt-6-luna`, kết quả ở `research/eval/assistant_run.json`: 25/25 trả lời HTTP 200; 17 câu trong phạm vi đều gọi công cụ (19 lần gọi, 1 lần lỗi tham số mà mô hình tự sửa); 3 câu ngoài phạm vi bị từ chối, không gọi công cụ; 2 câu yêu cầu ghi (duyệt, chuyển cycle) được trả lời "người phải làm trong Plane"; 3 câu tiêm lệnh không làm lộ prompt, không ghi, không đọc dự án khác; 0 câu bị thay vì nêu mã issue lạ; tổng chi phí 0,0043 USD, trung vị 3,2 giây, lâu nhất 6,2 giây. Hạn chế: người chấm đúng/sai là tôi đọc tay, chưa có nhãn độc lập; một lượt trước khi sửa trả lời bằng tiếng Nga cho câu tiếng Việt, đã thêm quy tắc ngôn ngữ; tìm "carry over" trước khi sửa không ra kết quả vì nguyên nhân lưu dạng carry_over, đã sửa và có test. Duyệt theo lô: [SẼ ĐO M15]. Sổ cảnh báo: [SẼ ĐO M17].
 
 ## 7. Hạn chế phải nêu trung thực
 
@@ -143,7 +143,7 @@ panel hỏi đáp.
 ## 11. Cập nhật 2026-11-06 (tối): trạng thái mã và lần chạy sau khi sửa
 
 - Mã trên nhánh `feat/sprint-assistant` (chưa gộp vào `main`): M13 `4313472`, M14 và backend M15 `bc1ace6`, giao diện M15 `1b4156b`,
-  M17 `52eba6a`. Test: research 92, backend 76 xanh. M16 (agent hỏi đáp) chưa làm.
+  M17 `52eba6a`. Test: research 92, backend 76 xanh. M16 (agent hỏi đáp) đã xong: 5 công cụ chỉ đọc, panel Ask, 25 câu chạy thật; backend 89 test xanh.
 - **Demo kế hoạch sprint:** các cycle nhập từ TAWOS đều đã kết thúc và Plane từ chối chuyển issue vào cycle đã xong, nên
   `post_plans.py --demo` phát lại một sprint cũ như đang chạy (tạo hai cycle hiện tại trong Plane và đặt các issue của sprint
   vào cycle đầu). Đây là hạn chế của bản demo, cần nêu: trên dữ liệu thật dùng cycle của sprint đang chạy và cycle kế tiếp.
@@ -167,5 +167,5 @@ panel hỏi đáp.
 - **M17:** alert lưu `seen_count` và `prev_score`; thẻ hiện "Checked N times. Risk score X in the run before, Y now."
   Alert đã Bỏ qua tự mở lại khi điểm mới >= điểm lần trước + 0,15 (hằng `REOPEN_RISE`, chọn bằng mắt, chưa hiệu chỉnh);
   alert đã Duyệt không bao giờ tự mở lại. Việc mở lại do dịch vụ ghi (decided_by "risk service: ...") không tính là hoàn tác của người.
-- **Ảnh và biểu đồ:** đã đặt vào `research/documents/assets/` đúng tên trong `NEEDED.md`, trừ 5.8 (chờ M16). Nguồn LaTeX và
-  script nằm ở `research/documents/assets/src/` và `research/scripts/make_report_figures.py`. Hình 5.1 vẽ M16 nét đứt vì chưa xong.
+- **Ảnh và biểu đồ:** đã đặt vào `research/documents/assets/` đúng tên trong `NEEDED.md`, kể cả 5.8 (panel Ask). Nguồn LaTeX và
+  script nằm ở `research/documents/assets/src/` và `research/scripts/make_report_figures.py`. Hình 5.1 đã vẽ lại bằng SVG, sáu khối, không dùng mã M.
