@@ -1,0 +1,5 @@
+# Host port 5432 is usually taken on this machine; expose the research DB on 15432 instead.
+services:
+  db:
+    ports: !override
+      - "15432:5432"

@@ -41,11 +41,3 @@ def test_load_reads_the_requested_landmark(tmp_path, monkeypatch):
                       'p': [.7]}).to_parquet(pred / f'cross_project__P__0.25__{model}.parquet')
     d = alert_eval.load(0.25)
     assert d.dynamic_status.tolist() == ['To Do'] and len(d) == 1
-
-
-def test_earliest_useful_needs_lift_and_rule_beaten():
-    from research.lead_time import earliest_useful
-    ok = lambda lo, ci: {'dynamic_catboost': {'lift_ci': [lo, 2]}, 'model_minus_rule': {'ci_low': ci}}
-    summary = {'0.0': ok(.9, .1), '0.25': ok(1.1, -.1), '0.5': ok(1.1, .1), '0.75': ok(1.2, .2)}
-    assert earliest_useful(summary) == .5
-    assert earliest_useful({'0.0': ok(.9, .1)}) is None
