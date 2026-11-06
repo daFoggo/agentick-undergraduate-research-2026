@@ -86,6 +86,8 @@ def verify(reply, events, key, can_move, inactive_days=99.0):
     if action == 'nudge_owner' and not (
             isinstance(text, str) and 20 <= len(text) <= 600 and key in text and inactive_days >= MIN_SILENT_DAYS
             and not re.search(r'https?://|www\.|@|<[^>]+>', text)
+            and not any(e.get('ref_key') and e['ref_key'].rsplit('-', 1)[0] != key.rsplit('-', 1)[0]
+                        and e['ref_key'] in text for e in events)  # never name an issue of another project
             and all(abs(float(d) - inactive_days) <= 1 for d in re.findall(r'(\d+(?:\.\d+)?)\s+days?', text))):
         action, text = None, None
     return dict(hypotheses=hyps, dropped=len(reply.hypotheses) - len(hyps), unknown=not hyps,

@@ -83,3 +83,14 @@ M0–M12 xong và đã review một lượt; giới hạn còn lại ghi ở [BA
 ## Trang Plane đã khảo sát (2026-11-06)
 
 Làm: tab Analytics riêng (Overview của Plane là thống kê chung, không chứa số liệu AI) và widget ở Home. Your work và Views làm ở M12.
+
+## Hạn chế nghiên cứu hiện tại
+
+Không sửa được trong phạm vi hiện tại; ghi nhận để nêu trong báo cáo (chi tiết từng mục ở [BACKLOG.md](BACKLOG.md)).
+
+- **Chưa có nhãn người, chưa đo độ chính xác của chẩn đoán.** Nguyên nhân, ghi chú `done_not_updated` (khớp từ khóa, khoảng 1/3 lần khớp không phải "đã xong") và ngưỡng `sprint_overload` chưa được kiểm với người chấm; prompt chỉnh trên khoảng 11 ca. Kết quả hiện chỉ là mô tả hệ thống chạy, không phải số đo chất lượng.
+- **Dữ liệu TAWOS thiếu thời gian.** `issue_link` không có thời điểm tạo (liên kết thêm sau t không loại được); 446 liên kết "is dependent of" và 52 "requires" bị bỏ vì không xác định được chiều; số issue trong sprint tại t dùng cột cuối cùng; 5-7% trạng thái/người phụ trách tại t lệch với cột cuối do khác cách ghi.
+- **Người phụ trách bị ẩn danh.** Không ánh xạ được sang người dùng Plane, nên trang Your work chỉ có nội dung khi triển khai thật có người được giao việc.
+- **Chỉ thử trên một dự án (IS) với 81 cảnh báo.** Tín hiệu "chuyển tiếp từ sprint trước" chiếm khoảng một nửa số cảnh báo nên yếu; ghi chú sprint quá tải chưa xuất hiện trên cảnh báo thật (cảnh báo phát ra ở mốc 0-75% của sprint).
+- **Hành động `move_next_cycle` do luật chọn, không do mô hình.** Mô hình chỉ đề xuất nhắc việc hoặc nâng ưu tiên.
+- **Triển khai.** View "Flagged by the risk check" tạo thủ công cho ISP (Plane không có API công khai); thống kê tính bằng Python mỗi lần gọi, đủ cho vài nghìn cảnh báo; cảnh báo spectral còn 8 mục thiếu mô tả.

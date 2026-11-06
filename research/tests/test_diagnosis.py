@@ -85,3 +85,10 @@ def test_a_reminder_needs_two_quiet_days_and_the_right_number_of_days():
     assert diagnose(Fake(nudge), 'X-1', 't', 's', 3.0, EV)[0]['action']['type'] == 'nudge_owner'
     assert diagnose(Fake(nudge), 'X-1', 't', 's', 1.0, EV)[0]['action']['type'] is None   # active a moment ago
     assert diagnose(Fake(nudge), 'X-1', 't', 's', 9.0, EV)[0]['action']['type'] is None   # says 3 days, really 9
+
+
+def test_a_reminder_never_names_an_issue_of_another_project():
+    events = EV + [dict(ev('o-2', 'owner'), ref_key='OTHER-9'), dict(ev('o-3', 'owner'), ref_key='X-7')]
+    ask = lambda mention: diagnose(Fake(reply(action='nudge_owner', text=f'Hi, X-1 is quiet for 3 days; did {mention} take your time?')),
+                                   'X-1', 't', 's', 3.0, events)[0]['action']['type']  # noqa: E731
+    assert ask('OTHER-9') is None and ask('X-7') == 'nudge_owner'  # same project is fine
