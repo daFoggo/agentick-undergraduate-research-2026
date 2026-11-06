@@ -46,11 +46,18 @@ def prefix(key: str) -> str:
 
 
 def redact(diagnosis: Diagnosis, issue_key: str) -> Diagnosis:
-    """Evidence about an issue of another project shows only its safe summary (priority, state), never its title or text."""
+    """Evidence about an issue of another project shows only its safe summary (priority, state), never its title or text.
+    The model's own words about it (reason, missing_info) could repeat that text, so they fall back to the label."""
+    hidden = False
     for h in diagnosis.hypotheses:
+        cut = False
         for e in h.evidence:
             if e.ref_key and prefix(e.ref_key) != prefix(issue_key):
-                e.text, e.ref_key = e.safe_text or "an issue in another project", None
+                e.text, e.ref_key, cut = e.safe_text or "an issue in another project", None, True
+        if cut:
+            h.reason, hidden = h.label, True
+    if hidden:
+        diagnosis.missing_info = None
     return diagnosis
 
 

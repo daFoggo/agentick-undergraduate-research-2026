@@ -11,10 +11,11 @@ alert and publishing to Plane and `agentick-backend`. Scope and modules: [../int
 | `artifacts/` | Trained models (`_archive_v2_momentum`), protocol, dataset, runs (git-ignored except `protocol/`) |
 | `documents/`, `papers/`, `slide-template/` | Submitted reports of the earlier direction; to be rewritten, not a source for the current design |
 
-Tests (pandas DLLs are blocked by Windows application control in a local venv, so run them in Docker):
+Tests (pandas DLLs are blocked by Windows application control in a local venv, so run them in Docker; start the DB
+first with `../scripts/stack.sh start`: without `TAWOS_DSN` the collector tests are skipped, not run):
 
 ```bash
-docker run --rm -v "$(pwd -W)":/w -v research-pip-cache:/root/.cache/pip -w /w python:3.12-slim \
+docker run --rm -e TAWOS_DSN=postgresql://tawos:tawos_local_dev@host.docker.internal:15432/tawos \n  -v "$(pwd -W)":/w -v research-pip-cache:/root/.cache/pip -w /w python:3.12-slim \
   sh -c "pip install -q -r requirements-dev.txt && python -m pytest -q"
 ```
 

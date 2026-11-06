@@ -27,20 +27,26 @@ SYSTEM = (
 
 class Hypothesis(BaseModel):
     cause: Literal['pulled_away', 'blocked', 'waiting_person', 'needs_decision', 'unclear_scope', 'carry_over']
-    event_ids: List[str] = Field(min_length=1)
+    event_ids: List[str] = Field(min_length=1, max_length=12)  # the backend stores at most 12 per hypothesis
     reason: str = Field(max_length=400)
 
 
 class Reply(BaseModel):
-    hypotheses: List[Hypothesis] = Field(default_factory=list, max_length=3)
+    hypotheses: List[Hypothesis] = Field(default_factory=list, max_length=6)  # the card keeps the first 3 that hold
     missing_info: Optional[str] = Field(None, max_length=300)
     action: Optional[Literal['raise_priority', 'nudge_owner', 'move_next_cycle']] = None
     nudge_text: Optional[str] = None
 
 
+def _data(text):
+    """User text must not be able to close the <untrusted> block that holds it."""
+    return re.sub(r'(?i)untrusted', '', text)
+
+
 def build_messages(key, title, status, inactive_days, events):
-    lines = "\n".join(f"[{e['id']}] {e['kind']} {e['ts']:%Y-%m-%d}: {e['text']}" for e in events) or "(no events)"
-    user = (f"Issue {key}, status {status}, no activity for {inactive_days:.1f} days.\n<untrusted>\nTitle: {title[:200]}\n"
+    lines = "\n".join(f"[{e['id']}] {e['kind']} {e['ts']:%Y-%m-%d}: {_data(e['text'])}" for e in events) or "(no events)"
+    user = (f"Issue {key}, status {status}, no activity for {inactive_days:.1f} days.\n<untrusted>\n"
+            f"Title: {_data(title[:200])}\n"
             f"{lines}\n</untrusted>")
     return [{'role': 'system', 'content': SYSTEM}, {'role': 'user', 'content': user}]
 
@@ -52,18 +58,35 @@ def _json(content):
     return json.loads(content[start:end + 1])
 
 
-def verify(reply, events, key, can_move):
-    """Card dict. Hypotheses citing ids that were not collected are dropped; a bad action becomes None."""
+MIN_SILENT_DAYS = 2  # a reminder to someone who touched the issue a moment ago is noise
+# what a cause must be able to point at, among the events it cites
+SUPPORT = {
+    'pulled_away': lambda ev: any(e['kind'] == 'owner' for e in ev),
+    'blocked': lambda ev: any(e['kind'] == 'blockers' and ' is open' in e['text'] for e in ev),
+    'carry_over': lambda ev: any(e['id'].startswith('h-carry') for e in ev),
+}
+
+
+def verify(reply, events, key, can_move, inactive_days=99.0):
+    """Card dict. Hypotheses that cite unknown ids, do not fit their cause, or repeat a cause are dropped; a bad action
+    becomes None."""
     by_id = {e['id']: e for e in events}
-    hyps = [dict(cause=h.cause, label=CAUSES[h.cause], reason=h.reason,
-                 evidence=[dict(by_id[i], ts=by_id[i]['ts'].isoformat())
-                           for i in h.event_ids])
-            for h in reply.hypotheses if all(i in by_id for i in h.event_ids)]
+    hyps, seen = [], set()
+    for h in reply.hypotheses:
+        cited = [by_id[i] for i in h.event_ids if i in by_id]
+        ok = len(cited) == len(h.event_ids) and h.cause not in seen and SUPPORT.get(
+            h.cause, lambda ev: any(e['kind'] == 'discussion' for e in ev))(cited)
+        if ok and len(hyps) < 3:
+            seen.add(h.cause)
+            hyps.append(dict(cause=h.cause, label=CAUSES[h.cause], reason=h.reason,
+                             evidence=[dict(e, ts=e['ts'].isoformat()) for e in cited]))
     action, text = reply.action, reply.nudge_text
     if action == 'move_next_cycle' and not can_move:
         action = None
-    if action == 'nudge_owner' and not (isinstance(text, str) and 20 <= len(text) <= 600 and key in text
-                                        and not re.search(r'https?://|www\.|@|<[^>]+>', text)):
+    if action == 'nudge_owner' and not (
+            isinstance(text, str) and 20 <= len(text) <= 600 and key in text and inactive_days >= MIN_SILENT_DAYS
+            and not re.search(r'https?://|www\.|@|<[^>]+>', text)
+            and all(abs(float(d) - inactive_days) <= 1 for d in re.findall(r'(\d+(?:\.\d+)?)\s+days?', text))):
         action, text = None, None
     return dict(hypotheses=hyps, dropped=len(reply.hypotheses) - len(hyps), unknown=not hyps,
                 missing_info=reply.missing_info, action=dict(type=action, text=text if action == 'nudge_owner' else None))
@@ -76,10 +99,7 @@ def diagnose(client, key, title, status, inactive_days, events, can_move=False):
         res = client.complete(build_messages(key, title, status, inactive_days, events), max_tokens=900)
         meta['cost'] = float((res.get('usage') or {}).get('cost') or 0)
         reply = Reply.model_validate(_json(res['choices'][0]['message']['content'] or ''))
-    except (ValidationError, ValueError, KeyError) as exc:  # bad JSON or schema miss
+    except Exception as exc:  # bad JSON, schema miss, client or network error: the card says unknown, the job goes on
         meta['error'] = f'{type(exc).__name__}: {exc}'[:160]
         return dict(hypotheses=[], dropped=0, unknown=True, missing_info=None, action=dict(type=None, text=None)), meta
-    except Exception as exc:  # client or network error: the card says unknown, the job goes on
-        meta['error'] = f'{type(exc).__name__}: {exc}'[:160]
-        return dict(hypotheses=[], dropped=0, unknown=True, missing_info=None, action=dict(type=None, text=None)), meta
-    return verify(reply, events, key, can_move), meta
+    return verify(reply, events, key, can_move, inactive_days), meta

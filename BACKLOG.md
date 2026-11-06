@@ -12,3 +12,5 @@
 | 8 | `.spectral.yaml` lint of the backend OpenAPI not run locally | Only pytest + schemathesis contract tests were run after M4 | Before merging to main (CI runs it) |
 | 9 | `move_next_cycle` is never proposed by the model's card | The rules know the cycles; the model's choice is only used for `nudge_owner` / `raise_priority` | If the card should explain a move |
 | 10 | The diagnosis prompt is tuned on 5 + 6 live cases only | No labelled set (see 6); cost ~0.0001 USD per alert | Report time |
+| 11 | `is dependent of` (446 links) and `requires` (52) left out of the waits-on map | Direction not confirmable from data (creation order is ~50/50) | Only if blockers look incomplete on the live run |
+| 12 | Redaction hides other-project text but not the nudge text the model drafts | The nudge is posted on this issue for people who can see it | If cross-project links ever appear (0 of 9159 now) |

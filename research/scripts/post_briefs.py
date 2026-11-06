@@ -24,6 +24,7 @@ from datetime import date, timezone
 import pandas as pd
 import psycopg
 
+from app.services.brief import final_action, why
 from app.services.diagnosis import diagnose
 from app.services.openrouter_client import OpenRouterClient
 from research.alert_actions import choose_action, next_cycle
@@ -92,18 +93,6 @@ def retire(w, label_id):
 PROPOSED = {'raise_priority': 'raise the priority to High.',
             'nudge_owner': 'post a reminder asking for a status update (its text is on the alert card).',
             'move_next_cycle': 'move it to the next cycle, since little of this one is left.'}
-
-
-def why(card):
-    if card['unknown']:
-        ask = card['missing_info'] or 'Ask the assignee what is holding it up.'
-        return f"<p><b>Why it may be late:</b> not clear from the recorded activity. {html.escape(ask)}</p>"
-    out = '<p><b>Why it may be late</b> (each point cites what was recorded before the alert)</p><ul>'
-    for h in card['hypotheses']:
-        cites = ''.join(f"<li><i>{html.escape(e['text'][:300])}</i></li>" for e in h['evidence'][:4])
-        out += f"<li><b>{html.escape(h['label'])}</b>: {html.escape(h['reason'])}<ul>{cites}</ul></li>"
-    ask = f"<p>Still unknown: {html.escape(card['missing_info'])}</p>" if card['missing_info'] else ''
-    return out + '</ul>' + ask
 
 
 def render(r, size, status, inactive, events, action, card, sprint_note):
@@ -191,11 +180,7 @@ for w in items:
         agent_cost += meta['cost']
         if meta['error']:
             print('diagnosis failed', key, meta['error'])
-        proposed = card['action']['type']
-        if proposed == 'nudge_owner':
-            action = {'action_type': 'nudge_owner', 'action_text': card['action']['text']}
-        elif proposed == 'raise_priority':
-            action = {'action_type': 'raise_priority'}  # move_next_cycle is left to the rules: they know the cycles
+        action = final_action(action, card)
     sprint_note = next((e['text'] for e in evidence if e['kind'] == 'sprint'), '')
     brief = plane('POST', P + f"/work-items/{w['id']}/comments/", {'comment_html': render(
         r, sprint_size[(r['sprint_id'], r['mark'])], row['dynamic_status'], inactive, events, action, card,

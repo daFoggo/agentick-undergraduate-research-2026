@@ -266,8 +266,8 @@ def _card(ref_key):
           "safe_text": "another issue, priority High"}
     mine = {"id": "c-1", "kind": "discussion", "ts": "2020-01-04T00:00:00+00:00", "text": "user#2: waiting"}
     return {"hypotheses": [{"cause": "pulled_away", "label": "the assignee is pulled to other work",
-                            "reason": "moved a High issue", "evidence": [ev, mine]}],
-            "dropped": 0, "unknown": False, "missing_info": None,
+                            "reason": 'fixed OTHER-9 "secret title"', "evidence": [ev, mine]}],
+            "dropped": 0, "unknown": False, "missing_info": "ask about secret title",
             "action": {"type": "nudge_owner", "text": "Hi, IS-1 looks stalled; any update?"}}
 
 
@@ -276,6 +276,8 @@ def test_evidence_about_an_issue_of_another_project_is_redacted_for_the_viewer(c
     ev = client.get(f"/api/v1/alerts/{W1}", headers=OK).json()["diagnosis"]["hypotheses"][0]["evidence"]
     assert ev[0]["text"] == "another issue, priority High" and ev[0]["ref_key"] is None
     assert ev[1]["text"] == "user#2: waiting"
+    body = client.get(f"/api/v1/alerts/{W1}", headers=OK).json()["diagnosis"]
+    assert "secret title" not in str(body)  # reason and missing_info are cut too
     client.put("/api/v1/alerts", json=[{**ALERT, "diagnosis": _card("IS-9")}], headers=INGEST)
     ev = client.get(f"/api/v1/alerts/{W1}", headers=OK).json()["diagnosis"]["hypotheses"][0]["evidence"]
     assert "secret title" in ev[0]["text"]  # same project: shown in full

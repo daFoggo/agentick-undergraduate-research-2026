@@ -4,9 +4,10 @@
 """
 
 # issue_link.description (not name: names are inconsistent) read from the row's own issue_id, meaning "this issue waits
-# on target_issue_id". Symmetric rows ("Blocked", "Dependent") carry no direction and are left out.
+# on target_issue_id". Left out: symmetric rows ("Blocked", "Dependent") and 'is dependent of' (446), 'requires' (52),
+# whose direction could not be confirmed (see BACKLOG #9).
 WAITS_ON = frozenset({
-    'is blocked by', 'depends on', 'depends upon', 'is dependent of', 'requires',
+    'is blocked by', 'depends on', 'depends upon',
     'fs-depends on', 'ff-depends on', 'ss-depends on', 'has to be done after', 'is triggered by'})
 _FIELDS = ('assignee', 'priority', 'status', 'sprint')
 

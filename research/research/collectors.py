@@ -55,19 +55,20 @@ def blockers(cur, issue_id, t, depth=2):
 
 
 def sprint(cur, issue_id, t):
-    cur.execute("select s.id, s.name, s.start_date, s.end_date from tawos_raw.issue i join tawos_raw.sprint s on "
-                "s.id=i.sprint_id where i.id=%s", (issue_id,))
-    row = cur.fetchone()
-    if not row:
+    """The sprint the issue was in at t (from the log, not the final column); dates may be missing in TAWOS."""
+    ids = state_at(cur, issue_id, t)['sprint_ids']
+    if not ids:
         return []
-    sid, name, start, end = row
+    cur.execute("select id, name, start_date, end_date from tawos_raw.sprint where id=any(%s) "
+                "order by start_date desc nulls last limit 1", (list(ids),))
+    sid, name, start, end = cur.fetchone()
     cur.execute("select count(*), count(*) filter (where resolution_date<=%s) from tawos_raw.issue where sprint_id=%s "
                 "and creation_date<=%s", (t, sid, t))  # shortcut: final membership, see BACKLOG #2
     total, done = cur.fetchone()
-    span = (end - start).total_seconds()
-    elapsed = min(max((t - start).total_seconds() / span, 0), 1) if span > 0 else 1
-    return [_ev(f's-{sid}', 'sprint', min(start, t), f'{name}: {elapsed:.0%} of the sprint elapsed, {done} of {total} issues '
-                                              f'resolved, {total - done} still open')]
+    span = (end - start).total_seconds() if start and end else 0
+    elapsed = f'{min(max((t - start).total_seconds() / span, 0), 1):.0%} of the sprint elapsed, ' if span > 0 else ''
+    return [_ev(f's-{sid}', 'sprint', min(start, t) if start else t,
+                f'{name}: {elapsed}{done} of {total} issues resolved, {total - done} still open')]
 
 
 def history(cur, issue_id, t, n=8):
