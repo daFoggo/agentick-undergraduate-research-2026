@@ -9,7 +9,7 @@
 | 5 | Evidence of other issues shows titles without a per-viewer check in the job | Filter happens in the backend (M4) per viewer | M4 |
 | 6 | Cause labels are not validated against human labels | No labelled set; out of scope for now | Report time |
 | 7 | ~~Old modules kept only for scoring~~ closed 2026-11-06: every module in `research/research` and `app/services` is imported by scoring or the diagnosis path | - | - |
-| 8 | Spectral lint run 2026-11-06: 0 errors, 8 warnings (missing operation descriptions and `servers`, on all routes). `tsc` for the web file not run: `plane/` has no `node_modules`, a typecheck needs a full pnpm install; the card was checked in the browser instead | Warnings: if CI turns them into errors. tsc: when the web app is built from source | 
+| 8 | Spectral lint run 2026-11-06: 0 errors, 8 warnings (missing operation descriptions and `servers`, on all routes). `tsc` run 2026-11-06 in Docker (node 22, pnpm, built workspace packages): 0 errors on the whole web app after widening the `AnalyticsTab` key type | Warnings: if CI turns them into errors. tsc: when the web app is built from source | 
 | 9 | `move_next_cycle` is never proposed by the model's card | The rules know the cycles; the model's choice is only used for `nudge_owner` / `raise_priority` | If the card should explain a move |
 | 10 | The diagnosis prompt is tuned on 5 + 6 live cases only | No labelled set (see 6); cost ~0.0001 USD per alert | Report time |
 | 11 | `is dependent of` (446 links) and `requires` (52) left out of the waits-on map | Direction not confirmable from data (creation order is ~50/50) | Only if blockers look incomplete on the live run |

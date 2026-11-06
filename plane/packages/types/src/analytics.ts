@@ -40,7 +40,7 @@ export enum ChartYAxisMetric {
 export type TAnalyticsTabsBase = "overview" | "work-items";
 export type TAnalyticsGraphsBase = "projects" | "work-items" | "custom-work-items";
 export interface AnalyticsTab {
-  key: TAnalyticsTabsBase;
+  key: TAnalyticsTabsBase | "delivery-risk"; // the risk tab has no insight fields, so it stays out of TAnalyticsTabsBase
   label: string;
   content: React.FC;
   isDisabled: boolean;
