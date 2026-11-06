@@ -75,7 +75,7 @@ def summary(
         tally(projects.setdefault(alert.project_id, ProjectRow(project_id=alert.project_id)), state)
         d = alert.diagnosis
         top = d["hypotheses"][0]["cause"] if d and d.get("hypotheses") else None
-        causes[top or alert.cause or "unknown"] += 1
+        causes[top or alert.cause or ("unknown" if d else "undiagnosed")] += 1
         if not d:
             continue
         diagnosed += 1
@@ -153,6 +153,7 @@ def pending(
                 rank=a.rank,
                 size=a.size,
                 action_type=a.action_type,
+                diagnosed=bool(a.diagnosis),
                 cause_label=top.label if top else None,
                 reason=top.reason if top else None,
             )

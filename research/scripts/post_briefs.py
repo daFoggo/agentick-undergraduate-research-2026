@@ -143,9 +143,10 @@ field_list = ','.join(f"'{f}'" for f in FIELDS)
 
 posted = retired = 0
 published = []
+MODEL = os.environ.get('OPENROUTER_MODEL', 'openai/gpt-6-luna')
 try:  # the model is on by default; without a key, or with AGENT=0, the card says unknown and the rules choose
     agent = None if os.environ.get('AGENT') == '0' else OpenRouterClient(
-        model=os.environ.get('OPENROUTER_MODEL', 'openai/gpt-6-luna'), budget=float(os.environ.get('AGENT_BUDGET_USD', .5)))
+        model=MODEL, budget=float(os.environ.get('AGENT_BUDGET_USD', .5)))
 except Exception as exc:
     print('agent off, rules only:', exc)
     agent = None
@@ -178,6 +179,7 @@ for w in items:
     if agent:
         title = tawos(f"select title from tawos_raw.issue where id={issue_id}")[0]['title'] or ''
         card, meta = diagnose(agent, key, title, row['dynamic_status'], inactive, evidence, can_move=bool(next_id))
+        card['meta'] = dict(model=MODEL, cost=meta['cost'], error=meta['error'])
         agent_stats['unknown' if card['unknown'] else card['hypotheses'][0]['cause']] += 1
         agent_cost += meta['cost']
         if meta['error']:

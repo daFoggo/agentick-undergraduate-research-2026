@@ -18,6 +18,7 @@ import { StickiesWidget } from "../stickies/widget";
 import { HomeLoader, NoProjectsEmptyState, RecentActivityWidget } from "./widgets";
 import { DashboardQuickLinks } from "./widgets/links";
 import { ManageWidgetsModal } from "./widgets/manage";
+import { RiskPendingWidget } from "./widgets/risk-pending";
 
 export const HOME_WIDGETS_LIST: {
   [key in THomeWidgetKeys]: {
@@ -80,6 +81,7 @@ export const DashboardWidgets = observer(function DashboardWidgets() {
 
       {isAnyWidgetEnabled ? (
         <div className="flex flex-col gap-12 pt-3 pb-4">
+          {!isWikiApp && <RiskPendingWidget workspaceSlug={workspaceSlug.toString()} />}
           {orderedWidgets.map((key) => {
             const WidgetComponent = HOME_WIDGETS_LIST[key]?.component;
             const isEnabled = widgetsMap[key]?.is_enabled;
