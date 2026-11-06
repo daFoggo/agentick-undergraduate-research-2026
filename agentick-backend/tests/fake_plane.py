@@ -21,6 +21,7 @@ class FakePlane:
         self.comments: list[str] = []  # html of every comment the bot posted
         self.deleted: list[str] = []  # ids of comments the bot deleted
         self.projects: list[str] = []  # project ids Plane lists for the signed-in user
+        self.fail_items: set[str] = set()  # work items Plane refuses to move to a cycle
 
         def handler(request: httpx.Request) -> httpx.Response:
             path, cookie = request.url.path, request.headers.get("cookie")
@@ -41,11 +42,10 @@ class FakePlane:
             if path.startswith("/api/workspaces/"):  # Plane's internal API: the access check
                 return httpx.Response(200 if cookie == "session-id=ok" else 403, json={})
             if request.method == "POST" and "/cycles/" in path and path.endswith("/cycle-issues/"):
-                if self.cycle_fails:
+                body = json.loads(request.content)
+                if self.cycle_fails or self.fail_items & set(body["issues"]):
                     return httpx.Response(400)  # Plane refuses a cycle that has finished
-                self.moves.append(
-                    (path.split("/cycles/")[1].split("/")[0], json.loads(request.content))
-                )
+                self.moves.append((path.split("/cycles/")[1].split("/")[0], body))
                 return httpx.Response(200, json={})
             if request.method == "POST" and path.endswith("/comments/"):
                 self.comments.append(json.loads(request.content)["comment_html"])
