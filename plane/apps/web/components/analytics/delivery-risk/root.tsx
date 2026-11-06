@@ -5,6 +5,7 @@
 import { observer } from "mobx-react";
 import useSWR from "swr";
 import { useTranslation } from "@plane/i18n";
+import { useAnalytics } from "@/hooks/store/use-analytics";
 import { useProject } from "@/hooks/store/use-project";
 import AnalyticsWrapper from "../analytics-wrapper";
 import AnalyticsSectionWrapper from "../analytics-section-wrapper";
@@ -46,7 +47,11 @@ const pct = (n: number, d: number) => (d ? `${Math.round((n / d) * 100)}%` : "â€
 export const DeliveryRisk = observer(function DeliveryRisk() {
   const { t } = useTranslation();
   const { getPartialProjectById } = useProject();
-  const { data, error, isLoading } = useSWR("risk-insights-summary", () => fetchRiskInsights<TRiskSummary>("summary"));
+  const { selectedProjects } = useAnalytics(); // the "All projects" filter of the Analytics header
+  const query = selectedProjects.length ? `?${selectedProjects.map((id) => `project_ids=${id}`).join("&")}` : "";
+  const { data, error, isLoading } = useSWR(`risk-insights-summary${query}`, () =>
+    fetchRiskInsights<TRiskSummary>(`summary${query}`)
+  );
   // "action_nudge_owner" -> its translation; an unknown key (a cause added later) shows as the raw key
   const label = (prefix: string, key: string) => {
     const k = `risk_insights.${prefix}_${key}`;

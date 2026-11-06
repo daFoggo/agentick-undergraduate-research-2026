@@ -3,7 +3,7 @@ from collections import Counter, defaultdict
 from datetime import UTC, datetime, timedelta
 from typing import Annotated
 
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, Query
 from sqlalchemy import func, select
 from sqlalchemy.orm import Session
 
@@ -61,10 +61,18 @@ def tally(counts: Counts, state: str) -> None:
     responses=ERRORS,
 )
 def summary(
-    session: PlaneSession, plane: PlaneDep, db: Annotated[Session, Depends(get_db)]
+    session: PlaneSession,
+    plane: PlaneDep,
+    db: Annotated[Session, Depends(get_db)],
+    project_ids: Annotated[list[uuid.UUID] | None, Query()] = None,
 ) -> Summary:
-    """Counted over the projects Plane lets the caller see, never another team's alerts."""
-    rows = states(db, plane.visible_project_ids(session))
+    """Counted over the projects Plane lets the caller see, never another team's alerts.
+
+    project_ids narrows that to the chosen projects; one the caller cannot see is ignored."""
+    visible_projects = plane.visible_project_ids(session)
+    if project_ids:
+        visible_projects = [p for p in visible_projects if uuid.UUID(p) in project_ids]
+    rows = states(db, visible_projects)
     total, causes, actions, projects = Counts(), Counter(), defaultdict(Counts), defaultdict(Counts)
     kept = dropped = diagnosed = unknown = failed = 0
     notes, kinds, models, cost = Counter(), Counter(), Counter(), 0.0

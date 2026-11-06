@@ -415,3 +415,19 @@ def test_pending_can_be_limited_to_one_assignee(client, plane):
     out = client.get(f"/api/v1/insights/pending?assignee={person}", headers=OK).json()
     assert [i["issue_key"] for i in out] == ["IS-1"]
     assert len(client.get("/api/v1/insights/pending", headers=OK).json()) == 2
+
+
+def test_summary_can_be_narrowed_to_chosen_projects_but_never_widened(client, plane):
+    a, b, other = str(uuid.uuid4()), str(uuid.uuid4()), str(uuid.uuid4())
+    plane.projects = [a, b]
+    client.put(
+        "/api/v1/alerts",
+        json=[_alert(a, "A-1", 0.5), _alert(b, "B-1", 0.5), _alert(other, "C-1", 0.5)],
+        headers=INGEST,
+    )
+
+    def total(q):
+        return client.get(f"/api/v1/insights/summary{q}", headers=OK).json()["alerts"]["total"]
+
+    assert total("") == 2 and total(f"?project_ids={a}") == 1
+    assert total(f"?project_ids={other}") == 0  # not visible: ignored, not added
