@@ -1,58 +1,129 @@
-\section{Bối cảnh và bài toán}
+\section{Bối cảnh, bài toán và kiến trúc hệ thống}
 
-\begin{frame}{Bối cảnh và bài toán}
-  \footnotesize
-  \begin{itemize}
-    \setlength{\itemsep}{2pt}
-    \item \alert{Vấn đề:} \alert{47,21\%} cặp issue--sprint không hoàn thành đúng hạn;
-          số cảnh báo mỗi sprint phải giới hạn.
-    \item \alert{Bài toán:} tại mốc $t\in\{0, 25, 50, 75\%\}$ sprint, ước lượng
-          $P(\text{không hoàn thành}\mid\text{thông tin đến } t)$, dữ liệu tái dựng \emph{as-of}.
-    \item \alert{RQ1:} lịch sử thực thi có giúp dự báo tốt hơn thông tin đầu sprint?\\
-          \alert{RQ2:} có giữ được trên sprint tương lai và dự án chưa thấy?\\
-          \alert{RQ3:} với số cảnh báo giới hạn, mô hình nào bắt được nhiều issue rủi ro hơn?
-    \item \alert{Giả thuyết chính (đăng ký trước):} tại mốc 50\%, cùng ngân sách,
-          mô hình \emph{động} có recall cao hơn mô hình \emph{tĩnh}.
-    \item \alert{Hai phần:} mô hình chọn \emph{issue nào} cần chú ý; agent giải thích
-          \emph{vì sao}, kèm bằng chứng.
-  \end{itemize}
+% Slide 2
+\begin{frame}{Bối cảnh thực tế và Bài toán nghiên cứu}
+  \scriptsize
+  \begin{columns}[T,onlytextwidth]
+    \begin{column}{0.48\textwidth}
+      \begin{block}{Thực trạng quản lý tiến độ trong Sprint}
+        \begin{itemize}
+          \setlength{\itemsep}{2pt}
+          \item Qua 18.322 cặp issue-sprint thuộc 14 dự án Agile trong bộ dữ liệu Jira TAWOS [6], có \alert{47,21\%} trường hợp kết thúc sprint khi issue vẫn chưa hoàn thành.
+          \item Nhật ký thao tác lưu đủ dấu hiệu trễ hạn (trạng thái đứng yên nhiều ngày, người phụ trách bị kéo sang việc khác, vướng chuỗi chặn, thảo luận bỏ ngỏ), nhưng trưởng nhóm khó đọc thủ công từng issue mỗi ngày.
+          \item \alert{Khoảng trống từ điểm số đến hành động:}
+            \begin{itemize}
+              \scriptsize
+              \item Điểm xác suất đơn lẻ chưa cho biết \emph{vì sao} issue gặp rủi ro và \emph{nên xử lý thế nào}.
+              \item Ước lượng trực tiếp story point từ 20 issue tương tự (thực nghiệm E6 trên 5 dự án) có $\text{MAE} = 1{,}61$ so với $1{,}71$ của trung vị dự án (CI 95\% $[-0{,}24; +0{,}01]$ chứa 0) $\Rightarrow$ không vượt mức trung vị.
+            \end{itemize}
+        \end{itemize}
+      \end{block}
+    \end{column}
+    \begin{column}{0.49\textwidth}
+      \begin{alertblock}{Bài toán đặt ra tại mốc $t \in \{0\%, 25\%, 50\%, 75\%\}$ sprint}
+        Hệ thống tích hợp trên nền tảng quản lý dự án \textbf{Plane} trả lời 3 câu hỏi ở hai cấp độ:
+        \begin{enumerate}
+          \setlength{\itemsep}{2.5pt}
+          \item \textbf{Phát hiện sớm theo ngân sách (Issue nào?):} Chấm điểm $p(t) \in [0,1]$ cho $n$ issue đang mở từ tiến độ thực thi trước mốc $t$; phát tối đa $K = \lceil 0{,}2n \rceil$ cảnh báo.
+          \item \textbf{Chẩn đoán có bằng chứng \& Hành động (Vì sao, làm gì?):} Chỉ ra nguyên nhân trong tập đóng 6 nhãn trỏ trực tiếp tới mã sự kiện lịch sử (\texttt{event\_id}); đề xuất hành động đóng chờ người dùng \alert{Duyệt / Bỏ qua / Hoàn tác}.
+          \item \textbf{Lập kế hoạch cấp Sprint \& Hỏi đáp:} Ước lượng số không xong dự kiến $b$ của cả sprint để lập tập chuyển sang sprint kế tiếp; cung cấp \textbf{agent hỏi đáp chỉ đọc}.
+        \end{enumerate}
+      \end{alertblock}
+    \end{column}
+  \end{columns}
 \end{frame}
 
-\begin{frame}{Dữ liệu TAWOS v1.1 và thiết kế đánh giá}
-  \footnotesize
-  \begin{columns}[T,onlytextwidth]
-    \begin{column}{0.44\textwidth}
-      \renewcommand{\arraystretch}{1.25}
-      \begin{tabular}{l|r|r}
-        & \textbf{Gốc} & \textbf{Đánh giá} \\
-        \hline
-        Dự án & 39 & 14 \\
-        Sprint & 4.594 & 1.962 \\
-        Issue / cặp & 458.232 & 18.322 \\
-      \end{tabular}
+% Slide 3
+\begin{frame}{Bốn câu hỏi nghiên cứu (RQ1 - RQ4) và Đóng góp thực nghiệm}
+  \scriptsize
+  \setlength{\tabcolsep}{4pt}
+  \renewcommand{\arraystretch}{1.28}
+  \begin{tabular}{L{0.07\textwidth}|L{0.28\textwidth}|L{0.31\textwidth}|L{0.28\textwidth}}
+    \textbf{RQ} & \textbf{Câu hỏi nghiên cứu} & \textbf{Thiết kế đo \& Quy tắc kết luận} & \textbf{Đóng góp thực nghiệm chính} \\
+    \hline
+    \textbf{RQ1} & Điểm phát hiện sớm có đủ tin cậy để xếp thứ tự cảnh báo dưới ngân sách $K = \lceil 0{,}2n \rceil$ không? & So sánh CatBoost động với mô hình tĩnh và quy tắc đơn giản trên 14 dự án (1.962 sprint). Có giá trị khi CI 95\% của hiệu số $>0$ và $\text{Lift}_K > 1$. & Khẳng định tiến độ thực thi giúp tăng Recall từ mốc 25\%; tại mốc 50\% trên issue còn mở đạt $\text{Precision} = 76{,}3\%$ ($\text{Lift} = 1{,}14$). \\
+    \hline
+    \textbf{RQ2} & Chẩn đoán của hệ thống có bám sát bằng chứng lịch sử và khớp với nhãn của người chấm không? & Đặt LLM giữa bộ thu thập SQL ($\le t$) và \texttt{verifier}. Đo độ đồng thuận $\kappa$ trên 81 cảnh báo và 60 issue held-out (dự án IS). & 0 giả thuyết bịa sự kiện lọt lên thẻ; nhãn người chấm nằm trong Top-3 giả thuyết của thẻ ở 96,9\% - 97,7\% trường hợp ($\kappa = 0{,}50 \to 0{,}57$). \\
+    \hline
+    \textbf{RQ3} & Công thức thống kê cấp sprint có ước lượng sát số không xong dự kiến và chọn đúng tập chuyển không? & Backtest trên 60 sprint đã kết thúc của dự án IS tại mốc 50\% thời lượng (412 issue đang mở, 201 issue không xong). & Ước lượng quy mô tồn đọng sát thực tế ($\text{MAE} = 1{,}76$, $\text{Bias} = -0{,}05$), đáng tin cậy hơn chọn đích danh từng issue ở độ sâu nửa sprint. \\
+    \hline
+    \textbf{RQ4} & Agent hỏi đáp có trả lời đúng phạm vi, chống tiêm lệnh và giữ cô lập quyền xem dự án không? & Kiểm thử tự động 25 câu hỏi kịch bản (trong phạm vi, ngoài phạm vi, đòi ghi dữ liệu, tiêm lệnh) trên dự án ISP. & 25/25 câu xử lý đúng thiết kế; 0 lần lộ dữ liệu chéo dự án, 0 thao tác tự ý ghi, 0 lần bịa mã issue ngoài kết quả công cụ. \\
+  \end{tabular}
+\end{frame}
 
-      \vspace{0.3cm}
+% Slide 4
+\begin{frame}{Dữ liệu TAWOS v1.1 và Quy tắc cắt tại mốc $t$ (Chống rò rỉ tương lai)}
+  \scriptsize
+  \begin{columns}[T,onlytextwidth]
+    \begin{column}{0.48\textwidth}
+      \textbf{1. Bộ dữ liệu TAWOS v1.1 [6] trên PostgreSQL}
       \begin{itemize}
-        \setlength{\itemsep}{3pt}
-        \item \alert{Nhãn:} trạng thái tại ngày kết thúc sprint không thuộc
-              \{Done, Resolved, Closed, Complete\}.
-        \item Kiểm tra chéo nhãn bằng SQL độc lập trên 765 cặp.
+        \setlength{\itemsep}{1.5pt}
+        \item Dữ liệu gốc: 39 dự án, 4.594 sprint, 458.232 issue và 9.253.419 dòng nhật ký thay đổi (\texttt{change\_log}).
+        \item Đơn vị phân tích: một \textbf{cặp issue-sprint}; nhãn ``không xong'' ($y = 1$) khi trạng thái cuối sprint $\notin \{\text{done, resolved, closed, complete}\}$.
+      \end{itemize}
+      \vspace{0.08cm}
+      \setlength{\tabcolsep}{4pt}
+      \renewcommand{\arraystretch}{1.18}
+      \begin{tabular}{L{0.62\linewidth}|R{0.31\linewidth}}
+        \textbf{Bước lọc dữ liệu (khóa trước)} & \textbf{Số lượng} \\
+        \hline
+        Cặp có thông tin thành viên sprint & 28.746 \\
+        Gán nhãn kết quả rõ ràng & 22.147 (77,04\%) \\
+        Tổng điểm cắt (nhân 4 mốc $t$) & 88.588 \\
+        \alert{Tập đánh giá (14 dự án, 1.962 sprint)} & \alert{18.322 cặp} \\
+      \end{tabular}
+      \vspace{0.08cm}
+      \begin{itemize}
+        \setlength{\itemsep}{1.5pt}
+        \item Khối chẩn đoán, kế hoạch sprint và giao diện Plane triển khai trên dự án \textbf{IS} (Indy SDK của Hyperledger, nhập vào Plane dưới mã \textbf{ISP}).
       \end{itemize}
     \end{column}
-    \begin{column}{0.52\textwidth}
-      \alert{\textbf{Temporal} (sprint tương lai)}\\
-      Train trên sprint cũ, test trên sprint mới hơn.\\[0.1cm]
-      \renewcommand{\arraystretch}{1.15}
-      \begin{tabular}{l|r|r|r}
-        & Train & Validation & Test \\
-        \hline
-        Cặp & 11.500 & 3.401 & 3.293 \\
-      \end{tabular}\\[0.1cm]
-      Vùng \emph{purge} (128 cặp) tách train và test để tránh rò rỉ.
+    \begin{column}{0.49\textwidth}
+      \textbf{2. Vấn đề rò rỉ thời gian [9] và Quy tắc cắt tại mốc $t$}
+      \begin{itemize}
+        \setlength{\itemsep}{1.5pt}
+        \item Trên bảng \texttt{issue} của Jira/TAWOS, các cột \texttt{status}, \texttt{priority}, \texttt{assignee\_id}, \texttt{sprint\_id} lưu \alert{giá trị cuối cùng sau khi issue đã đóng}. Đọc trực tiếp các cột này tại mốc $t$ sẽ gây rò rỉ thông tin tương lai.
+        \item \textbf{Giải pháp:} Tái dựng trạng thái của từng issue tại mốc $t$ từ bảng \texttt{change\_log}, chỉ lấy bản ghi cập nhật cuối cùng có dấu thời gian $\le t$.
+      \end{itemize}
+      \vspace{0.1cm}
+      \centering
+      \includegraphics[max width=0.98\linewidth,max height=0.36\textheight,keepaspectratio]{fig_3_1_moc_t.png}
+      \par\vspace{0.04cm}
+      {\tiny Hình: Mọi đặc trưng của CatBoost và sự kiện cấp cho LLM đều chỉ lấy ở nửa bên trái mốc $t$ (có unit test kiểm chứng tự động).}
+    \end{column}
+  \end{columns}
+\end{frame}
 
-      \vspace{0.35cm}
-      \alert{\textbf{Cross-project} (dự án chưa thấy)}\\
-      Lần lượt giữ 1 trong 14 dự án làm test, train trên 13 dự án còn lại.
+% Slide 5
+\begin{frame}{Kiến trúc tổng thể 6 khối chức năng và 7 bất biến an toàn}
+  \scriptsize
+  \begin{columns}[T,onlytextwidth]
+    \begin{column}{0.53\textwidth}
+      \centering
+      \includegraphics[max width=\linewidth,max height=0.48\textheight,keepaspectratio]{fig_5_1_kien_truc.png}
+      \par\vspace{0.08cm}
+      \raggedright
+      \begin{itemize}
+        \setlength{\itemsep}{1.5pt}
+        \item \textbf{Luồng dữ liệu một chiều:} Khối 2 (chẩn đoán) và Khối 3 (kế hoạch sprint) chạy nền theo lô (batch jobs); Khối 4 (FastAPI + PostgreSQL 16) tách biệt với ứng dụng đích \textbf{Plane} (Khối 5).
+        \item \alert{Mũi tên đỏ duy nhất:} Dịch vụ risk chỉ gọi API ghi vào Plane khi người dùng bấm \textbf{Duyệt} (hoặc \textbf{Hoàn tác}) dưới quyền của chính phiên đăng nhập đó.
+      \end{itemize}
+    \end{column}
+    \begin{column}{0.45\textwidth}
+      \setlength{\tabcolsep}{3pt}
+      \renewcommand{\arraystretch}{1.18}
+      \begin{tabular}{L{0.34\linewidth}|L{0.61\linewidth}}
+        \textbf{Bất biến an toàn} & \textbf{Cơ chế bảo đảm bằng code} \\
+        \hline
+        1. Cắt tại mốc $t$ & Tái dựng trạng thái từ \texttt{change\_log} $\le t$; chặn sự kiện tương lai. \\
+        2. Bám bằng chứng & \texttt{Verifier} loại bỏ mọi giả thuyết không trỏ tới \texttt{event\_id} có thật. \\
+        3. LLM không ghi & LLM chỉ sinh đề xuất JSON; mọi thao tác sửa Plane cần người dùng bấm Duyệt. \\
+        4. Dữ liệu không tin cậy & Bình luận và tiêu đề bọc trong thẻ \texttt{<untrusted>}; xóa thẻ đóng giả mạo. \\
+        5. Cô lập quyền xem & Ẩn tiêu đề issue liên quan và lọc thống kê theo quyền dự án trên Plane. \\
+        6. Số liệu do code tính & Điểm rủi ro $p(t)$, số không xong dự kiến $b$ và tập chuyển tính bằng thuật toán. \\
+        7. Hành động đóng & Duyệt đơn lẻ/theo lô chỉ đi qua 3 thao tác đóng; agent hỏi đáp chỉ có công cụ đọc. \\
+      \end{tabular}
     \end{column}
   \end{columns}
 \end{frame}

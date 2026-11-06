@@ -1,14 +1,12 @@
-# Báo cáo tiến độ: Dự báo sớm issue không hoàn thành trong sprint
+# Báo cáo tổng kết: Nghiên cứu mô hình đánh giá rủi ro trễ hạn công việc trong sprint và xây dựng agent hỗ trợ can thiệp sớm
 
-Slide Beamer dùng `theme.tex` và các asset của template gốc.
-Build bằng XeLaTeX (theme dùng `fontspec` với Times New Roman):
+Bộ slide Beamer (20 slide) sử dụng `theme.tex` của Học viện Công nghệ Bưu chính Viễn thông / Viện Khoa học Kỹ thuật Bưu điện.
+Build bằng XeLaTeX (`fontspec` với Times New Roman):
 
 ```bash
-latexmk -xelatex main.tex
+xelatex -interaction=nonstopmode main.tex
 ```
 
-- Nội dung nằm trong `sections/`; lời nói cho từng slide nằm trong `script.md`.
-- Hình kết quả được chép từ `artifacts/results/` sang `assets/results/`.
-- Số liệu lấy từ `artifacts/results/` và `artifacts/agent_extension/`, là benchmark trên TAWOS v1.1. Chưa có dữ liệu từ Agentick.
-- Thuyết minh đi kèm: `documents/Thuyet_minh_bao_cao_tien_do.md` (bản PDF cùng tên).
-- `assets/demo/` và `annobot-experiment-result.pdf` là phần còn lại của template AnnoBot, slide hiện tại không dùng.
+- Nội dung từng phần nằm trong `sections/01-setup.tex` đến `sections/05-next.tex`; kịch bản thuyết trình chi tiết cho từng slide nằm trong `script.md`.
+- Các hình ảnh kiến trúc, giao diện Plane và biểu đồ thực nghiệm được tham chiếu trực tiếp từ `../documents/assets/`.
+- Toàn bộ số liệu và thuật ngữ đồng bộ 100% với báo cáo tổng kết `../documents/Bao_cao_tong_ket_de_tai_v2.md`.

@@ -1,97 +1,73 @@
-\begin{frame}{Giới hạn}
-  \footnotesize
-  \begin{enumerate}
-    \setlength{\itemsep}{3pt}
-    \item \alert{Chưa triển khai thực nghiệm:} agent chưa tích hợp vào Agentick,
-          mọi kết quả đều từ benchmark TAWOS.
-    \item Trên issue còn mở, cải thiện chỉ $\sim$2--2,6 điểm.
-    \item Ngân sách ``20\%'' thực tế cao hơn 20\%.
-    \item Chưa chứng minh ML hơn quy tắc đơn giản (temporal).
-    \item Xác suất không chuyển giao giữa dự án.
-    \item Phân tích phân bổ cảnh báo và một số so sánh là post-hoc.
-    \item Mô phỏng không chứng minh cảnh báo làm giảm trễ.
-  \end{enumerate}
+\section{Thảo luận, Kết luận và Hướng phát triển}
+
+% Slide 18
+\begin{frame}{Thảo luận tổng hợp và Các mối đe dọa tính hợp lệ (Threats to Validity)}
+  \scriptsize
+  \begin{block}{Nhận định xuyên suốt từ thực nghiệm RQ1 - RQ4}
+    Các bước dựa trên \textbf{phép đếm thống kê ở cấp tập hợp} (ước lượng số không xong dự kiến $b$ của sprint với $\text{MAE} = 1{,}76$; xếp hạng nhóm 20\% rủi ro cao nhất với $\text{Lift} = 1{,}14$) và \textbf{kiểm tra cấu trúc bằng code} (\texttt{verifier} chặn 100\% giả thuyết bịa \texttt{event\_id}; bao phủ 96,9\% - 97,7\% nhãn người chấm) đạt độ tin cậy cao hơn những bước đòi hỏi phân biệt từng issue ở giữa bảng xếp hạng hoặc suy luận ngữ nghĩa ẩn (\texttt{unclear\_scope}).
+  \end{block}
+  \vspace{0.08cm}
+  \setlength{\tabcolsep}{4pt}
+  \renewcommand{\arraystretch}{1.22}
+  \begin{tabular}{L{0.21\textwidth}|L{0.75\textwidth}}
+    \textbf{Nhóm tính hợp lệ} & \textbf{Giới hạn hiện tại của nghiên cứu và Lý do kỹ thuật} \\
+    \hline
+    \textbf{1. Nội tại} (\emph{Internal}) & Người chấm độc lập ở M13 là một LLM khác (Claude Opus) làm việc theo rubric khóa trước, nhưng hai LLM vẫn có thể chia sẻ thiên lệch khi đọc văn bản bình luận; nhãn ``không xong'' bao gồm cả những issue được chủ động rút khỏi sprint giữa chừng. \\
+    \hline
+    \textbf{2. Ngoại tại} (\emph{External}) & Phần chẩn đoán, kế hoạch sprint và giao diện Plane mới đo đạc trên 1 dự án mã nguồn mở (IS: 81 cảnh báo, 60 sprint); mã người làm trong TAWOS đã ẩn danh nên màn hình \emph{Your work} để trống và duyệt kế hoạch chạy qua chế độ phát lại (\texttt{--demo}). \\
+    \hline
+    \textbf{3. Cấu trúc đo} (\emph{Construct}) & Nhãn M13 phản ánh nguyên nhân thể hiện trong nhật ký Jira, không bao gồm trao đổi ngoài luồng; bảng \texttt{issue\_link} không có thời điểm tạo liên kết; danh sách thành viên sprint tại mốc $t$ xấp xỉ từ \texttt{sprint\_id} cuối cùng (khoảng 5\% - 7\% lệch từ vựng). \\
+    \hline
+    \textbf{4. Kết luận} (\emph{Conclusion}) & Chưa có thử nghiệm đối chứng với người quản lý dự án thật đang vận hành, nên đề tài không đưa ra kết luận nhân quả về việc hệ thống trực tiếp làm giảm tỉ lệ trễ hạn của đội phát triển. \\
+  \end{tabular}
 \end{frame}
 
-\section{Tiến độ và kế hoạch}
-
-\begin{frame}{Tiến độ hiện tại}
+% Slide 19
+\begin{frame}{Kết luận và Hướng phát triển tiếp theo}
   \scriptsize
   \begin{columns}[T,onlytextwidth]
-    \begin{column}{0.49\textwidth}
-      \begin{block}{Đã hoàn thành}
-        \begin{itemize}
-          \setlength{\itemsep}{1pt}
-          \item Protocol, nhãn, cohort; giả thuyết chính
-          \item Pipeline TAWOS $\to$ PostgreSQL, snapshot as-of 4 mốc
-          \item 6 mô hình, đánh giá temporal/cross-project, sensitivity
-          \item Bản thảo bài báo (LaTeX)
-          \item Phân tích phân bổ cảnh báo theo thời gian
-          \item \alert{Mô-đun agent} (công cụ chỉ đọc, brief, verifier)
-        \end{itemize}
+    \begin{column}{0.51\textwidth}
+      \begin{block}{Tóm lược 4 kết quả thực nghiệm chính}
+        \begin{enumerate}
+          \setlength{\itemsep}{3pt}
+          \item \textbf{Phát hiện sớm (RQ1):} Tiến độ thực thi trước mốc $t$ giúp CatBoost động vượt mô hình tĩnh từ mốc 25\% và vượt quy tắc đơn giản ở cả 4 mốc trên 14 dự án chưa thấy; tại mốc 50\% trên issue còn mở đạt $\text{Precision} = 76{,}3\%$ so với nền $67{,}0\%$ ($\text{Lift} = 1{,}14$).
+          \item \textbf{Chẩn đoán có bằng chứng (RQ2):} Bộ thu thập SQL ($\le t$) + LLM + \texttt{verifier} giúp 81 thẻ cảnh báo có 0 lỗi định dạng và 0 giả thuyết bịa sự kiện; khớp Top-1 với người chấm đạt $61{,}7\%$ ($\kappa = 0{,}50$) ở lượt 1 và $68{,}3\%$ ($\kappa = 0{,}57$) trên 60 issue held-out sau khi hạ thứ tự \texttt{carry\_over}.
+          \item \textbf{Lập kế hoạch cấp Sprint (RQ3):} Backtest trên 60 sprint tại mốc 50\% ước lượng số không xong dự kiến lệch trung bình $\text{MAE} = 1{,}76$ issue/sprint ($\text{Bias} = -0{,}05$), kết hợp duyệt và hoàn tác theo lô trên Plane.
+          \item \textbf{Agent hỏi đáp chỉ đọc (RQ4):} Đạt 25/25 câu hỏi kịch bản (kể cả 3 câu tiêm lệnh), 0 lần lộ dữ liệu chéo dự án và 0 lần bịa mã issue.
+        \end{enumerate}
       \end{block}
     \end{column}
-    \begin{column}{0.47\textwidth}
-      \begin{alertblock}{Đang chờ / chưa làm}
-        \begin{itemize}
-          \setlength{\itemsep}{1pt}
-          \item \alert{Tích hợp agent vào Agentick} (bước tiếp theo)
-          \item Registry mô hình, endpoint dự báo
-          \item Kiểm tra agent trên dữ liệu Agentick
-          \item Ledger/outbox, bảng cảnh báo, dry-run
-        \end{itemize}
+    \begin{column}{0.46\textwidth}
+      \begin{alertblock}{Ba hướng phát triển tiếp theo}
+        \begin{enumerate}
+          \setlength{\itemsep}{3.5pt}
+          \item \textbf{Đối chiếu với chuyên gia con người \& Mở rộng dự án:} Tổ chức cho người quản lý dự án thực tế chấm độc lập một mẫu cảnh báo để đo độ lệch giữa nhãn con người và nhãn M13; mở rộng đánh giá chẩn đoán và kế hoạch sprint sang các dự án khác trong TAWOS ngoài IS.
+          \item \textbf{Bổ sung lịch sử mô tả \& Hiệu chuẩn xác suất:} Đưa lịch sử chỉnh sửa nội dung mô tả (\texttt{description}) của issue vào bộ thu thập để cải thiện khả năng nhận diện nhóm nguyên nhân \texttt{unclear\_scope}; hiệu chuẩn lại xác suất theo từng mốc $t$ trước khi chọn tập chuyển.
+          \item \textbf{Thử nghiệm ngầm (\emph{Shadow mode}) thực tế:} Triển khai trên một đội phát triển đang làm việc thực tế để đo tần suất cảnh báo tự mở lại và tỉ lệ issue phục hồi tiến độ trên sổ cảnh báo (module M17).
+        \end{enumerate}
       \end{alertblock}
-      \vspace{0.05cm}
-      Agentick là dự án riêng bên ngoài, đã có mã nguồn, dùng để thu dữ liệu
-      và chạy thực nghiệm. \alert{Mọi kết quả hôm nay đều từ benchmark TAWOS.}
     \end{column}
   \end{columns}
 \end{frame}
 
-\begin{frame}{Roadmap và kế hoạch (tính từ T0 = hôm nay)}
-  \scriptsize
-  \setlength{\tabcolsep}{3pt}
-  \renewcommand{\arraystretch}{1.3}
-  \begin{tabular}{L{0.2\textwidth}|L{0.14\textwidth}|L{0.32\textwidth}|L{0.24\textwidth}}
-    \textbf{Giai đoạn} & \textbf{Thời gian} & \textbf{Công việc} & \textbf{Tiêu chí xong} \\
-    \hline
-    1. Tích hợp Agentick & T0 $\to$ +2 tuần & Nối dữ liệu vào pipeline as-of; endpoint dự báo; bảng cảnh báo, ledger, dry-run & Agentick hiển thị issue rủi ro + brief; log có phiên bản \\
-    2. Hoàn thiện kiểm tra agent & song song bước 1 & Chạy agent trên issue được chọn từ Agentick; kiểm tra trích dẫn, số liệu & Agent chạy trong luồng cảnh báo, brief lưu kèm trace \\
-    3. Thực nghiệm & +2 $\to$ +5 tuần & Shadow mode, hiệu chuẩn lại, so với quy tắc & Recall, precision, lead time trên dữ liệu thật \\
-    4. Báo cáo cuối & 2 tuần cuối & Tổng hợp, hoàn thiện bài báo và ứng dụng & Báo cáo, mã, dữ liệu tái lập \\
-  \end{tabular}
-
-  \vspace{0.2cm}
-  \footnotesize
-  \alert{Shadow mode:} dự báo và brief được ghi log nhưng chưa gửi cho người dùng.
-  Chỉ sang bước 3 khi dữ liệu Agentick tái dựng được phạm vi cam kết và trạng thái
-  hoàn thành, theo cùng tiêu chí đã dùng với TAWOS.
-\end{frame}
-
-\begin{frame}{Tóm tắt}
-  \small
-  \begin{itemize}
-    \setlength{\itemsep}{4pt}
-    \item Lịch sử thực thi \alert{cải thiện} khả năng phát hiện issue sắp trễ
-          (+8,90 / +9,96 điểm tại 50\%), giữ được trên dự án chưa thấy.
-    \item Phần lớn lợi thế đến từ việc nhận biết issue đã xong. Trên issue còn
-          mở, mức cải thiện \alert{nhỏ nhưng vẫn có ý nghĩa}.
-    \item Mô-đun agent đã xây xong: tự lấy bằng chứng tại thời điểm dự báo,
-          đề xuất cảnh báo và viết brief \alert{trích dẫn sự kiện có thật}.
-    \item \alert{Bước tiếp theo:} tích hợp vào Agentick, kiểm tra agent, thực
-          nghiệm shadow mode trên dữ liệu thật.
-  \end{itemize}
-\end{frame}
-
+% Slide 20
 \begin{frame}{Tài liệu tham khảo}
-  \scriptsize
-  \begin{thebibliography}{9}
+  \tiny
+  \begin{thebibliography}{10}
     \setbeamertemplate{bibliography item}[text]
-    \bibitem{tu} F.~Tu, J.~Zhu, Q.~Zheng, and M.~Zhou, ``Be careful of when: An empirical study on time-related misuse of issue tracking data,'' in \emph{Proc. ESEC/FSE}, 2018.
-    \bibitem{catboost} L.~Prokhorenkova \emph{et al.}, ``CatBoost: Unbiased boosting with categorical features,'' in \emph{Proc. NeurIPS}, 2018.
-    \bibitem{agentdojo} E.~Debenedetti \emph{et al.}, ``AgentDojo: A dynamic environment to evaluate prompt injection attacks and defenses for LLM agents,'' arXiv:2406.13352, 2024.
-    \bibitem{tawos} V.~Tawosi, A.~Al-Subaihin, R.~Moussa, and F.~Sarro, ``A versatile dataset of agile open source software projects,'' in \emph{Proc. MSR}, 2022, pp.~707--711.
-    \bibitem{verenich} I.~Verenich \emph{et al.}, ``Survey and cross-benchmark comparison of remaining time prediction methods in business process monitoring,'' \emph{ACM TIST}, 2019.
-    \bibitem{kubrak} M.~Kubrak \emph{et al.}, ``Prescriptive process monitoring: Quo vadis?,'' \emph{PeerJ Comput. Sci.}, 2022.
+    \setlength{\itemsep}{1.5pt}
+    \bibitem{agentdojo} E.~Debenedetti, J.~Zhang, M.~Balunovi\'{c}, L.~Beurer-Kellner, M.~Fischer, and F.~Tram\`{e}r, ``AgentDojo: A dynamic environment to evaluate prompt injection attacks and defenses for LLM agents,'' in \emph{NeurIPS Datasets and Benchmarks Track}, 2024, arXiv:2406.13352.
+    \bibitem{greshake} K.~Greshake, S.~Abdelnabi, S.~Mishra, C.~Endres, T.~Holz, and M.~Fritz, ``Not what you've signed up for: Compromising real-world LLM-integrated applications with indirect prompt injection,'' in \emph{Proc. AISec}, 2023, arXiv:2302.12173.
+    \bibitem{kubrak} K.~Kubrak, F.~Milani, A.~Nolte, and M.~Dumas, ``Prescriptive process monitoring: Quo vadis?,'' \emph{PeerJ Comput. Sci.}, 2022, arXiv:2112.01769.
+    \bibitem{liu} X.~Liu \emph{et al.}, ``Do proactive agents need an LLM to decide when to act?,'' preprint, 2026, arXiv:2605.30152.
+    \bibitem{catboost} L.~Prokhorenkova, G.~Gusev, A.~Vorobev, A.~V.~Dorogush, and A.~Gulin, ``CatBoost: Unbiased boosting with categorical features,'' in \emph{Proc. NeurIPS}, 2018, arXiv:1706.09516.
+    \bibitem{tawos} V.~Tawosi, A.~Al-Subaihin, R.~Moussa, and F.~Sarro, ``A versatile dataset of agile open source software projects,'' in \emph{Proc. MSR}, 2022, pp.~707--711, arXiv:2202.00979.
+    \bibitem{tawosi_se} V.~Tawosi, R.~Moussa, and F.~Sarro, ``Agile effort estimation: Have we solved the problem yet? Insights from a replication study,'' \emph{IEEE Trans. Softw. Eng.}, 2022, arXiv:2201.05401.
+    \bibitem{teinemaa} I.~Teinemaa, M.~Dumas, M.~La~Rosa, and F.~M.~Maggi, ``Outcome-oriented predictive process monitoring: Review and benchmark,'' \emph{ACM Trans. Knowl. Discov. Data}, vol.~13, no.~2, 2019, arXiv:1707.06766.
+    \bibitem{tu} F.~Tu, J.~Zhu, Q.~Zheng, and M.~Zhou, ``Be careful of when: An empirical study on time-related misuse of issue tracking data,'' in \emph{Proc. ESEC/FSE}, 2018, doi:10.1145/3236024.3236054.
+    \bibitem{taubench} S.~Yao, N.~Shinn, P.~Razavi, and K.~Narasimhan, ``$\tau$-bench: A benchmark for tool-agent-user interaction in real-world domains,'' 2024, arXiv:2406.12045.
   \end{thebibliography}
+  \vspace{0.18cm}
+  \centering
+  {\footnotesize\color{templateDarkRed}\textbf{Em xin trân trọng cảm ơn Thầy/Cô trong Hội đồng đã lắng nghe!}}
 \end{frame}

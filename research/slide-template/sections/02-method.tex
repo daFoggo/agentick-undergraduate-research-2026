@@ -1,59 +1,135 @@
-\section{Phương pháp}
+\section{Phương pháp đề xuất}
 
-\begin{frame}{Đặc trưng và mô hình}
-  \footnotesize
+% Slide 6
+\begin{frame}{Phương pháp Khối 1: Phát hiện sớm rủi ro theo ngân sách (RQ1)}
+  \scriptsize
   \begin{columns}[T,onlytextwidth]
-    \begin{column}{0.5\textwidth}
-      \renewcommand{\arraystretch}{1.25}
-      \begin{tabular}{L{0.5\linewidth}|L{0.38\linewidth}}
-        \textbf{Nhóm đặc trưng} & \textbf{Mô hình tĩnh?} \\
+    \begin{column}{0.48\textwidth}
+      \textbf{1. Năm nhóm đặc trưng tại mốc $t$ và Mô hình CatBoost [5]}
+      \vspace{0.04cm}
+      \setlength{\tabcolsep}{3pt}
+      \renewcommand{\arraystretch}{1.12}
+      \begin{tabular}{L{0.29\linewidth}|L{0.53\linewidth}|C{0.12\linewidth}}
+        \textbf{Nhóm đặc trưng} & \textbf{Các biến đại diện (tính đến $\le t$)} & \textbf{Tĩnh?} \\
         \hline
-        Timing & có \\
-        Attributes & có (tại đầu sprint) \\
-        Execution state & không \\
-        Prefix activity & không \\
-        Cohort context & không \\
+        Thời gian & Độ dài sprint, số ngày đã qua, số ngày còn lại & Có \\
+        Thuộc tính tĩnh & Loại issue, độ ưu tiên, story point, tuổi issue & Có ($0\%$) \\
+        Trạng thái thực thi & Trạng thái hiện tại, cờ hoàn thành, \alert{số ngày liên tiếp ngừng hoạt động} & Không \\
+        Cường độ hoạt động & Tổng số sự kiện, số lần đổi trạng thái / người làm / ước lượng trước mốc $t$ & Không \\
+        Bối cảnh sprint & Tổng số issue, tỉ lệ issue cùng sprint đã xong & Không \\
       \end{tabular}
-
-      \vspace{0.2cm}
-      \scriptsize Chỉ dùng thông tin có trước hoặc đúng thời điểm mốc.
+      \vspace{0.05cm}
+      \begin{itemize}
+        \setlength{\itemsep}{1.5pt}
+        \item \textbf{Cấu hình khóa trước:} CatBoost (400 cây, độ sâu 5, $\text{lr} = 0{,}05$, $\text{L2} = 5$). Điểm đầu ra $z(x)$ được hiệu chuẩn thành xác suất qua hàm logistic (Platt scaling) khớp trên tập validation:
+        $$P(y = 1 \mid x) = \frac{1}{1 + \exp(-(a \cdot z(x) + b))}$$
+        \item \textbf{Hai mức tham chiếu:} Tỉ lệ nền $\pi$ (chọn ngẫu nhiên) và \emph{Quy tắc sắp xếp đơn giản} (xếp issue đang mở theo số ngày ngừng hoạt động giảm dần).
+      \end{itemize}
     \end{column}
-    \begin{column}{0.46\textwidth}
-      \textbf{6 mô hình so sánh}
-      \begin{enumerate}
-        \setlength{\itemsep}{1pt}
-        \item Frequency (tỷ lệ lịch sử)
-        \item Quy tắc nghiệp vụ: Done $\to$ 0,01; còn lại
-              $\mathrm{clip}(0{,}5+0{,}02d+0{,}1u)$
-        \item Logistic Regression tĩnh
-        \item CatBoost tĩnh
-        \item \alert{CatBoost động}
-        \item CatBoost động, bỏ nhóm cohort
-      \end{enumerate}
-      \scriptsize CatBoost\ieeecitefootnote{2}{L.~Prokhorenkova \emph{et al.}, ``CatBoost: Unbiased boosting with categorical features,'' in \emph{Proc. NeurIPS}, 2018.}: 400 cây, depth 5, lr 0,05, L2 = 5; hiệu chuẩn sigmoid trên validation.
+    \begin{column}{0.49\textwidth}
+      \textbf{2. Chính sách ngân sách $K = \lceil 0{,}2n \rceil$ và Chỉ số đánh giá}
+      \begin{itemize}
+        \setlength{\itemsep}{1.5pt}
+        \item \textbf{Vì sao dùng ngân sách cố định thay vì ngưỡng xác suất?} Cùng một ngưỡng xác suất có thể gây ngập cảnh báo ở dự án này nhưng không báo gì ở dự án khác; hơn nữa trưởng nhóm chỉ rà soát được một số lượng hữu hạn công việc mỗi sprint [4].
+        \item Trong sprint có $n$ issue đủ điều kiện (đang mở, chưa hủy) và $P$ issue thực sự không xong (tỉ lệ nền $\pi = P/n$), hệ thống chọn $K = \lceil 0{,}2n \rceil$ issue có điểm $p(t)$ cao nhất (bắt trúng $\text{TP}_K$ issue không xong):
+        $$\text{Precision}_K = \frac{\text{TP}_K}{K}, \quad \text{Recall}_K = \frac{\text{TP}_K}{P}, \quad \text{Lift}_K = \frac{\text{Precision}_K}{\pi}$$
+        \item \alert{Vì sao phải đo $\text{Lift}_K$?} Càng về cuối sprint ($t = 50\%, 75\%$), các issue dễ đã hoàn thành trước nên tỉ lệ nền $\pi$ của tập issue còn mở tự tăng cao. $\text{Lift}_K > 1$ cho biết cảnh báo của mô hình chính xác gấp bao nhiêu lần so với chọn ngẫu nhiên tại chính mốc $t$ đó.
+        \item \textbf{Kiểm định thống kê:} Chia dữ liệu theo thời gian (sprint tương lai) và chia chéo theo dự án (14 dự án); lấy mẫu bootstrap ghép cặp 2.000 lần theo cụm sprint.
+      \end{itemize}
     \end{column}
   \end{columns}
 \end{frame}
 
-\begin{frame}{Cảnh báo theo ngân sách và cách đọc chỉ số}
+% Slide 7
+\begin{frame}{Phương pháp Khối 2: Bộ thu thập SQL, Chẩn đoán LLM \& Verifier}
   \scriptsize
-  \textbf{Ngân sách:} mỗi sprint có $n$ issue nhận tối đa
-  $\lceil 0{,}2\,n\rceil$ cảnh báo, dành cho các issue có điểm rủi ro cao nhất.
-  So sánh mô hình bằng paired bootstrap 2.000 lần (theo sprint / theo dự án).
+  \begin{columns}[T,onlytextwidth]
+    \begin{column}{0.48\textwidth}
+      \textbf{1. Bộ thu thập sự kiện bằng 5 truy vấn SQL cố định}
+      \begin{itemize}
+        \setlength{\itemsep}{1pt}
+        \item Chỉ chạy cho các issue nằm trong danh sách cảnh báo; trả về các bản ghi sự kiện chuẩn hóa có dấu thời gian $\le t$ và mã \texttt{event\_id}:
+        \begin{enumerate}
+          \scriptsize
+          \setlength{\itemsep}{0.8pt}
+          \item \textbf{Thảo luận:} Tối đa 8 bình luận gần nhất $\le t$ (cắt 400 ký tự).
+          \item \textbf{Hoạt động người phụ trách:} Tối đa 5 lần người này cập nhật các issue khác trong 7 ngày trước $t$.
+          \item \textbf{Chuỗi chặn:} Quan hệ ``issue A chờ issue B'' đến độ sâu 2 kèm trạng thái của B tại mốc $t$ (loại bỏ 498 liên kết không rõ chiều).
+          \item \textbf{Tình trạng sprint:} \% thời lượng đã qua, số issue đã xong / còn mở.
+          \item \textbf{Lịch sử issue:} Tối đa 8 lần đổi trạng thái, ưu tiên, người làm, sprint và tổng số lần bị dồn qua các sprint.
+        \end{enumerate}
+      \end{itemize}
+      \vspace{0.03cm}
+      \textbf{2. Hai ghi chú bối cảnh theo luật tất định}
+      \begin{itemize}
+        \setlength{\itemsep}{1pt}
+        \item \texttt{sprint\_overload}: bật khi $t \ge 50\%$, sprint có $\ge 5$ issue và $\ge 60\%$ còn mở.
+        \item \texttt{done\_not\_updated}: bình luận 3 ngày gần nhất có từ khóa hoàn tất (\texttt{done, merged, fixed...}) nhưng trạng thái chưa đóng.
+      \end{itemize}
+    \end{column}
+    \begin{column}{0.49\textwidth}
+      \textbf{3. Chẩn đoán 1 lượt gọi LLM + Hậu kiểm bằng \texttt{Verifier}}
+      \begin{itemize}
+        \setlength{\itemsep}{1pt}
+        \item LLM (\texttt{openai/gpt-6-luna}) đọc dữ liệu trong thẻ \texttt{<untrusted>}, trả về JSON (Pydantic) gồm tối đa 3 giả thuyết thuộc \textbf{tập đóng 6 nhãn nguyên nhân} và \textbf{ràng buộc loại sự kiện của \texttt{Verifier}}:
+      \end{itemize}
+      \vspace{0.02cm}
+      \setlength{\tabcolsep}{3pt}
+      \renewcommand{\arraystretch}{1.10}
+      \begin{tabular}{L{0.32\linewidth}|L{0.63\linewidth}}
+        \textbf{Nhãn nguyên nhân} & \textbf{Điều kiện bắt buộc trong \texttt{Verifier}} \\
+        \hline
+        \texttt{pulled\_away} & Phải trích \texttt{event\_id} hoạt động của người làm trên issue khác. \\
+        \texttt{blocked} & Phải trích \texttt{event\_id} chuỗi chặn vẫn đang ở trạng thái mở. \\
+        \texttt{carry\_over} & Phải trích \texttt{event\_id} đếm số lần đưa vào sprint; \alert{đẩy xuống cuối thẻ} nếu có nguyên nhân cụ thể khác đi kèm. \\
+        \texttt{waiting\_person}, \texttt{needs\_decision}, \texttt{unclear\_scope} & Phải trích ít nhất 1 \texttt{event\_id} bình luận thảo luận có thật trong danh sách thu thập. \\
+      \end{tabular}
+      \vspace{0.04cm}
+      \begin{itemize}
+        \setlength{\itemsep}{1pt}
+        \item Nếu không có giả thuyết nào đủ bằng chứng $\Rightarrow$ thẻ hiện trạng thái \textbf{``chưa rõ''} kèm câu hỏi gợi ý trong \texttt{missing\_info}.
+        \item \textbf{Kiểm tra câu nhắc (\texttt{nudge\_text}):} Bắt buộc chứa đúng mã issue, dài 20 - 600 ký tự, cấm link / \texttt{@} / HTML / mã issue dự án khác, và issue phải ngừng hoạt động $>2$ ngày.
+      \end{itemize}
+    \end{column}
+  \end{columns}
+\end{frame}
 
-  \vspace{0.12cm}
-  \setlength{\tabcolsep}{3pt}
-  \renewcommand{\arraystretch}{1.22}
-  \begin{tabular}{L{0.2\textwidth}|L{0.44\textwidth}|L{0.28\textwidth}}
-    \textbf{Chỉ số} & \textbf{Ý nghĩa} & \textbf{Tốt khi} \\
-    \hline
-    Recall@ngân sách & \% issue thực sự trễ nằm trong danh sách cảnh báo & cao \\
-    Precision & \% cảnh báo đúng & cao \\
-    Cảnh báo sai/sprint & số cảnh báo rơi vào issue cuối cùng vẫn xong & thấp \\
-    Lead time & số ngày từ lúc cảnh báo đến hết sprint & dài \\
-    AP & chất lượng xếp hạng trên mọi ngưỡng; ngẫu nhiên $\approx$ tỷ lệ lớp & gần 1 \\
-    Brier & sai số bình phương của xác suất; đoán hằng $\approx 0{,}25$ & thấp \\
-    Intercept / slope & xác suất có khớp tần suất thực tế không & 0 / 1 \\
-    Chênh lệch, CI 95\% & recall động trừ recall tĩnh (điểm \%); CI không chứa 0 $\Rightarrow$ có ý nghĩa & CI $>0$ \\
-  \end{tabular}
+% Slide 8
+\begin{frame}{Phương pháp Khối 3 \& 4: Kế hoạch Sprint, Duyệt lô và Agent hỏi đáp}
+  \scriptsize
+  \begin{columns}[T,onlytextwidth]
+    \begin{column}{0.50\textwidth}
+      \textbf{1. Lập kế hoạch cấp Sprint (M14) và Duyệt theo lô (M15)}
+      \begin{itemize}
+        \setlength{\itemsep}{1.5pt}
+        \item \textbf{Ước lượng số không xong dự kiến $b$ bằng thống kê lịch sử:} Với tập các sprint đã kết thúc $S_{\text{trước}}$ của cùng dự án, gọi $O_s(t)$ là số issue còn mở tại mốc $t$ và $U_s(t)$ là số lượng trong đó không xong cuối sprint $s$. Tỉ lệ không hoàn thành lịch sử $r$ và số không xong dự kiến $b$ của sprint hiện tại (đang có $O(t)$ issue mở) là:
+        $$r = \frac{\sum_{s \in S_{\text{trước}}} U_s(t)}{\sum_{s \in S_{\text{trước}}} O_s(t)}, \quad b = \mathrm{round}(r \cdot O(t))$$
+        {\tiny (Chỉ sinh kế hoạch khi dự án có $\ge 3$ sprint lịch sử và $\sum O_s(t) \ge 15$).}
+        \item \textbf{Chọn tập chuyển \& Đóng bắc cầu:} Lấy $b$ issue đang mở có điểm $p(t)$ cao nhất, sau đó \alert{đóng bắc cầu theo quan hệ chờ-nhau}: nếu issue A chờ issue B mà B nằm trong tập chuyển thì đưa cả A vào tập chuyển (nhãn \texttt{dependent}).
+        \item \textbf{Thực thi đóng \& Hoàn tác (M15):} Chỉ cho phép 3 thao tác lên Plane (\texttt{raise\_priority}, \texttt{nudge\_owner}, \texttt{move\_next\_cycle}); lưu lại giá trị cũ trước khi gọi API Plane để khôi phục chính xác khi bấm \textbf{Hoàn tác} (đơn lẻ hoặc cả lô).
+      \end{itemize}
+    \end{column}
+    \begin{column}{0.47\textwidth}
+      \textbf{2. Sổ cảnh báo theo dõi vòng đời (Module M17)}
+      \begin{itemize}
+        \setlength{\itemsep}{1pt}
+        \item Ghi nhận số lần kiểm tra (\texttt{seen\_count}) và điểm số lần chạy liền trước (\texttt{prev\_score}) ngay trên thẻ cảnh báo.
+        \item Nếu cảnh báo từng bị bấm \textbf{Bỏ qua} nhưng ở lần chạy sau điểm rủi ro tăng thêm $p_{\text{mới}} - p_{\text{trước}} \ge 0{,}15$, hệ thống tự động mở lại cảnh báo về trạng thái chờ duyệt.
+      \end{itemize}
+      \vspace{0.05cm}
+      \textbf{3. Agent hỏi đáp chỉ đọc (Module M16)}
+      \begin{itemize}
+        \setlength{\itemsep}{1pt}
+        \item Hỗ trợ hỏi đáp tiếng Việt/Anh qua vòng lặp gọi \textbf{5 công cụ chỉ đọc} có lọc quyền dự án trong SQL: \texttt{list\_at\_risk}, \texttt{explain\_alert}, \texttt{decision\_summary}, \texttt{sprint\_plans}, \texttt{search\_alerts}.
+        \item \textbf{Ba chốt chặn bằng code (không dùng Text-to-SQL):}
+          \begin{enumerate}
+            \scriptsize
+            \setlength{\itemsep}{0.8pt}
+            \item Tối đa 5 vòng gọi công cụ; cắt kết quả ở 4.000 ký tự.
+            \item Bọc toàn bộ văn bản cơ sở dữ liệu trong thẻ \texttt{<untrusted>}.
+            \item \alert{Quét mã issue đầu ra:} Hủy câu trả lời nếu nêu bất kỳ mã issue nào không xuất hiện trong kết quả công cụ vừa truy xuất.
+          \end{enumerate}
+      \end{itemize}
+    \end{column}
+  \end{columns}
 \end{frame}

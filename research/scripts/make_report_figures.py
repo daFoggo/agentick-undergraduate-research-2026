@@ -78,12 +78,12 @@ def confusion(res, title, x0):
 
 
 write('fig_confusion', r'\begin{tikzpicture}' '\n'
-      + confusion(first, f'81 alert (lần 1), khớp {pc(first["top1"])}', 0) + '\n'
-      + confusion(held, f'60 ca held-out, khớp {pc(held["top1"])}', 11) + '\n'
+      + confusion(first, f'81 cảnh báo (lượt 1), khớp {pc(first["top1"])}', 0) + '\n'
+      + confusion(held, f'60 issue held-out, khớp {pc(held["top1"])}', 11) + '\n'
       + r'\node[font=\small] at (3.6,-5.6) {Hàng: nhãn của người chấm. Cột: nguyên nhân đứng đầu của hệ thống.};' '\n'
-      + r'\node[font=\small] at (14.6,-5.6) {Số ô là số alert.};' '\n' + r'\end{tikzpicture}')
-cause_compare(first, 'Lần 1: 81 alert, trước khi sửa thứ tự', 'fig_cause_first')
-cause_compare(held, 'Held-out: 60 ca, sau khi sửa thứ tự', 'fig_cause_heldout')
+      + r'\node[font=\small] at (14.6,-5.6) {Số trong ô là số cảnh báo / issue.};' '\n' + r'\end{tikzpicture}')
+cause_compare(first, 'Lượt 1: 81 cảnh báo, trước khi sửa thứ tự', 'fig_cause_first')
+cause_compare(held, 'Held-out: 60 issue, sau khi sửa thứ tự', 'fig_cause_heldout')
 
 pts = ' '.join(f'({r["expected"]},{r["unfinished"]})' for r in back['sprints'])
 top = max(max(r['expected'], r['unfinished']) for r in back['sprints']) + 1

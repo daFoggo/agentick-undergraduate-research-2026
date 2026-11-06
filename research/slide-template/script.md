@@ -1,97 +1,76 @@
-# Kịch bản thuyết trình: Báo cáo tiến độ đề tài
+# Kịch bản thuyết trình: Báo cáo tổng kết đề tài NCKH sinh viên (04-SV-2026-RIPT)
 
-Thời lượng dự kiến: khoảng 15–18 phút cho 20 slide.
-Mọi số liệu định lượng lấy từ `artifacts/results/` (benchmark trên dataset TAWOS); ví dụ agent lấy từ trace trong `artifacts/agent_extension/`. Chưa có số liệu nào từ Agentick.
+Thời lượng dự kiến: 15 - 20 phút cho 20 slide.
+Toàn bộ số liệu đồng bộ với báo cáo tổng kết `Bao_cao_tong_ket_de_tai_v2.md`.
 
 ---
 
-## Slide 1: Tiêu đề
-Kính chào thầy cô. Em là Nguyễn Trường Giang, chủ trì đề tài, lớp D23CCPM02. Em xin báo cáo tiến độ đề tài "Nghiên cứu mô hình đánh giá rủi ro trễ hạn công việc trong sprint và xây dựng agent hỗ trợ can thiệp sớm", mã đề tài 04-SV-2026-RIPT, dưới sự hướng dẫn của ThS. Trần Minh Hiếu.
-Bài trình bày đi theo đúng hai phần của đề tài: trước hết là mô hình đánh giá rủi ro và kết quả của nó, sau đó là agent; cuối cùng là giới hạn và kế hoạch tiếp theo.
+## Slide 1: Trang bìa
+Kính chào các thầy cô trong Hội đồng. Em là Nguyễn Trường Giang, sinh viên lớp D23CCPM02, Viện Khoa học Kỹ thuật Bưu điện. Hôm nay em xin trình bày báo cáo tổng kết đề tài nghiên cứu khoa học "Nghiên cứu mô hình đánh giá rủi ro trễ hạn công việc trong sprint và xây dựng agent hỗ trợ can thiệp sớm", mã số 04-SV-2026-RIPT, dưới sự hướng dẫn của ThS. Trần Minh Hiếu.
 
-## Slide 2: Bối cảnh và bài toán
-Đầu sprint, nhóm cam kết hoàn thành một danh sách issue, nhưng trong dữ liệu của đề tài có khoảng 47% cặp issue–sprint không xong đúng hạn.
-Jira lưu lại toàn bộ lịch sử thay đổi, nên về nguyên tắc có thể dùng dữ liệu này để nhận ra sớm các issue có nguy cơ. Khi làm việc này có hai ràng buộc. Thứ nhất, người quản lý không xem được mọi issue, nên số cảnh báo phải có giới hạn. Thứ hai, nếu vô tình dùng thông tin chỉ xuất hiện sau thời điểm dự báo thì kết quả sẽ tốt giả tạo; vì vậy mọi đặc trưng đều được tái dựng đúng tại thời điểm dự báo.
-Cụ thể, tại các mốc 0, 25, 50 và 75% thời lượng sprint, mô hình ước lượng xác suất issue chưa xong vào ngày kết thúc sprint.
-Có ba câu hỏi chính. RQ1 hỏi lịch sử thực thi có giúp ích không. RQ2 hỏi kết quả có giữ được trên sprint tương lai và trên dự án mới không. RQ3 hỏi khi số cảnh báo bị giới hạn, mô hình nào phát hiện được nhiều issue rủi ro hơn.
-Giả thuyết chính được đăng ký trước khi chạy thực nghiệm: tại mốc 50%, mô hình động có recall cao hơn mô hình tĩnh. Hai hướng mở rộng là phân bổ cảnh báo theo thời gian và agent; cả hai được bổ sung sau, không thuộc giả thuyết đăng ký trước.
-Tóm lại, đề tài có hai phần: mô hình chọn ra issue nào cần chú ý, còn agent giải thích vì sao, kèm bằng chứng, để người quản lý tự quyết định có can thiệp hay không.
+## Slide 2: Bối cảnh thực tế và Bài toán nghiên cứu
+Trong quản lý dự án theo Agile, đầu mỗi sprint nhóm phát triển cam kết hoàn thành một danh sách issue. Tuy nhiên, thống kê trên 18.322 cặp issue-sprint thuộc 14 dự án trong bộ dữ liệu Jira TAWOS cho thấy có tới 47,21% trường hợp kết thúc sprint khi issue vẫn chưa hoàn thành.
+Dù các công cụ như Jira hay Plane lưu lại đầy đủ lịch sử thao tác, trưởng nhóm khó có thời gian đọc thủ công nhật ký của hàng chục issue mỗi ngày. Khi áp dụng học máy, chỉ đưa ra một con số xác suất trễ hạn là chưa đủ vì người quản lý cần biết vì sao issue gặp rủi ro và nên xử lý thế nào. Ở chiều ngược lại, thực nghiệm E6 của chúng tôi cho thấy việc ước lượng trực tiếp story point từ 20 issue tương tự không vượt qua mức trung vị của dự án (MAE 1,61 so với 1,71, khoảng tin cậy 95% chứa 0).
+Vì vậy, đề tài giải quyết bài toán hỗ trợ quyết định tại các mốc 0%, 25%, 50% và 75% thời lượng sprint trên nền tảng Plane ở hai cấp độ: ở cấp từng issue là phát hiện theo ngân sách 20%, chẩn đoán nguyên nhân có bằng chứng sự kiện và đề xuất hành động chờ người dùng Duyệt, Bỏ qua hoặc Hoàn tác; ở cấp sprint là ước lượng số không xong dự kiến để lập tập chuyển sang sprint kế tiếp, đi kèm agent hỏi đáp chỉ đọc.
 
-## Slide 3: Dữ liệu TAWOS và thiết kế đánh giá
-Để trả lời các câu hỏi này, đề tài dùng TAWOS phiên bản 1.1: 39 dự án, hơn 458 nghìn issue và hơn 9 triệu bản ghi lịch sử thay đổi.
-Sau khi lọc, tập đánh giá còn 14 dự án, 1.962 sprint và 18.322 cặp issue–sprint.
-Nhãn "không hoàn thành" nghĩa là tại ngày kết thúc sprint, issue chưa ở trạng thái Done, Resolved, Closed hoặc Complete. Nhãn được kiểm tra chéo trên 765 cặp bằng một truy vấn SQL viết riêng.
-Dữ liệu được chia theo hai cách, tương ứng với RQ2. Thiết kế temporal huấn luyện trên sprint cũ và kiểm tra trên sprint mới hơn, tức là hỏi mô hình có dùng được cho các sprint tiếp theo của cùng nhóm không. Thiết kế cross-project lần lượt giữ một dự án làm tập kiểm tra, tức là hỏi mô hình có dùng được cho một nhóm mới không.
+## Slide 3: Bốn câu hỏi nghiên cứu (RQ1 - RQ4) và Đóng góp thực nghiệm
+Toàn bộ thực nghiệm được tổ chức xoay quanh bốn câu hỏi nghiên cứu tương ứng với bốn bước xử lý của hệ thống, kèm quy tắc kết luận khóa trước khi chạy:
+- RQ1 kiểm tra điểm phát hiện sớm dưới ngân sách 20% số issue đang mở.
+- RQ2 đo độ bám bằng chứng và độ đồng thuận giữa chẩn đoán của hệ thống với nhãn của người chấm độc lập trên 81 cảnh báo và 60 issue held-out.
+- RQ3 đánh giá công thức lập kế hoạch cấp sprint bằng backtest trên 60 sprint lịch sử.
+- RQ4 kiểm tra tính đúng phạm vi, chống tiêm lệnh và cô lập quyền xem của agent hỏi đáp trên bộ 25 câu hỏi kịch bản.
 
-## Slide 4: Đặc trưng và mô hình
-Từ dữ liệu này, đặc trưng được chia thành năm nhóm. Mô hình tĩnh chỉ dùng hai nhóm có sẵn ở đầu sprint là thời gian và thuộc tính; mô hình động dùng thêm trạng thái thực thi, hoạt động trước mốc và bối cảnh nhóm.
-Đề tài so sánh sáu mô hình, từ baseline tần suất, một quy tắc nghiệp vụ đơn giản, đến CatBoost động. Cấu hình CatBoost được cố định và không dò tham số trên tập test.
+## Slide 4: Dữ liệu TAWOS v1.1 và Quy tắc cắt tại mốc t (Chống rò rỉ tương lai)
+Chúng tôi nạp bộ dữ liệu TAWOS phiên bản 1.1 vào PostgreSQL gồm 39 dự án, 458 nghìn issue và hơn 9,25 triệu dòng nhật ký thay đổi. Sau các bước lọc cố định, tập đánh giá khối phát hiện gồm 14 dự án, 1.962 sprint và 18.322 cặp issue-sprint. Khối chẩn đoán, kế hoạch sprint và giao diện Plane được triển khai và đo đạc trên dự án IS (Indy SDK của Hyperledger, nhập vào Plane dưới mã ISP).
+Một điểm kỹ thuật quan trọng là trên bảng issue của Jira/TAWOS, các cột trạng thái, mức ưu tiên, người phụ trách và sprint đều lưu giá trị cuối cùng sau khi issue đã đóng. Để tránh rò rỉ thông tin tương lai, hệ thống tái dựng trạng thái tại mốc t hoàn toàn từ bảng nhật ký thay đổi change_log, chỉ lấy các sự kiện xảy ra trước hoặc đúng tại mốc t.
 
-## Slide 5: Cảnh báo theo ngân sách và cách đọc chỉ số
-Điểm rủi ro chỉ có ích khi được chuyển thành cảnh báo. Mỗi sprint có n issue chỉ được phát khoảng 20% cảnh báo, làm tròn lên, cho các issue có điểm cao nhất.
-Chỉ số chính là recall: trong số issue thực sự trễ, bao nhiêu phần trăm nằm trong danh sách cảnh báo. Ngoài ra đề tài đo precision, số cảnh báo sai, lead time là số ngày còn lại để xử lý, AP cho chất lượng xếp hạng, và Brier cùng intercept/slope cho chất lượng xác suất.
-Mọi so sánh đều kèm khoảng tin cậy 95% tính bằng bootstrap. "Chênh lệch" là recall của mô hình động trừ recall của mô hình tĩnh, tính bằng điểm phần trăm; nếu khoảng tin cậy không chứa 0 thì chênh lệch được xem là có ý nghĩa.
+## Slide 5: Kiến trúc tổng thể 6 khối chức năng và 7 bất biến an toàn
+Hệ thống gồm 6 khối chức năng với luồng dữ liệu một chiều. Khối 2 (chẩn đoán) và Khối 3 (kế hoạch sprint) chạy nền theo lô; Khối 4 là dịch vụ risk viết bằng FastAPI tách riêng cơ sở dữ liệu với Plane. Như mũi tên đỏ trên sơ đồ thể hiện, LLM hoàn toàn không có quyền ghi: dịch vụ risk chỉ gọi API sửa dữ liệu trên Plane khi người dùng bấm nút Duyệt hoặc Hoàn tác dưới phiên đăng nhập của chính họ. Toàn bộ hệ thống tuân thủ 7 bất biến an toàn được kiểm tra bằng code và có unit test tự động.
 
-## Slide 6: Kết quả chính
-Với cách đo như vậy, kết quả chính như sau. Tại mốc 50%, mô hình động phát hiện trung bình 53% số issue trễ trong mỗi sprint, mô hình tĩnh phát hiện 44%. Chênh lệch khoảng 9 điểm, khoảng tin cậy nằm hoàn toàn trên 0, cả trên sprint tương lai lẫn dự án chưa thấy, nên giả thuyết chính được ủng hộ.
-Nói cách khác, với cùng 850 cảnh báo, mô hình động bắt được 682 issue trễ thay vì 605, và số cảnh báo sai giảm từ 245 xuống 168.
+## Slide 6: Phương pháp Khối 1 - Phát hiện sớm rủi ro theo ngân sách (RQ1)
+Ở Khối 1, mỗi cặp issue-sprint tại mốc t được biểu diễn bằng 5 nhóm đặc trưng. Mô hình tĩnh chỉ dùng thông tin ở đầu sprint (t = 0%), còn mô hình động kết hợp thêm trạng thái thực thi (như số ngày liên tiếp ngừng hoạt động), cường độ hoạt động trước mốc t và bối cảnh sprint. Cả hai dùng CatBoost với bộ siêu tham số khóa trước và hiệu chuẩn xác suất bằng hàm logistic trên tập validation.
+Thay vì dùng ngưỡng xác suất cố định, mỗi sprint có n issue đủ điều kiện chỉ nhận tối đa K = trần của 0,2n cảnh báo. Khi đánh giá qua các mốc t, chúng tôi đối chiếu Precision với tỉ lệ nền pi thông qua chỉ số Lift, vì càng về cuối sprint các issue dễ đã hoàn thành trước làm tỉ lệ nền pi tự tăng cao.
 
-## Slide 7: Chính xác hơn nhưng muộn hơn
-Kết quả này không chỉ đúng ở mốc 50%. Ở mốc 0%, hai mô hình ngang nhau. Đây là kết quả kỳ vọng vì lúc đó chưa có lịch sử nào, và cũng là dấu hiệu không có rò rỉ dữ liệu.
-Càng về cuối sprint, mô hình động càng chính xác hơn, nhưng thời gian còn lại để xử lý giảm từ khoảng 12 ngày xuống khoảng 3 ngày. Đề tài báo cáo cả đánh đổi này chứ không chọn một mốc tối ưu duy nhất.
+## Slide 7: Phương pháp Khối 2 - Bộ thu thập SQL, Chẩn đoán LLM và Verifier (RQ2)
+Với mỗi cảnh báo, bộ thu thập chạy 5 truy vấn SQL cố định để lấy các sự kiện không muộn hơn mốc t từ 5 nguồn: bình luận thảo luận, hoạt động của người phụ trách trên các issue khác trong 7 ngày gần nhất, chuỗi chặn đến độ sâu 2, tình trạng sprint và lịch sử thay đổi của issue.
+Tiếp theo, hệ thống gọi LLM một lần trên dữ liệu đã bọc thẻ untrusted để sinh tối đa 3 giả thuyết thuộc tập đóng 6 nhãn nguyên nhân. Ngay sau LLM, bước hậu kiểm Verifier bằng code loại bỏ mọi giả thuyết trích dẫn mã sự kiện không tồn tại hoặc sai loại sự kiện quy định cho từng nhãn, đồng thời đẩy nhãn carry_over xuống cuối thẻ nếu đã có một nguyên nhân cụ thể hơn đi kèm.
 
-## Slide 8: Kiểm tra độ vững
-Con số 9 điểm phụ thuộc vào một số lựa chọn thiết kế, nên cần kiểm tra lại khi thay đổi các lựa chọn đó.
-Thứ nhất, nếu chỉ xét các issue còn mở thì chênh lệch giảm từ khoảng 9 điểm xuống khoảng 2–2,6 điểm. Phần lớn lợi thế đến từ việc nhận ra issue đã Done; đặc trưng này chiếm 27% importance trong temporal và 56% trong cross-project.
-Thứ hai, ngân sách 20% thực tế cao hơn 20%. Gần một nửa số sprint test có dưới 5 issue, nên làm tròn lên vẫn cho ít nhất một cảnh báo; tỷ lệ cảnh báo thực tế là khoảng 41% theo sprint và 26% tính gộp.
-Dù vậy, trong mọi trường hợp chênh lệch vẫn dương và có ý nghĩa thống kê.
+## Slide 8: Phương pháp Khối 3 & 4 - Kế hoạch Sprint, Duyệt/Hoàn tác và Agent hỏi đáp
+Ở cấp sprint (module M14), thuật toán tính tỉ lệ không hoàn thành lịch sử r từ các sprint đã kết thúc trước đó của cùng dự án tại cùng mốc t, nhân với số issue đang mở O(t) để ước lượng số không xong dự kiến b. Sau khi lấy b issue có điểm rủi ro cao nhất, thuật toán đóng bắc cầu theo quan hệ chờ-nhau để đưa thêm các issue phụ thuộc vào tập chuyển.
+Mọi thao tác Duyệt đơn lẻ hay theo lô (module M15) chỉ đi qua 3 hành động đóng và lưu giá trị cũ trước khi gọi API Plane để hỗ trợ Hoàn tác. Sổ cảnh báo (module M17) tự mở lại cảnh báo đã bỏ qua nếu điểm rủi ro ở lần chạy sau tăng thêm từ 0,15 trở lên. Agent hỏi đáp (module M16) sử dụng 5 công cụ chỉ đọc có lọc quyền xem dự án ngay trong SQL và quét đầu ra để chặn mọi câu trả lời bịa mã issue.
 
-## Slide 9: Chất lượng xác suất
-Các kết quả trên chỉ dùng điểm để xếp hạng. Nếu muốn đọc điểm như xác suất thì phải kiểm tra hiệu chuẩn.
-Mô hình động xếp hạng tốt hơn rõ rệt: AP tăng từ khoảng 0,65 lên khoảng 0,81.
-Với temporal, sau hiệu chuẩn intercept gần 0 và slope gần 1. Với cross-project, Brier không cải thiện, nghĩa là xác suất học từ dự án khác không áp dụng thẳng cho dự án mới được. Khi đưa vào Agentick sẽ cần hiệu chuẩn lại.
+## Slide 9: Minh họa thực tế - Luồng xử lý 5 bước trên cảnh báo ISP-401 (IS-1119)
+Slide này minh họa luồng xử lý thực tế trên issue IS-1119 (mã trên Plane là ISP-401). Ở mốc 25% sprint, issue đang ở trạng thái Code Review và ngừng hoạt động 3,3 ngày; CatBoost chấm điểm 0,759 (xếp thứ 2/7) nên đưa vào diện cảnh báo. Bộ thu thập SQL lấy ra 12 sự kiện trước mốc t, bao gồm bình luận c-550736 chờ 3 thành viên review và lịch sử h-carry-203241 ghi nhận 7 lần dồn sprint. LLM nêu hai giả thuyết waiting_person và carry_over kèm câu nhắc hỏi tiến độ review; Verifier xác nhận cả hai mã sự kiện hợp lệ và đăng thẻ lên Plane. Kết quả này trùng khớp hoàn toàn với nhãn của người chấm độc lập ở module M13.
 
-## Slide 10: So với quy tắc đơn giản và giữa các dự án
-Vì phần lớn tín hiệu đến từ trạng thái Done và số ngày không hoạt động, câu hỏi tự nhiên là một quy tắc đơn giản dựa trên hai thông tin này có đủ không. Đây là phân tích khám phá, thực hiện sau khi đã xem kết quả.
-Trên sprint tương lai, mô hình động chỉ hơn quy tắc khoảng 2 điểm và khoảng tin cậy chứa 0, nên chưa chứng minh được học máy hơn quy tắc. Trên dự án mới, mô hình động hơn khoảng 3,8 điểm.
-Ngoài ra, nếu phát cảnh báo dần qua các mốc thì lead time tăng lên khoảng 8 ngày.
-Cuối cùng, con số trung bình che đi khác biệt giữa các dự án: chênh lệch dương ở cả 14 dự án nhưng dao động rất lớn, từ khoảng 3 đến 35 điểm, nên không thể suy ra mức cải thiện cho một nhóm cụ thể từ con số trung bình.
+## Slide 10: Giao diện trên Plane (1/2) - Thẻ cảnh báo Issue và Bảng điều khiển
+Trên giao diện Plane, hình bên trái là thẻ cảnh báo hiển thị ngay trong trang chi tiết của issue ISP-401, gồm dòng trạng thái từ sổ cảnh báo M17, danh sách giả thuyết gắn mã sự kiện, câu nhắc dự kiến và hai nút Approve / Dismiss. Hình bên phải là bảng điều khiển Delivery risk trong mục Analytics, tổng hợp 81 cảnh báo của dự án, chi phí vận hành 0,0103 USD và tỉ lệ bám bằng chứng đạt 80/81 thẻ.
 
-## Slide 11: Phân bổ cảnh báo theo thời gian
-Phân tích cuối cùng của phần dự báo đi tiếp từ quan sát về lead time ở slide trước: với cùng tổng số cảnh báo, phát sớm một phần có tốt hơn phát hết ở mốc 50% không?
-Kết quả là phát sớm giúp cảnh báo sớm hơn khoảng 1,9 ngày nhưng không tăng recall. Giá trị K=2 chỉ là giá trị được khảo sát, không phải giá trị đã chứng minh là tối ưu.
-Tóm lại phần dự báo: mô hình chọn được danh sách issue rủi ro tốt hơn, nhưng đầu ra vẫn chỉ là một điểm số. Phần tiếp theo là agent, thành phần giải thích vì sao.
+## Slide 11: Giao diện trên Plane (2/2) - Kế hoạch Sprint, Duyệt theo lô và Hỏi đáp
+Ở nửa trái là thẻ kế hoạch của sprint "LibINDY 18.04 Revocation" tại mốc 50%: từ 13 issue đang mở và tỉ lệ lịch sử 45%, thuật toán ước lượng 6 issue không xong và lập tập chuyển. Khi bỏ chọn dòng IS-546 và bấm duyệt theo lô 5 dòng còn lại, cả 5 issue chuyển sang sprint sau và có thể bấm Undo để hoàn tác cả lô. Ở nửa phải là khung hỏi đáp Ask: trả lời câu hỏi tự nhiên kèm mã issue và hiển thị rõ các công cụ đã gọi ở dòng Looked up.
 
-## Slide 12: Kiến trúc agent hai tầng
-Hệ thống gồm hai tầng. Tầng một là mô hình CatBoost vừa trình bày cùng controller, không dùng LLM; tầng này quyết định khi nào cảnh báo và cảnh báo issue nào.
-Tầng hai là agent. Agent chỉ nhận các issue mà tầng một đã chọn, dùng công cụ chỉ đọc để lấy bằng chứng và viết brief; mỗi khẳng định phải trích một event_id có thật, và verifier chặn những brief vi phạm. LLM không sinh xác suất và không được sửa sprint.
+## Slide 12: Kết quả RQ1 (1/2) - So sánh mô hình động và tĩnh qua các mốc thời gian
+Bước sang kết quả thực nghiệm, ở RQ1, bảng và biểu đồ so sánh Recall dưới ngân sách 20% cho thấy tại mốc 0%, mô hình động và tĩnh ngang nhau, xác nhận không có rò rỉ dữ liệu tương lai. Từ mốc 25% trở đi, tiến độ thực thi giúp mô hình động tăng Recall có ý nghĩa thống kê ở cả kịch bản chia theo thời gian (+7,1 điểm % ở mốc 50%) và chia theo dự án (+7,5 điểm % ở mốc 50%). Do trung bình có 57% issue không xong nhưng ngân sách chỉ báo 20%, mức Recall tối đa lý thuyết là 0,598; mức 0,533 của mô hình động ở mốc 50% đã đạt 89% mức tối đa lý thuyết đó.
 
-## Slide 13: Agent làm được gì
-Cụ thể, agent có bốn khả năng. Thứ nhất, lấy bằng chứng của một issue tại thời điểm dự báo: trạng thái, số ngày không hoạt động, ước lượng, điểm rủi ro do CatBoost tính và các sự kiện đã xảy ra. Thứ hai, lấy tổng quan sprint. Thứ ba, đề xuất cảnh báo hoặc bỏ qua. Thứ tư, viết brief có cấu trúc gồm loại rủi ro, giá trị đo, event_id làm căn cứ, việc nên kiểm tra và điều chưa biết.
-Các ràng buộc được cài trong mã: chỉ đọc, lọc sự kiện sau thời điểm dự báo, chặn issue của dự án khác, gắn nhãn nội dung không tin cậy, và verifier chặn event_id bịa, số liệu sai hay khẳng định nhân quả.
+## Slide 13: Kết quả RQ1 (2/2) - Chất lượng cảnh báo trên tập issue còn mở (E8, E9)
+Khi đo trực tiếp trên tập các issue còn đang mở tại mốc t qua 14 dự án chưa từng xuất hiện khi huấn luyện (thực nghiệm E8, E9), ở mốc 50% cảnh báo của mô hình đạt Precision 76,3% so với tỉ lệ nền 67,0%, tương ứng Lift = 1,14. Ở cả bốn mốc thời gian, mô hình động đều vượt quy tắc sắp xếp đơn giản có ý nghĩa thống kê. Thực nghiệm phụ E7 cũng chỉ ra rằng việc đưa cờ từ khóa bình luận vào CatBoost chỉ tăng AUC thêm 0,016, giải thích vì sao văn bản bình luận được giữ cho bước chẩn đoán bằng LLM.
 
-## Slide 14: Ví dụ: agent gọi công cụ lấy bằng chứng
-Đây là một lần chạy thật, issue 177929 của dự án CONFSERVER ở mốc 50%. Agent gọi get_issue_evidence với mã issue. Công cụ trả về: issue đang open, đã 7 ngày không có hoạt động, điểm rủi ro do CatBoost tính là 0,863, và ba sự kiện: tạo issue, đưa vào sprint, cập nhật trạng thái open. Cờ untrusted_content đánh dấu phần nội dung do người dùng nhập.
+## Slide 14: Kết quả RQ2 (1/2) - Độ bám bằng chứng và Độ đồng thuận chẩn đoán (M13)
+Ở RQ2, cả 81 cảnh báo đều trả về JSON hợp lệ và Verifier loại bỏ 3 giả thuyết thiếu căn cứ, bảo đảm 0 giả thuyết bịa sự kiện lọt lên thẻ với chi phí chỉ 0,0001 USD mỗi cảnh báo. Khi đối chiếu với người chấm độc lập M13, tỉ lệ khớp nguyên nhân đứng đầu đạt 61,7% (kappa = 0,496) ở lượt 1 và tăng lên 68,3% (kappa = 0,571) trên tập 60 issue held-out sau khi sửa quy tắc thứ tự. Đặc biệt, khi cả hai bên cùng nêu nguyên nhân, nhãn của người chấm đã nằm sẵn trong danh sách giả thuyết của thẻ ở 96,9% và 97,7% số trường hợp.
 
-## Slide 15: Ví dụ: brief agent trả về
-Từ bằng chứng đó, agent trả về quyết định cảnh báo, kèm một khẳng định thuộc loại đình trệ trạng thái với giá trị 7 ngày, trích cả ba event_id. Agent gợi ý kiểm tra người phụ trách có bị chặn không và có tiến triển nhưng chưa cập nhật trạng thái không, đồng thời nêu rõ điều chưa biết là có commit nằm ngoài hệ thống issue hay không.
-Verifier xác nhận các event_id có thật và con số 7 ngày khớp dữ liệu, nên brief được chấp nhận. Trong dữ liệu, issue này thực tế không hoàn thành trong sprint.
-Ngoài ra, khi bộ kiểm thử chèn vào mô tả một issue khác câu lệnh yêu cầu agent đặt rủi ro bằng 0 và không cảnh báo, agent không làm theo mà vẫn cảnh báo dựa trên các sự kiện có thật; điểm rủi ro do CatBoost tính nên LLM không sửa được.
+## Slide 15: Kết quả RQ2 (2/2) - Ma trận nhầm lẫn và Phân tích theo từng nguyên nhân
+Ma trận nhầm lẫn lý giải vì sao có sự chênh lệch trên: ở lượt 1, LLM xếp nhãn carry_over lên đầu ở 41/81 thẻ, lấn át các nguyên nhân cụ thể hơn như pulled_away hay waiting_person nằm ở vị trí thứ hai. Vì nhật ký thực sự có sự kiện dồn sprint nên Verifier (vốn chỉ kiểm tra cấu trúc) không tự nhận ra đây là dấu hiệu bề mặt; việc thêm quy tắc đẩy carry_over xuống cuối thẻ giải quyết trực tiếp điểm này. Ngược lại, hạn chế lớn nhất của hệ thống nằm ở nhãn unclear_scope (khớp 0/13 trường hợp) khi phạm vi chưa rõ nằm ẩn trong câu chữ thảo luận.
 
-## Slide 16: Giới hạn
-Trước khi sang kế hoạch, em xin nêu các giới hạn. Giới hạn đầu tiên là chưa triển khai thực nghiệm: agent chưa được tích hợp vào Agentick nên mọi kết quả đều từ benchmark TAWOS. Các giới hạn còn lại là những lưu ý khi đọc kết quả phần dự báo đã trình bày ở trên.
+## Slide 16: Kết quả RQ3 - Đánh giá kế hoạch cấp Sprint bằng Backtest trên 60 Sprint (M14)
+Ở RQ3, kết quả backtest trên 60 sprint lịch sử của dự án IS tại mốc 50% cho thấy sự khác biệt rõ rệt giữa hai bước. Ở bước ước lượng quy mô tồn đọng của cả sprint, công thức thống kê lịch sử đạt độ chính xác cao với sai số tuyệt đối trung bình MAE = 1,76 issue/sprint và độ chệch Bias = -0,05, tốt hơn nhiều so với việc cộng trực tiếp xác suất của mô hình. Tuy nhiên, ở bước chọn đích danh từng issue vào tập chuyển khi phải lấy sâu tới gần nửa sprint, Precision chỉ đạt 52,8% so với 48,8% chọn ngẫu nhiên. Vì vậy, thẻ kế hoạch hữu ích trước hết ở con số cảnh báo sức chứa của sprint, còn danh sách bên dưới là gợi ý để trưởng nhóm chọn lại và duyệt theo lô.
 
-## Slide 17: Tiến độ hiện tại
-Đã hoàn thành: toàn bộ phần dự báo trên TAWOS, phân tích phân bổ cảnh báo, và mô-đun agent.
-Đang chờ: tích hợp vào Agentick. Agentick là dự án riêng, đã có mã nguồn, dùng để thu dữ liệu và chạy thực nghiệm.
+## Slide 17: Kết quả RQ4 - Kiểm thử Agent hỏi đáp (M16) và Hiệu năng toàn hệ thống
+Ở RQ4, trên 25 câu hỏi kịch bản, agent hỏi đáp trả lời đúng cả 17 câu trong phạm vi, từ chối 3 câu ngoài phạm vi, từ chối 2 yêu cầu ghi dữ liệu và chặn hoàn toàn 3 câu tấn công tiêm lệnh, không bịa mã issue nào ngoài kết quả công cụ với thời gian phản hồi trung vị 3,2 giây. Toàn bộ hệ thống có 92 unit test khối nghiên cứu và 89 unit test khối backend đều vượt qua 100%.
 
-## Slide 18: Roadmap và kế hoạch
-Vì vậy bước tiếp theo là tích hợp vào Agentick và kiểm tra agent trong luồng cảnh báo thật. Sau đó chạy shadow mode: hệ thống ghi lại dự báo và brief nhưng chưa gửi cho người dùng, để đo trên dữ liệu thật mà không ảnh hưởng đến nhóm.
-Chỉ chuyển sang bước thực nghiệm khi dữ liệu Agentick tái dựng được phạm vi sprint và trạng thái hoàn thành.
-Về thời gian, tích hợp dự kiến 2 tuần, song song kiểm tra agent; thực nghiệm khoảng 3 tuần tiếp theo; 2 tuần cuối để viết báo cáo.
+## Slide 18: Thảo luận tổng hợp và Các mối đe dọa tính hợp lệ (Threats to Validity)
+Nhìn chung, các bước dựa trên thống kê cấp tập hợp và kiểm tra cấu trúc bằng code đạt độ tin cậy cao hơn những bước đòi hỏi phân biệt từng issue ở giữa bảng xếp hạng hoặc suy luận ngữ nghĩa ẩn. Chúng tôi cũng phân tích rõ bốn nhóm mối đe dọa tính hợp lệ: người chấm M13 là một LLM độc lập nên có thể chia sẻ thiên lệch đọc văn bản; phần chẩn đoán và kế hoạch sprint mới đo trên 1 dự án mã nguồn mở (IS); bảng liên kết chặn trong TAWOS thiếu dấu thời gian tạo liên kết; và nghiên cứu chưa có thử nghiệm đối chứng trực tiếp với người quản lý dự án thật.
 
-## Slide 19: Tóm tắt
-Tóm lại, lịch sử thực thi giúp phát hiện issue sắp trễ tốt hơn, và kết quả giữ được trên dự án mới, dù phần lớn lợi thế đến từ việc nhận biết issue đã xong. Agent đã xây xong: tự lấy bằng chứng tại thời điểm dự báo, đề xuất cảnh báo và viết brief trích dẫn sự kiện có thật. Bước tiếp theo là tích hợp cả hai vào Agentick để thực nghiệm trên dữ liệu thật.
+## Slide 19: Kết luận và Hướng phát triển tiếp theo
+Từ bốn kết quả thực nghiệm chính và các giới hạn đã phân tích, ba hướng phát triển tiếp theo của đề tài gồm: thứ nhất, mời người quản lý dự án thực tế chấm độc lập một mẫu cảnh báo và mở rộng thực nghiệm sang các dự án khác trong TAWOS; thứ hai, bổ sung lịch sử chỉnh sửa mô tả issue vào bộ thu thập để nhận diện tốt hơn nguyên nhân unclear_scope và hiệu chuẩn lại xác suất theo từng mốc t; thứ ba, triển khai chạy thử nghiệm ngầm (shadow mode) trên một đội phát triển thực tế.
 
 ## Slide 20: Tài liệu tham khảo
-Em xin cảm ơn thầy cô đã lắng nghe, và rất mong nhận được góp ý.
+Trên đây là phần trình bày báo cáo tổng kết đề tài của em. Em xin trân trọng cảm ơn các thầy cô trong Hội đồng đã lắng nghe và rất mong nhận được ý kiến đóng góp của thầy cô ạ.
