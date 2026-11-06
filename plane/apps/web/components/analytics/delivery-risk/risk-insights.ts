@@ -40,7 +40,7 @@ export type TRiskPending = {
   reason: string | null;
 };
 
-export async function fetchRiskInsights<T>(path: "summary" | "pending?limit=8"): Promise<T | null> {
+export async function fetchRiskInsights<T>(path: string): Promise<T | null> {
   const response = await fetch(`${RISK_API}/${path}`, { credentials: "same-origin" });
   // Plane's web app answers with its HTML page when the /risk route is not deployed: no data, not an error
   if (response.ok && !response.headers.get("content-type")?.includes("application/json")) return null;

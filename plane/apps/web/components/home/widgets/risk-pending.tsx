@@ -8,10 +8,12 @@ import { useTranslation } from "@plane/i18n";
 import { fetchRiskInsights } from "@/components/analytics/delivery-risk/risk-insights";
 import type { TRiskPending } from "@/components/analytics/delivery-risk/risk-insights";
 
-export function RiskPendingWidget(props: { workspaceSlug: string }) {
-  const { workspaceSlug } = props;
+// assignee: only the work items assigned to this Plane user ("Your work"); without it, every flagged item the viewer sees
+export function RiskPendingWidget(props: { workspaceSlug: string; assignee?: string }) {
+  const { workspaceSlug, assignee } = props;
   const { t } = useTranslation();
-  const { data } = useSWR("risk-insights-pending", () => fetchRiskInsights<TRiskPending[]>("pending?limit=8"));
+  const query = `pending?limit=8${assignee ? `&assignee=${assignee}` : ""}`;
+  const { data } = useSWR(`risk-insights-${query}`, () => fetchRiskInsights<TRiskPending[]>(query));
   if (!data || data.length === 0) return null;
   const action = (a: string) => {
     const key = `risk_insights.action_${a}`;
@@ -21,7 +23,7 @@ export function RiskPendingWidget(props: { workspaceSlug: string }) {
   return (
     <div>
       <div className="mb-3 flex items-center justify-between">
-        <h2 className="text-body-md-medium text-secondary">{t("risk_insights.home_title")}</h2>
+        <h2 className="text-body-md-medium text-secondary">{t(assignee ? "risk_insights.mine_title" : "risk_insights.home_title")}</h2>
         <Link href={`/${workspaceSlug}/analytics/delivery-risk`} className="text-body-xs-regular text-accent-primary">
           {t("risk_insights.home_more")}
         </Link>

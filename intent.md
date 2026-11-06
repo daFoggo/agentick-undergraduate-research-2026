@@ -62,6 +62,7 @@ pydantic · FastAPI, SQLAlchemy 2, Alembic, PostgreSQL 16 (`agentick-backend`) �
 | M9 | Backend `GET /insights/summary` và `/insights/pending` (chỉ đếm project người xem thấy), `diagnosis.meta` (model, chi phí, lỗi) | pytest và contract test xanh |
 | M10 | Tab Analytics "Delivery risk": KPI, nguyên nhân, hành động và quyết định, độ bám bằng chứng, chi phí, theo ngày, theo project | Kiểm trong trình duyệt |
 | M11 | Home: danh sách cảnh báo đang chờ quyết định, bấm vào mở issue | Kiểm trong trình duyệt |
+| M12 | Your work: cảnh báo giao cho người đó (alert lưu `assignee_ids`); Views: view "Flagged by the risk check" theo nhãn | Kiểm trong trình duyệt |
 
 ## Báo cáo cũ phải viết lại nhiều
 
@@ -77,8 +78,8 @@ sổ cảnh báo và vòng đời; nhãn sau sự việc và người chấm. Kh
 
 ## Tiến độ (2026-11-06)
 
-M0–M11 xong và đã review một lượt; giới hạn còn lại ghi ở [BACKLOG.md](BACKLOG.md). Chạy đầu cuối: `scripts/score_sprints.py` -> `scripts/post_briefs.py` -> thẻ trên Plane (Duyệt / Bỏ qua / Hoàn tác đã thử trên ISP-459).
+M0–M12 xong và đã review một lượt; giới hạn còn lại ghi ở [BACKLOG.md](BACKLOG.md). Chạy đầu cuối: `scripts/score_sprints.py` -> `scripts/post_briefs.py` -> thẻ trên Plane (Duyệt / Bỏ qua / Hoàn tác đã thử trên ISP-459).
 
 ## Trang Plane đã khảo sát (2026-11-06)
 
-Làm: tab Analytics riêng (Overview của Plane là thống kê chung, không chứa số liệu AI) và widget ở Home. Không làm: Your work (cảnh báo chưa có người phụ trách để lọc), Views (nhãn `risk-alert` đã có sẵn nên view "có cảnh báo" tạo bằng bộ lọc nhãn của Plane, không cần code).
+Làm: tab Analytics riêng (Overview của Plane là thống kê chung, không chứa số liệu AI) và widget ở Home. Your work và Views làm ở M12.

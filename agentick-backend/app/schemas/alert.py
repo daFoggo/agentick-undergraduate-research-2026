@@ -106,6 +106,7 @@ class AlertIn(BaseModel):
     action_text: str | None = Field(default=None, max_length=2000)
     cause: Cause | None = None  # why the issue looks stuck, from the agent that read its comments
     evidence_quote: str | None = Field(default=None, max_length=500)  # what it quoted
+    assignee_ids: list[uuid.UUID] = Field(default=[], max_length=20)
     diagnosis: Diagnosis | None = None  # why it is at risk: hypotheses with evidence, or "unknown"
     cycle_id: uuid.UUID | None = None  # the cycle the item is in now (where an undo puts it back)
     target_cycle_id: uuid.UUID | None = None  # the cycle a move_next_cycle action puts it in

@@ -405,3 +405,13 @@ def test_an_alert_without_a_diagnosis_is_not_counted_as_an_unknown_cause(client,
     client.put("/api/v1/alerts", json=[_alert(mine, "IS-1", 0.4)], headers=INGEST)
     s = client.get("/api/v1/insights/summary", headers=OK).json()
     assert s["causes"] == [{"cause": "undiagnosed", "n": 1}] and s["ai"]["diagnosed"] == 0
+
+
+def test_pending_can_be_limited_to_one_assignee(client, plane):
+    mine, person = str(uuid.uuid4()), str(uuid.uuid4())
+    plane.projects = [mine]
+    a, b = _alert(mine, "IS-1", 0.4, assignee_ids=[person]), _alert(mine, "IS-2", 0.8)
+    client.put("/api/v1/alerts", json=[a, b], headers=INGEST)
+    out = client.get(f"/api/v1/insights/pending?assignee={person}", headers=OK).json()
+    assert [i["issue_key"] for i in out] == ["IS-1"]
+    assert len(client.get("/api/v1/insights/pending", headers=OK).json()) == 2

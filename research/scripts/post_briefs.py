@@ -192,7 +192,7 @@ for w in items:
     posted += 1
     published.append({'work_item_id': w['id'], 'project_id': project, 'issue_key': key, 'comment_id': brief['id'],
                       'rank': int(float(r['rank'])), 'size': sprint_size[(r['sprint_id'], r['mark'])], 'mark': mark,
-                      'score': p, 'status': row['dynamic_status'], 'inactive_days': inactive,
+                      'score': p, 'assignee_ids': w.get('assignees') or [], 'status': row['dynamic_status'], 'inactive_days': inactive,
                       'changes': [change_line(e) for e in events], 'diagnosis': card} | action | (
                           {'cause': card['hypotheses'][0]['cause']} if card['hypotheses'] else {}))
 if published:
