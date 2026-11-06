@@ -1,21 +1,20 @@
-"""Post a verified, readable brief as a Plane comment on every risk-alert work item of one project.
+"""Post a readable brief as a Plane comment on every risk-alert work item of one project.
 A work item that scores no longer flag (cancelled, done, or out of the sprint's alert cap) is retired: label removed, the
 bot's brief deleted, the stored alert dropped unless a person already decided on it.
 
-Template brief (no LLM, English like the Plane UI). The claim behind each brief is checked by EvidenceVerifier against as-of changelog
-events; unverified briefs are not posted. Each verified alert is also published to the risk service, which feeds the
-Approve / Dismiss / Undo card on the work item. Re-running replaces earlier briefs (deleted with PLANE_API_KEY, posted
-with PLANE_BOT_KEY if set) and overwrites the stored alerts.
-An LLM (OPENROUTER_MODEL, default openai/gpt-6-luna, spend capped by AGENT_BUDGET_USD) picks and drafts the action; any
-failure falls back to the rules; AGENT=0 turns it off.
-Usage: PLANE_API_KEY=... [PLANE_BOT_KEY=...] RISK_INGEST_TOKEN=... TAWOS_PG_PASSWORD=... \
+The brief is a template over a diagnosis card: hypotheses about why the item is at risk, each with the events that back
+it (collected up to the alert time, research/collectors.py), what is still unknown, and one proposed action. One LLM call
+(OPENROUTER_MODEL, default openai/gpt-6-luna, spend capped by AGENT_BUDGET_USD) writes the hypotheses; code drops those
+without real event ids (app/services/diagnosis.py). Without a key or with AGENT=0 the card says "unknown" and the rules
+choose the action. Each alert is also published to the risk service, which feeds the Approve / Dismiss / Undo card.
+Re-running replaces earlier briefs (deleted with PLANE_API_KEY, posted with PLANE_BOT_KEY if set) and overwrites the alerts.
+Usage: PLANE_API_KEY=... [PLANE_BOT_KEY=...] RISK_INGEST_TOKEN=... [RESEARCH_DATABASE_URL=...] \
        python scripts/post_briefs.py scores.csv ISP [limit]
 """
 import csv
 import html
 import json
 import os
-import subprocess
 import sys
 import urllib.error
 import urllib.request
@@ -25,12 +24,10 @@ from datetime import date, timezone
 import pandas as pd
 import psycopg
 
-from app.services.agent_context import AgentContext
-from app.services.evidence_verifier import ClaimSchema, EvidenceVerifier
+from app.services.diagnosis import diagnose
 from app.services.openrouter_client import OpenRouterClient
-from app.services.stuck_agent import run_agent
-from research.tawos_source import TawosSource
 from research.alert_actions import choose_action, next_cycle
+from research.collectors import collect
 
 BASE = os.environ.get('PLANE_URL', 'http://localhost:31080/api/v1/workspaces/ript')
 KEY = os.environ['PLANE_API_KEY']
@@ -38,6 +35,7 @@ BOT_KEY = os.environ.get('PLANE_BOT_KEY', KEY)
 RISK_URL = os.environ.get('RISK_URL', 'http://localhost:31081/api/v1/alerts')
 MARK = 'Sprint risk alert'
 OLD_MARKS = (MARK, 'Cảnh báo rủi ro sprint', 'Sprint-risk brief')  # earlier briefs are replaced too
+research_db = psycopg.connect(os.environ.get('RESEARCH_DATABASE_URL', 'postgresql://tawos:tawos_local_dev@localhost:15432/tawos'))
 scores_csv, identifier = sys.argv[1], sys.argv[2]
 limit = int(sys.argv[3]) if len(sys.argv) > 3 else None
 
@@ -58,11 +56,10 @@ def plane(method, path, body=None, key=None):
 
 
 def tawos(sql):
-    out = subprocess.run(['docker', 'exec', '-e', f"PGPASSWORD={os.environ['TAWOS_PG_PASSWORD']}",
-                          os.environ.get('TAWOS_DB_CONTAINER', 'research-db-1'), 'psql', '-U', 'tawos', '-d', 'tawos',
-                          '-Atc', f"select coalesce(json_agg(t),'[]') from ({sql}) t"],
-                         capture_output=True, text=True, check=True).stdout
-    return json.loads(out)
+    cur = research_db.cursor()
+    cur.execute(sql)
+    cols = [d.name for d in cur.description]
+    return [dict(zip(cols, row)) for row in cur.fetchall()]
 
 
 def change_line(e):
@@ -97,32 +94,31 @@ PROPOSED = {'raise_priority': 'raise the priority to High.',
             'move_next_cycle': 'move it to the next cycle, since little of this one is left.'}
 
 
-CAUSES = {'waiting_on_person': 'waiting for someone', 'blocked_by_issue': 'blocked by another issue',
-          'needs_decision': 'waiting for a decision', 'unclear_scope': 'the scope is unclear',
-          'not_started': 'nobody has started it'}
+def why(card):
+    if card['unknown']:
+        ask = card['missing_info'] or 'Ask the assignee what is holding it up.'
+        return f"<p><b>Why it may be late:</b> not clear from the recorded activity. {html.escape(ask)}</p>"
+    out = '<p><b>Why it may be late</b> (each point cites what was recorded before the alert)</p><ul>'
+    for h in card['hypotheses']:
+        cites = ''.join(f"<li><i>{html.escape(e['text'][:300])}</i></li>" for e in h['evidence'][:4])
+        out += f"<li><b>{html.escape(h['label'])}</b>: {html.escape(h['reason'])}<ul>{cites}</ul></li>"
+    ask = f"<p>Still unknown: {html.escape(card['missing_info'])}</p>" if card['missing_info'] else ''
+    return out + '</ul>' + ask
 
 
-def why(diagnosis):
-    if diagnosis['cause'] == 'no_signal':
-        return ''
-    quote = diagnosis.get('quote') or f"blocked by {diagnosis.get('blocker_key')}"
-    return (f"<p><b>According to the comments:</b> {CAUSES[diagnosis['cause']]}. Evidence: "
-            f"<i>{html.escape(quote)}</i></p>")
-
-
-def render(r, size, status, inactive, events, action, diagnosis):
+def render(r, size, status, inactive, events, action, card, sprint_note):
     changes = ''.join(f'<li>{html.escape(change_line(e))}</li>' for e in events) or \
         '<li>No changes were recorded before that point.</li>'
+    sprint = f'<li>Sprint: {html.escape(sprint_note)}</li>' if sprint_note else ''
     return (
         f"<p><b>{MARK}</b> — this item is among the ones worth a look early in the sprint.</p>"
         f"<p>Ranked <b>{int(float(r['rank']))} of {size}</b> by risk score among the open items of the sprint "
         f"(score {float(r['p']):.2f}, scale 0–1), measured when {float(r['mark']):.0%} of the sprint had passed. "
         "This is a hint about where to look first, not a statement that the item will be late.</p>"
         f"<p><b>What was observed</b></p><ul><li>Status at that time: {html.escape(status)}</li>"
-        f"<li>No recorded activity for {inactive:.1f} days</li></ul>"
-        f"{why(diagnosis)}"
+        f"<li>No recorded activity for {inactive:.1f} days</li>{sprint}</ul>"
+        f"{why(card)}"
         f"<p><b>Latest changes before that point</b></p><ul>{changes}</ul>"
-        "<p><b>Suggested check:</b> confirm who owns this item and what the next step is.</p>"
         f"<p><b>Proposed action:</b> {PROPOSED[action['action_type']]} Use <b>Approve</b> or <b>Dismiss</b> on the "
         "alert card at the top of the item; it can be undone. Nothing changes until you click.</p>")
 
@@ -155,10 +151,9 @@ snap = pd.read_parquet('data/processed/snapshots.parquet')
 snap = snap.set_index(['landmark', 'sprint_id', 'issue_id'])
 field_list = ','.join(f"'{f}'" for f in FIELDS)
 
-posted = failed = retired = 0
+posted = retired = 0
 published = []
-research_db = psycopg.connect(os.environ.get('RESEARCH_DATABASE_URL', 'postgresql://tawos:tawos_local_dev@localhost:15990/tawos'))
-try:  # the agent is on by default; without a key, or with AGENT=0, the rules choose
+try:  # the model is on by default; without a key, or with AGENT=0, the card says unknown and the rules choose
     agent = None if os.environ.get('AGENT') == '0' else OpenRouterClient(
         model=os.environ.get('OPENROUTER_MODEL', 'openai/gpt-6-luna'), budget=float(os.environ.get('AGENT_BUDGET_USD', .5)))
 except Exception as exc:
@@ -180,20 +175,6 @@ for w in items:
         f"select id,field,from_string,to_string,creation_date as ts from tawos_raw.change_log where issue_id={issue_id} "
         f"and field in ({field_list}) and creation_date <= '{cutoff.isoformat()}' order by creation_date desc limit 3")
     inactive, p = float(row['dynamic_inactive_days']), float(r['p'])
-    ctx = AgentContext(row['project'], sprint_id, cutoff, {issue_id: {
-        'project': row['project'], 'status': row['dynamic_status'], 'inactive_days': inactive, 'risk_score': p,
-        'events': [{'id': f"cl-{e['id']}", 'timestamp': e['ts']} for e in events]}})
-    claim = ClaimSchema(
-        issue_id=str(issue_id), cutoff=cutoff.isoformat(), risk_score=p, reported_inactive_days=inactive,
-        kind='status_stagnation' if inactive >= 3 else 'general_risk', evidence_ids=[f"cl-{e['id']}" for e in events],
-        suggested_checks=['Confirm who owns the next step for this item.'],
-        summary=f"Ranked {int(float(r['rank']))} by risk score {p:.2f} in its sprint at the {mark:.0%} mark. Status "
-                f"'{row['dynamic_status']}', no recorded activity for {inactive:.1f} days.")
-    result = EvidenceVerifier(ctx).verify_claim(claim, strict=False)
-    if not result.valid:
-        failed += 1
-        print('NOT POSTED', issue_id, result.errors[:1])
-        continue
     for old in plane('GET', P + f"/work-items/{w['id']}/comments/")['results']:
         if any(m in old['comment_html'] for m in OLD_MARKS):
             plane('DELETE', P + f"/work-items/{w['id']}/comments/{old['id']}/")
@@ -201,34 +182,35 @@ for w in items:
     cycle_id = cycle_of_sprint.get(r['sprint_id'])
     next_id = next_cycle(cycles, cycle_id, date.today()) if cycle_id else None
     action = choose_action(key, row['dynamic_status'], inactive, mark, cycle_id, next_id)
-    diagnosis = {'cause': 'no_signal'}
-    if agent:  # the tool agent reads comments and linked issues and says why it looks stuck; failures become no_signal
-        facts = dict(
-            key=key, status=row['dynamic_status'], inactive_days=inactive,
-            links=[dict(key=x['k'], kind='blocked by' if x['n'] == 'Blocks' else 'depends on',
-                        resolved=bool(x['rd'] and x['rd'] <= cutoff.isoformat())) for x in tawos(
-                f"select l.name n, t.issue_key k, t.resolution_date::text rd from tawos_raw.issue_link l "
-                f"join tawos_raw.issue t on t.id=l.target_issue_id where l.issue_id={issue_id} and "
-                f"((l.name='Blocks' and l.direction='INBOUND') or (l.name='Depends' and l.direction='OUTBOUND'))")])
-        diagnosis, meta = run_agent(agent, facts, TawosSource(research_db.cursor(), cutoff))
-        agent_stats[diagnosis['cause']] += 1
+    card = dict(hypotheses=[], dropped=0, unknown=True, missing_info=None, action=dict(type=None, text=None))
+    evidence = collect(research_db.cursor(), issue_id, cutoff)
+    if agent:
+        title = tawos(f"select title from tawos_raw.issue where id={issue_id}")[0]['title'] or ''
+        card, meta = diagnose(agent, key, title, row['dynamic_status'], inactive, evidence, can_move=bool(next_id))
+        agent_stats['unknown' if card['unknown'] else card['hypotheses'][0]['cause']] += 1
         agent_cost += meta['cost']
-        if diagnosis['cause'] != 'no_signal' and action['action_type'] != 'move_next_cycle':
-            action = {'action_type': 'nudge_owner', 'action_text': diagnosis['action_text']}  # aimed at the cause
+        if meta['error']:
+            print('diagnosis failed', key, meta['error'])
+        proposed = card['action']['type']
+        if proposed == 'nudge_owner':
+            action = {'action_type': 'nudge_owner', 'action_text': card['action']['text']}
+        elif proposed == 'raise_priority':
+            action = {'action_type': 'raise_priority'}  # move_next_cycle is left to the rules: they know the cycles
+    sprint_note = next((e['text'] for e in evidence if e['kind'] == 'sprint'), '')
     brief = plane('POST', P + f"/work-items/{w['id']}/comments/", {'comment_html': render(
-        r, sprint_size[(r['sprint_id'], r['mark'])], row['dynamic_status'], inactive, events, action, diagnosis)}, key=BOT_KEY)
+        r, sprint_size[(r['sprint_id'], r['mark'])], row['dynamic_status'], inactive, events, action, card,
+        sprint_note)}, key=BOT_KEY)
     posted += 1
     published.append({'work_item_id': w['id'], 'project_id': project, 'issue_key': key, 'comment_id': brief['id'],
                       'rank': int(float(r['rank'])), 'size': sprint_size[(r['sprint_id'], r['mark'])], 'mark': mark,
                       'score': p, 'status': row['dynamic_status'], 'inactive_days': inactive,
-                      'changes': [change_line(e) for e in events]} | action | (
-                          {'cause': diagnosis['cause'], 'evidence_quote': (diagnosis.get('quote') or f"blocked by {diagnosis.get('blocker_key')}")[:500]}
-                          if diagnosis['cause'] != 'no_signal' else {}))
+                      'changes': [change_line(e) for e in events], 'diagnosis': card} | action | (
+                          {'cause': card['hypotheses'][0]['cause']} if card['hypotheses'] else {}))
 if published:
-    req = urllib.request.Request(RISK_URL, method='PUT', data=json.dumps(published).encode(), headers={
+    req = urllib.request.Request(RISK_URL, method='PUT', data=json.dumps(published, default=str).encode(), headers={
         'Authorization': f"Bearer {os.environ['RISK_INGEST_TOKEN']}", 'Content-Type': 'application/json'})
     with urllib.request.urlopen(req, timeout=30) as r:
         print('risk service stored', json.load(r)['stored'], 'alerts')
 if agent:
-    print('diagnoses:', dict(agent_stats), 'cost USD', round(agent_cost, 5))
-print('posted', posted, 'not posted', failed, 'retired', retired, 'of', len(items))
+    print('causes:', dict(agent_stats), 'cost USD', round(agent_cost, 5))
+print('posted', posted, 'retired', retired, 'of', len(items))

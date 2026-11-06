@@ -6,8 +6,9 @@ KINDS = ('discussion', 'owner', 'blockers', 'sprint', 'history')
 FIELDS = ('status', 'priority', 'assignee', 'sprint', 'story points')
 
 
-def _ev(id, kind, ts, text):
-    return dict(id=id, kind=kind, ts=ts, text=text)
+def _ev(id, kind, ts, text, ref_key=None, safe_text=None):
+    """ref_key/safe_text: set when the event is about ANOTHER issue; the backend shows safe_text to viewers outside its project."""
+    return dict(id=id, kind=kind, ts=ts, text=text, ref_key=ref_key, safe_text=safe_text)
 
 
 def discussion(cur, issue_id, t, n=8):
@@ -28,7 +29,8 @@ def owner(cur, issue_id, t, days=7, n=5):
     out = []
     for cid, ts, oid, key, title, f, to in cur.fetchall():
         prio = state_at(cur, oid, t)['priority']  # fetchall above is done, so the cursor is reusable
-        out.append(_ev(f'o-{cid}', 'owner', ts, f'assignee user#{a} moved {key} "{title[:120]}" (priority {prio}) {f} -> {to}'))
+        out.append(_ev(f'o-{cid}', 'owner', ts, f'assignee user#{a} moved {key} "{title[:120]}" (priority {prio}) {f} -> {to}',
+                       key, f'another issue of the assignee, priority {prio}, {f} -> {to}'))
     return out[::-1]
 
 
@@ -45,7 +47,8 @@ def blockers(cur, issue_id, t, depth=2):
             title, created = cur.fetchone()
             out.append(_ev(f"b-{b['issue_id']}", 'blockers', created,
                            f"level {d}: {b['key']} \"{title[:120]}\" ({b['link']}) is "
-                           f"{'resolved' if b['resolved'] else 'open'}, status {st['status']}, priority {st['priority']}"))
+                           f"{'resolved' if b['resolved'] else 'open'}, status {st['status']}, priority {st['priority']}",
+                           b['key'], f"a linked issue, {'resolved' if b['resolved'] else 'open'}, priority {st['priority']}"))
             if d < depth and not b['resolved']:
                 todo.append((b['issue_id'], d + 1))
     return out

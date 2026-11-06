@@ -56,7 +56,7 @@ def verify(reply, events, key, can_move):
     """Card dict. Hypotheses citing ids that were not collected are dropped; a bad action becomes None."""
     by_id = {e['id']: e for e in events}
     hyps = [dict(cause=h.cause, label=CAUSES[h.cause], reason=h.reason,
-                 evidence=[dict(id=i, kind=by_id[i]['kind'], ts=by_id[i]['ts'].isoformat(), text=by_id[i]['text'])
+                 evidence=[dict(by_id[i], ts=by_id[i]['ts'].isoformat())
                            for i in h.event_ids])
             for h in reply.hypotheses if all(i in by_id for i in h.event_ids)]
     action, text = reply.action, reply.nudge_text
