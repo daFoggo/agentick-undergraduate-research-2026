@@ -9,7 +9,7 @@ from sqlalchemy.orm import Session
 
 from app.db.session import get_db
 from app.dependencies import PlaneDep, PlaneSession
-from app.models.alert import Alert, AlertDecision
+from app.models.alert import SYSTEM, Alert, AlertDecision
 from app.schemas.alert import AlertIn, redact
 from app.schemas.error import ErrorDetail
 from app.schemas.insights import (
@@ -103,12 +103,16 @@ def summary(
     visible = [a.work_item_id for a, _ in rows]
     undone = db.scalar(
         select(func.count()).where(
-            AlertDecision.event == "undo", AlertDecision.work_item_id.in_(visible)
+            AlertDecision.event == "undo",
+            AlertDecision.work_item_id.in_(visible),
+            AlertDecision.decided_by.not_like(f"{SYSTEM}%"),
         )
     )
     for ev in db.scalars(
         select(AlertDecision).where(
-            AlertDecision.work_item_id.in_(visible), AlertDecision.created_at >= since
+            AlertDecision.work_item_id.in_(visible),
+            AlertDecision.created_at >= since,
+            AlertDecision.decided_by.not_like(f"{SYSTEM}%"),
         )
     ):
         day = ev.created_at.date().isoformat()

@@ -38,13 +38,16 @@ thi: gán lại người, tách nhỏ, hỏi người quyết định.
 - **Có bằng chứng:** mỗi ý trên thẻ trỏ tới `event_id` có thật; ý không qua verifier thì bị bỏ.
 - **LLM không có quyền ghi:** chỉ ghi vào Plane khi người bấm Duyệt; hành động ngoài tập đóng bị từ chối.
 - **Text của người dùng là dữ liệu:** comment, description được đưa vào như dữ liệu, có giới hạn độ dài, không làm theo lệnh trong đó.
+- **Số do code tính:** sức chứa sprint và tập issue đề xuất chuyển do luật tính; LLM chỉ giải thích và không được nêu số không có trong kế hoạch.
+- **Lô cũng là hành động đóng:** mỗi dòng của kế hoạch thực thi qua đúng tập hành động đóng, từng dòng hoàn tác được; agent hỏi đáp chỉ có công cụ đọc.
 - **Quyền xem:** bằng chứng về issue khác chỉ hiện tên/tiêu đề nếu người xem có quyền xem issue đó; nếu không, chỉ hiện số lượng và mức ưu tiên.
 
 ## Stack
 
 PostgreSQL 17 (TAWOS) · CatBoost, pandas · OpenRouter qua `OpenRouterClient` (`openai/gpt-6-luna`, trần chi) ·
 pydantic · FastAPI, SQLAlchemy 2, Alembic, PostgreSQL 16 (`agentick-backend`) · Plane fork (React) · Docker Compose
-(`scripts/stack.sh`) · pytest. Không thêm framework agent, vector store, hay text2sql.
+(`scripts/stack.sh`) · pytest. Không thêm framework agent, vector store, hay text2sql. Agent hỏi đáp (M16) dùng vòng
+gọi công cụ tự viết trên `OpenRouterClient`.
 
 ## Module (xây, test, sửa, commit, sang module tiếp)
 
@@ -63,6 +66,11 @@ pydantic · FastAPI, SQLAlchemy 2, Alembic, PostgreSQL 16 (`agentick-backend`) �
 | M10 | Tab Analytics "Delivery risk": KPI, nguyên nhân, hành động và quyết định, độ bám bằng chứng, chi phí, theo ngày, theo project | Kiểm trong trình duyệt |
 | M11 | Home: danh sách cảnh báo đang chờ quyết định, bấm vào mở issue | Kiểm trong trình duyệt |
 | M12 | Your work: cảnh báo giao cho người đó (alert lưu `assignee_ids`); Views: view "Flagged by the risk check" theo nhãn | Kiểm trong trình duyệt |
+| M13 | Bộ nhãn đo chất lượng chẩn đoán: ~60 alert của ISP, người chấm đọc bằng chứng thô, không thấy kết luận của mô hình; script `eval_diagnosis` | Có con số đồng thuận (top-1, từng nguyên nhân, kappa) kèm giới hạn của người chấm; test xanh |
+| M14 | Kế hoạch cấp sprint: code ước lượng sức chứa từ lịch sử cùng dự án và chọn tập issue nên chuyển sprint sau (đóng dưới quan hệ chờ-nhau); một lần gọi LLM chỉ giải thích; verifier kiểm số | Backtest trên các sprint cũ (sai số sức chứa, precision/recall tập chuyển); test; bảng `plans`, `GET/POST /plans` |
+| M15 | Duyệt theo lô và hoàn tác theo lô: chọn từng dòng, thực thi qua tập hành động đóng, lỗi từng dòng được ghi | pytest (một phần lỗi, hoàn tác); kiểm trong trình duyệt trên stack local |
+| M16 | Agent hỏi đáp về rủi ro: vòng gọi công cụ tự viết, công cụ có tham số, chỉ đọc, lọc theo quyền xem, chỉ trả lời trong phạm vi quản lý rủi ro; panel "Ask" trong tab Delivery risk | Bộ 25 câu hỏi (gồm tiêm lệnh, hỏi project không được xem, ngoài phạm vi) đạt; kiểm trong trình duyệt |
+| M17 | Sổ cảnh báo tối thiểu: trạng thái giữa các lần chạy (mới, dai dẳng, xấu đi, đã giải quyết), tạm hoãn khi Bỏ qua, ghi nhận issue hồi phục sau khi Duyệt | Test; số liệu hiện trên tab Delivery risk |
 
 ## Báo cáo cũ phải viết lại nhiều
 
@@ -74,7 +82,9 @@ phát hiện (E1–E9) làm nền. Không dùng các file này làm nguồn khi 
 ## Không làm (lúc này)
 
 Huấn luyện lại hoặc so sánh phương pháp; tìm ca tương tự (cần gán nhãn trước); đọc trực tiếp dữ liệu Plane sống;
-sổ cảnh báo và vòng đời; nhãn sau sự việc và người chấm. Khi viết báo cáo mới chọn phần cần so sánh.
+text2sql tự do; ước lượng story point cho từng issue (E6 không phân biệt được với trung vị); nhiều agent chạy song
+song; cổng chi phí quyết định có cảnh báo hay không (cần hiệu chuẩn theo mốc 25/50/75%). Khi viết báo cáo mới chọn
+phần cần so sánh.
 
 ## Tiến độ (2026-11-06)
 

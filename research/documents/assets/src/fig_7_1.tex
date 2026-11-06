@@ -1,0 +1,23 @@
+\documentclass[border=6pt]{standalone}
+\usepackage{fontspec}\setmainfont{Times New Roman}
+\usepackage{pgfplots}\pgfplotsset{compat=1.17}\usepgfplotslibrary{groupplots}\usepackage{tikz}\pgfkeys{/pgf/number format/.cd,use comma,1000 sep={}}
+\definecolor{sys}{HTML}{2F6DB5}\definecolor{lab}{HTML}{D9822B}
+\begin{document}
+\begin{tikzpicture}
+\begin{groupplot}[group style={group size=2 by 1, horizontal sep=1cm}, width=8.2cm, height=7cm, ymin=0.3, ymax=0.68,
+ xmin=-0.05, xmax=0.8, xtick={0,0.25,0.5,0.75}, xticklabels={0,25,50,75}, xlabel={Phần sprint đã trôi qua (\%)},
+ title style={font=\small}, label style={font=\small}, tick label style={font=\footnotesize}, grid=major, grid style={gray!25},
+ legend style={font=\scriptsize, at={(0.02,0.98)}, anchor=north west, fill=white, fill opacity=0.85, text opacity=1}]
+\nextgroupplot[title={Theo thời gian (397 sprint)}, ylabel={Recall khi chỉ cảnh báo 20\% issue mỗi sprint}]
+\addplot[gray, dashed, thick] coordinates {(0,0.598) (0.25,0.598) (0.5,0.598) (0.75,0.598)}; \addlegendentry{Mức tối đa (xếp theo nhãn thật)}
+\addplot[sys, very thick, mark=*] coordinates {(0,0.456) (0.25,0.503) (0.5,0.532) (0.75,0.543)}; \addlegendentry{Mô hình động}
+\addplot[lab, thick, mark=square*] coordinates {(0,0.462) (0.25,0.462) (0.5,0.462) (0.75,0.462)}; \addlegendentry{Mô hình tĩnh}
+\addplot[black, thick, mark=triangle*] coordinates {(0,0.405) (0.25,0.451) (0.5,0.481) (0.75,0.525)}; \addlegendentry{Quy tắc: đã xong hay chưa}
+\nextgroupplot[title={Theo dự án (1962 sprint)}, yticklabels={}]
+\addplot[gray, dashed, thick] coordinates {(0,0.637) (0.25,0.637) (0.5,0.637) (0.75,0.637)}; \addlegendentry{Mức tối đa (xếp theo nhãn thật)}
+\addplot[sys, very thick, mark=*] coordinates {(0,0.447) (0.25,0.486) (0.5,0.522) (0.75,0.573)}; \addlegendentry{Mô hình động}
+\addplot[lab, thick, mark=square*] coordinates {(0,0.447) (0.25,0.447) (0.5,0.447) (0.75,0.447)}; \addlegendentry{Mô hình tĩnh}
+\addplot[black, thick, mark=triangle*] coordinates {(0,0.367) (0.25,0.418) (0.5,0.466) (0.75,0.535)}; \addlegendentry{Quy tắc: đã xong hay chưa}
+\end{groupplot}
+\end{tikzpicture}
+\end{document}

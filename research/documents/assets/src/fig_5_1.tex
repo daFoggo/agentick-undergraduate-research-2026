@@ -1,0 +1,44 @@
+\documentclass[border=6pt]{standalone}
+\usepackage{fontspec}\setmainfont{Times New Roman}
+\usepackage{tikz}\usetikzlibrary{arrows.meta,calc,positioning}
+\definecolor{sys}{HTML}{2F6DB5}\definecolor{red}{HTML}{C0392B}
+\newcommand{\ids}[1]{{\scriptsize\color{gray!55!black}#1}}
+\hyphenpenalty=10000 \exhyphenpenalty=10000 \tolerance=9999 \emergencystretch=3em
+\begin{document}
+\begin{tikzpicture}[font=\small,
+ blk/.style={draw=sys!75!black, rounded corners=3pt, fill=sys!5, text width=5.5cm, inner sep=7pt, align=left, minimum height=3.2cm},
+ ext/.style={blk, fill=gray!10, draw=gray!70, double},
+ wide/.style={blk, minimum height=0pt},
+ flow/.style={-{Stealth[length=2.6mm]}, very thick, sys!75!black},
+ back/.style={-{Stealth[length=2.6mm]}, very thick, red}]
+% cột trái: các job chạy ngoại tuyến
+\node[blk] (a) at (0,0) {\textbf{1. Dữ liệu và phát hiện}\\\ids{M0, M1, nền E1 đến E9}\\[4pt]
+ Dựng trạng thái issue tại t từ lịch sử thay đổi, chấm điểm nguy cơ trễ cho từng issue.\\[4pt]\textit{PostgreSQL 17 (TAWOS), Python, pandas, CatBoost}};
+\node[blk, below=1.1cm of a] (b) {\textbf{2. Bằng chứng và chẩn đoán}\\\ids{M2, M3, M8}\\[4pt]
+ Năm truy vấn SQL cố định lấy sự kiện đến t, một lần gọi mô hình nêu nguyên nhân kèm mã sự kiện, đoạn code kiểm lại.\\[4pt]\textit{Python, SQL, OpenRouter (gpt-6-luna), pydantic}};
+\node[blk, below=1.1cm of b] (c) {\textbf{3. Kế hoạch sprint}\\\ids{M14}\\[4pt]
+ Ước lượng số issue sẽ không xong từ các sprint trước, chọn issue nên chuyển sang cycle sau.\\[4pt]\textit{Python}};
+% cột giữa: dịch vụ risk
+\node[blk, right=2.1cm of b, minimum height=6.2cm, text width=5.7cm] (s) {\textbf{4. Dịch vụ risk}\\\ids{M4, M9, M15, M16, M17}\\[4pt]
+ Lưu chẩn đoán và kế hoạch, lọc theo quyền xem của người dùng, tính thống kê, thực thi Duyệt, Bỏ qua, Hoàn tác (từng issue và cả lô), đếm số lần cảnh báo, trả lời câu hỏi bằng công cụ chỉ đọc (M16, đang xây).\\[4pt]\textit{FastAPI, SQLAlchemy 2, Alembic, PostgreSQL 16}};
+% cột phải
+\node[blk, right=2.1cm of s, yshift=2.6cm] (u) {\textbf{5. Giao diện Plane}\\\ids{M6, M10, M11, M12}\\[4pt]
+ Thẻ cảnh báo trên issue, tab Delivery risk, danh sách ở Home và Your work, kế hoạch sprint.\\[4pt]\textit{Plane (bản fork), React, MobX}};
+\node[ext, below=1.3cm of u] (p) {\textbf{API của Plane}\\[4pt]
+ Hệ thống bên ngoài. Chỉ được ghi khi người bấm Duyệt: đổi ưu tiên, đăng comment, chuyển cycle.};
+% dải dưới
+\node[wide, below=0.9cm of c.south west, anchor=north west, text width=18.6cm] (q) {\textbf{6. Đánh giá và vận hành}\hspace{0.8em}\ids{M13, M7}\hspace{1em}
+ Đo chẩn đoán với nhãn độc lập; chạy đầu cuối trên Plane cục bộ.\hspace{1em}\textit{Python, Docker Compose, pytest}};
+% luồng
+\draw[flow] (a) -- (b);
+\draw[flow] (b) -- (c);
+\draw[flow] (b.east) -- (b.east -| s.west);
+\draw[flow] (c.east) -| (s.south);
+\draw[flow] (s.east |- u.west) -- (u.west);
+% luồng ngược duy nhất: người duyệt
+\draw[back] ($(u.south)+(0.9,0)$) -- ($(p.north)+(0.9,0)$);
+\draw[back] (p.west) -- (p.west -| s.east);
+\node[red, font=\scriptsize, anchor=west] at ($(u.south)!0.5!(p.north)+(1.05,0)$) {người bấm Duyệt};
+\node[red, font=\scriptsize, anchor=south] at ($(p.west)!0.5!(p.west -| s.east)+(0,0.05)$) {ghi vào Plane};
+\end{tikzpicture}
+\end{document}

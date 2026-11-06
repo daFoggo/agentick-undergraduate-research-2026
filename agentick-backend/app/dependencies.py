@@ -4,8 +4,9 @@ from typing import Annotated
 from fastapi import Depends, Header, Request
 
 from app.core.config import settings
-from app.core.exceptions import UnauthorizedError
+from app.core.exceptions import ServiceUnavailableError, UnauthorizedError
 from app.core.security import valid_bearer
+from app.integrations.openrouter import OpenRouterChat
 from app.integrations.plane import SESSION_COOKIE, PlaneClient
 
 
@@ -16,6 +17,14 @@ def get_plane() -> PlaneClient:
         settings.plane_api_key.get_secret_value(),
         settings.plane_workspace_slug,
     )
+
+
+@lru_cache
+def get_chat() -> OpenRouterChat:
+    key = settings.openrouter_api_key.get_secret_value()
+    if not key:
+        raise ServiceUnavailableError("The assistant is not configured.")
+    return OpenRouterChat(key, settings.assistant_model, settings.assistant_budget_usd)
 
 
 def require_ingest_token(authorization: Annotated[str | None, Header()] = None) -> None:
@@ -33,4 +42,5 @@ def get_plane_session(request: Request) -> str:
 
 
 PlaneDep = Annotated[PlaneClient, Depends(get_plane)]
+ChatDep = Annotated[OpenRouterChat, Depends(get_chat)]
 PlaneSession = Annotated[str, Depends(get_plane_session)]

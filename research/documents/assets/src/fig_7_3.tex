@@ -1,0 +1,12 @@
+\documentclass[border=6pt]{standalone}
+\usepackage{fontspec}\setmainfont{Times New Roman}
+\usepackage{pgfplots}\pgfplotsset{compat=1.17}\usepgfplotslibrary{groupplots}\usepackage{tikz}\pgfkeys{/pgf/number format/.cd,use comma,1000 sep={}}
+\definecolor{sys}{HTML}{2F6DB5}\definecolor{lab}{HTML}{D9822B}
+\begin{document}
+\begin{tikzpicture}
+\begin{axis}[xbar, bar width=9pt, width=11cm, height=7cm, xmin=0, xmax=46, symbolic y coords={Dồn từ sprint trước,Người phụ trách bận việc khác,Không rõ,Bị issue khác chặn,Chờ một người,Phạm vi chưa rõ,Chờ quyết định}, ytick=data, y dir=reverse,
+ enlarge y limits=0.1, nodes near coords, xlabel={Số cảnh báo (n=81)}, tick label style={font=\small}, label style={font=\small}]
+\addplot[fill=sys, draw=none] coordinates {(41,Dồn từ sprint trước) (19,Người phụ trách bận việc khác) (16,Không rõ) (2,Bị issue khác chặn) (2,Chờ một người) (1,Phạm vi chưa rõ) (0,Chờ quyết định)};
+\end{axis}
+\end{tikzpicture}
+\end{document}

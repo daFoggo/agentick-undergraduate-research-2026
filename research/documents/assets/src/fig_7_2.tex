@@ -1,0 +1,17 @@
+\documentclass[border=6pt]{standalone}
+\usepackage{fontspec}\setmainfont{Times New Roman}
+\usepackage{pgfplots}\pgfplotsset{compat=1.17}\usepgfplotslibrary{groupplots}\usepackage{tikz}\pgfkeys{/pgf/number format/.cd,use comma,1000 sep={}}
+\definecolor{sys}{HTML}{2F6DB5}\definecolor{lab}{HTML}{D9822B}
+\begin{document}
+\begin{tikzpicture}
+\begin{axis}[width=10cm, height=6.5cm, ymin=0.9, ymax=1.32, xmin=-0.05, xmax=0.8, xtick={0,0.25,0.5,0.75},
+ xticklabels={0,25,50,75}, xlabel={Phần sprint đã trôi qua (\%)}, ylabel={Lift (độ chính xác so với chọn ngẫu nhiên)},
+ label style={font=\small}, tick label style={font=\footnotesize}, grid=major, grid style={gray!25},
+ legend style={font=\scriptsize, at={(0.98,0.98)}, anchor=north east}]
+\addplot[sys, very thick, mark=*, error bars/.cd, y dir=both, y explicit, error bar style={thick}] coordinates {(0,1.23) +- (0,0.02) (0.25,1.19) +- (0,0.02) (0.5,1.14) +- (0,0.02) (0.75,1.08) +- (0,0.01)};
+\addlegendentry{Mô hình động (khoảng tin cậy 95\%)}
+\addplot[black, thick, mark=triangle*] coordinates {(0,1.01) (0.25,1.03) (0.5,1.03) (0.75,1.03)}; \addlegendentry{Quy tắc đơn giản}
+\addplot[gray, dashed, domain=-0.05:0.8] {1}; \addlegendentry{Chọn ngẫu nhiên}
+\end{axis}
+\end{tikzpicture}
+\end{document}

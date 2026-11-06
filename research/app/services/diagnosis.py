@@ -76,10 +76,12 @@ def verify(reply, events, key, can_move, inactive_days=99.0):
         cited = [by_id[i] for i in h.event_ids if i in by_id]
         ok = len(cited) == len(h.event_ids) and h.cause not in seen and SUPPORT.get(
             h.cause, lambda ev: any(e['kind'] == 'discussion' for e in ev))(cited)
-        if ok and len(hyps) < 3:
+        if ok:
             seen.add(h.cause)
             hyps.append(dict(cause=h.cause, label=CAUSES[h.cause], reason=h.reason,
                              evidence=[dict(e, ts=e['ts'].isoformat()) for e in cited]))
+    # carried over is a weak signal on its own (M13: it was first on 41 of 81 cards, a labeller agreed on 20): list it last
+    hyps = sorted(hyps, key=lambda h: h['cause'] == 'carry_over')[:3]
     action, text = reply.action, reply.nudge_text
     if action == 'move_next_cycle' and not can_move:
         action = None

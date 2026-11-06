@@ -431,3 +431,41 @@ def test_summary_can_be_narrowed_to_chosen_projects_but_never_widened(client, pl
 
     assert total("") == 2 and total(f"?project_ids={a}") == 1
     assert total(f"?project_ids={other}") == 0  # not visible: ignored, not added
+
+
+def decide_on(client, decision):
+    return client.post(
+        f"/api/v1/alerts/{ALERT['work_item_id']}/decision",
+        json={"decision": decision},
+        headers=OK,
+    ).json()
+
+
+def test_a_second_run_counts_and_remembers_the_previous_score(seeded):
+    first = seeded.get(f"/api/v1/alerts/{ALERT['work_item_id']}", headers=OK).json()
+    assert first["seen_count"] == 1 and first["prev_score"] is None
+    seeded.put("/api/v1/alerts", json=[{**ALERT, "score": 0.9}], headers=INGEST)
+    again = seeded.get(f"/api/v1/alerts/{ALERT['work_item_id']}", headers=OK).json()
+    assert again["seen_count"] == 2 and again["prev_score"] == ALERT["score"]
+    assert again["score"] == 0.9
+
+
+def test_a_dismissed_alert_comes_back_when_its_score_rises_a_lot(seeded):
+    assert decide_on(seeded, "reject")["state"] == "dismissed"
+
+    def state_after_run(score):
+        seeded.put("/api/v1/alerts", json=[{**ALERT, "score": score}], headers=INGEST)
+        return seeded.get(f"/api/v1/alerts/{ALERT['work_item_id']}", headers=OK).json()["state"]
+
+    assert state_after_run(0.60) == "dismissed"  # better than before
+    assert state_after_run(0.65) == "dismissed"  # +0.05: not enough to disturb anyone
+    assert state_after_run(0.82) == "pending"  # +0.17 on the run before: back for a new decision
+
+
+def test_an_approved_alert_stays_decided_however_much_worse_it_gets(seeded):
+    assert decide_on(seeded, "approve")["state"] == "approved"
+    seeded.put("/api/v1/alerts", json=[{**ALERT, "score": 0.99}], headers=INGEST)
+    assert (
+        seeded.get(f"/api/v1/alerts/{ALERT['work_item_id']}", headers=OK).json()["state"]
+        == "approved"
+    )

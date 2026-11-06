@@ -27,6 +27,7 @@ services:
       PLANE_BASE_URL: http://api:8000
       PLANE_API_KEY: ${RISK_BOT_API_KEY}
       INGEST_TOKEN: ${RISK_INGEST_TOKEN}
+      OPENROUTER_API_KEY: ${OPENROUTER_API_KEY:-}   # optional: without it the Ask panel answers 503
     ports:
       - "127.0.0.1:31081:8000"   # the offline job publishes here; not exposed beyond this host
     depends_on:
