@@ -33,6 +33,9 @@ class Alert(Base, TimestampMixin):
     action_text: Mapped[str | None] = mapped_column(String(2000))  # the drafted reminder, if any
     cause: Mapped[str | None] = mapped_column(String(24))
     evidence_quote: Mapped[str | None] = mapped_column(String(500))
+    assignee_ids: Mapped[list[str]] = mapped_column(
+        JSONB, nullable=False, server_default="[]"
+    )  # Plane user ids of the assignees when the alert was published
     diagnosis: Mapped[dict | None] = mapped_column(
         JSONB
     )  # the card: hypotheses + evidence, see schemas.alert

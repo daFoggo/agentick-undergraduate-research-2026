@@ -17,6 +17,7 @@ import { ProfilePriorityDistribution } from "@/components/profile/overview/prior
 import { ProfileStateDistribution } from "@/components/profile/overview/state-distribution";
 import { ProfileStats } from "@/components/profile/overview/stats";
 import { ProfileWorkload } from "@/components/profile/overview/workload";
+import { RiskPendingWidget } from "@/components/home/widgets/risk-pending";
 // constants
 import { USER_PROFILE_DATA } from "@plane/constants";
 // services
@@ -44,6 +45,7 @@ export default function ProfileOverviewPage({ params }: Route.ComponentProps) {
       <PageHead title={t("profile.page_label")} />
       <ContentWrapper className="space-y-7">
         <ProfileStats userProfile={userProfile} />
+        <RiskPendingWidget workspaceSlug={workspaceSlug} assignee={userId} />
         <ProfileWorkload stateDistribution={stateDistribution} />
         <div className="grid grid-cols-1 items-stretch gap-5 xl:grid-cols-2">
           <ProfilePriorityDistribution userProfile={userProfile} />

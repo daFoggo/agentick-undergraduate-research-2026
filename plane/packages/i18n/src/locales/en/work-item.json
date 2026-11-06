@@ -555,6 +555,7 @@
     "cause_needs_decision": "Waiting for a decision",
     "cause_waiting_on_person": "Waiting for someone",
     "cause_blocked_by_issue": "Blocked by another work item",
-    "cause_not_started": "Nobody has started it"
+    "cause_not_started": "Nobody has started it",
+    "mine_title": "Flagged work items assigned to this person, waiting for a decision"
   }
 }

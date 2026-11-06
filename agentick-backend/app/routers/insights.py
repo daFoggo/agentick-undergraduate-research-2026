@@ -1,3 +1,4 @@
+import uuid
 from collections import Counter, defaultdict
 from datetime import UTC, datetime, timedelta
 from typing import Annotated
@@ -135,9 +136,18 @@ def summary(
     responses=ERRORS,
 )
 def pending(
-    session: PlaneSession, plane: PlaneDep, db: Annotated[Session, Depends(get_db)], limit: int = 20
+    session: PlaneSession,
+    plane: PlaneDep,
+    db: Annotated[Session, Depends(get_db)],
+    limit: int = 20,
+    assignee: uuid.UUID | None = None,
 ) -> list[PendingItem]:
-    waiting = [a for a, s in states(db, plane.visible_project_ids(session)) if s == "pending"]
+    """assignee: only work items assigned to this Plane user (the "Your work" list)."""
+    waiting = [
+        a
+        for a, s in states(db, plane.visible_project_ids(session))
+        if s == "pending" and (assignee is None or str(assignee) in a.assignee_ids)
+    ]
     out = []
     for a in sorted(waiting, key=lambda a: -a.score)[: max(1, min(limit, 100))]:
         top = None
