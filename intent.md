@@ -58,6 +58,7 @@ pydantic · FastAPI, SQLAlchemy 2, Alembic, PostgreSQL 16 (`agentick-backend`) �
 | M5 | Job `scripts/post_briefs.py` dùng pipeline mới | Alert có chẩn đoán vào DB risk trên stack local |
 | M6 | Thẻ Plane hiển thị chẩn đoán | Kiểm trong trình duyệt, chụp màn hình |
 | M7 | Chạy đầu cuối, sửa lỗi, chốt | Demo chạy từ đầu đến cuối |
+| M8 | Hai ghi chú `sprint_overload`, `done_not_updated` cạnh chẩn đoán | Test collectors trên DB, thẻ hiển thị trong trình duyệt |
 
 ## Báo cáo cũ phải viết lại nhiều
 
@@ -73,4 +74,4 @@ sổ cảnh báo và vòng đời; nhãn sau sự việc và người chấm. Kh
 
 ## Tiến độ (2026-11-06)
 
-M0–M7 xong và đã review một lượt; giới hạn còn lại ghi ở [BACKLOG.md](BACKLOG.md). Chạy đầu cuối: `scripts/score_sprints.py` -> `scripts/post_briefs.py` -> thẻ trên Plane (Duyệt / Bỏ qua / Hoàn tác đã thử trên ISP-459).
+M0–M8 xong và đã review một lượt; giới hạn còn lại ghi ở [BACKLOG.md](BACKLOG.md). Chạy đầu cuối: `scripts/score_sprints.py` -> `scripts/post_briefs.py` -> thẻ trên Plane (Duyệt / Bỏ qua / Hoàn tác đã thử trên ISP-459).

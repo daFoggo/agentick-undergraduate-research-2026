@@ -22,3 +22,10 @@ def test_user_text_is_escaped_in_the_why_block():
 def test_unknown_card_asks_instead_of_claiming():
     out = why({'unknown': True, 'missing_info': 'Ask QA', 'hypotheses': []})
     assert 'not clear' in out and 'Ask QA' in out
+
+
+def test_notes_are_shown_escaped_and_absent_cards_still_render():
+    card = {'unknown': True, 'missing_info': None, 'hypotheses': [], 'notes': [{'kind': 'sprint_overload', 'text': '7 <b>open</b>'}]}
+    out = why(card)
+    assert 'Also noted' in out and '&lt;b&gt;' in out
+    assert 'Also noted' not in why({'unknown': True, 'missing_info': None, 'hypotheses': []})

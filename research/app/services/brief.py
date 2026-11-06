@@ -3,6 +3,15 @@ import html
 
 
 def why(card):
+    return _why(card) + _notes(card)
+
+
+def _notes(card):
+    items = ''.join(f"<li>{html.escape(n['text'])}</li>" for n in card.get('notes', []))
+    return f'<p>Also noted:</p><ul>{items}</ul>' if items else ''
+
+
+def _why(card):
     if card['unknown']:
         ask = card['missing_info'] or 'Ask the assignee what is holding it up.'
         return f"<p><b>Why it may be late:</b> not clear from the recorded activity. {html.escape(ask)}</p>"
