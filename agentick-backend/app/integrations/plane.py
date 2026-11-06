@@ -60,6 +60,12 @@ class PlaneClient:
         me = self._user("/api/users/me/", session)
         return me.get("display_name") or me.get("email") or "a reviewer"
 
+    def visible_project_ids(self, session: str) -> list[str]:
+        """Projects Plane lists for this user: what a statistic may be counted over."""
+        return [
+            p["id"] for p in self._user(f"/api/workspaces/{self._workspace}/projects/", session)
+        ]
+
     def assert_can_view(self, session: str, project_id: str, work_item_id: str) -> None:
         self._user(
             f"/api/workspaces/{self._workspace}/projects/{project_id}/issues/{work_item_id}/",

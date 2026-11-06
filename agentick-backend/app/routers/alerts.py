@@ -42,7 +42,9 @@ def read_model(db: Session, alert: Alert) -> AlertRead:
     state = "pending" if last is None or last.event == "undo" else STATES[last.event]
     data = AlertIn.model_validate(alert, from_attributes=True)
     if data.diagnosis:
-        redact(data.diagnosis, alert.issue_key)  # the viewer's own project is checked by authorize()
+        redact(
+            data.diagnosis, alert.issue_key
+        )  # the viewer's own project is checked by authorize()
     return AlertRead(
         **data.model_dump(),
         state=state,

@@ -20,6 +20,7 @@ class FakePlane:
         self.moves: list[tuple[str, dict]] = []  # (cycle id, body) of every cycle-issues POST
         self.comments: list[str] = []  # html of every comment the bot posted
         self.deleted: list[str] = []  # ids of comments the bot deleted
+        self.projects: list[str] = []  # project ids Plane lists for the signed-in user
 
         def handler(request: httpx.Request) -> httpx.Response:
             path, cookie = request.url.path, request.headers.get("cookie")
@@ -30,6 +31,12 @@ class FakePlane:
                     httpx.Response(200, json={"display_name": "dung"})
                     if signed_in
                     else httpx.Response(401)
+                )
+            if path == "/api/workspaces/ws/projects/":
+                return (
+                    httpx.Response(200, json=[{"id": p} for p in self.projects])
+                    if cookie == "session-id=ok"
+                    else httpx.Response(403)
                 )
             if path.startswith("/api/workspaces/"):  # Plane's internal API: the access check
                 return httpx.Response(200 if cookie == "session-id=ok" else 403, json={})

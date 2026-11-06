@@ -261,25 +261,49 @@ def test_the_diagnosed_cause_and_its_quote_are_kept_and_optional(client, plane):
 
 
 def _card(ref_key):
-    ev = {"id": "o-1", "kind": "owner", "ts": "2020-01-05T00:00:00+00:00",
-          "text": 'assignee moved OTHER-9 "secret title" In Progress -> Done', "ref_key": ref_key,
-          "safe_text": "another issue, priority High"}
-    mine = {"id": "c-1", "kind": "discussion", "ts": "2020-01-04T00:00:00+00:00", "text": "user#2: waiting"}
-    return {"hypotheses": [{"cause": "pulled_away", "label": "the assignee is pulled to other work",
-                            "reason": 'fixed OTHER-9 "secret title"', "evidence": [ev, mine]}],
-            "dropped": 0, "unknown": False, "missing_info": "ask about secret title",
-            "action": {"type": "nudge_owner", "text": "Hi, IS-1 looks stalled; any update?"}}
+    ev = {
+        "id": "o-1",
+        "kind": "owner",
+        "ts": "2020-01-05T00:00:00+00:00",
+        "text": 'assignee moved OTHER-9 "secret title" In Progress -> Done',
+        "ref_key": ref_key,
+        "safe_text": "another issue, priority High",
+    }
+    mine = {
+        "id": "c-1",
+        "kind": "discussion",
+        "ts": "2020-01-04T00:00:00+00:00",
+        "text": "user#2: waiting",
+    }
+    return {
+        "hypotheses": [
+            {
+                "cause": "pulled_away",
+                "label": "the assignee is pulled to other work",
+                "reason": 'fixed OTHER-9 "secret title"',
+                "evidence": [ev, mine],
+            }
+        ],
+        "dropped": 0,
+        "unknown": False,
+        "missing_info": "ask about secret title",
+        "action": {"type": "nudge_owner", "text": "Hi, IS-1 looks stalled; any update?"},
+    }
 
 
 def test_evidence_about_an_issue_of_another_project_is_redacted_for_the_viewer(client, plane):
     client.put("/api/v1/alerts", json=[{**ALERT, "diagnosis": _card("OTHER-9")}], headers=INGEST)
-    ev = client.get(f"/api/v1/alerts/{W1}", headers=OK).json()["diagnosis"]["hypotheses"][0]["evidence"]
+    ev = client.get(f"/api/v1/alerts/{W1}", headers=OK).json()["diagnosis"]["hypotheses"][0][
+        "evidence"
+    ]
     assert ev[0]["text"] == "another issue, priority High" and ev[0]["ref_key"] is None
     assert ev[1]["text"] == "user#2: waiting"
     body = client.get(f"/api/v1/alerts/{W1}", headers=OK).json()["diagnosis"]
     assert "secret title" not in str(body)  # reason and missing_info are cut too
     client.put("/api/v1/alerts", json=[{**ALERT, "diagnosis": _card("IS-9")}], headers=INGEST)
-    ev = client.get(f"/api/v1/alerts/{W1}", headers=OK).json()["diagnosis"]["hypotheses"][0]["evidence"]
+    ev = client.get(f"/api/v1/alerts/{W1}", headers=OK).json()["diagnosis"]["hypotheses"][0][
+        "evidence"
+    ]
     assert "secret title" in ev[0]["text"]  # same project: shown in full
 
 
@@ -288,12 +312,87 @@ def test_a_diagnosis_is_optional_and_checked(client, plane):
     assert client.get(f"/api/v1/alerts/{W1}", headers=OK).json()["diagnosis"] is None
     bad = _card("IS-9")
     bad["hypotheses"][0]["evidence"] = []  # a hypothesis without evidence is not storable
-    assert client.put("/api/v1/alerts", json=[{**ALERT, "diagnosis": bad}], headers=INGEST).status_code == 422
+    assert (
+        client.put("/api/v1/alerts", json=[{**ALERT, "diagnosis": bad}], headers=INGEST).status_code
+        == 422
+    )
 
 
 def test_notes_are_stored_and_only_known_kinds_are_accepted(client, plane):
-    card = _card("IS-9") | {"notes": [{"kind": "sprint_overload", "text": "7 of 9 open", "event_ids": ["s-1"]}]}
+    card = _card("IS-9") | {
+        "notes": [{"kind": "sprint_overload", "text": "7 of 9 open", "event_ids": ["s-1"]}]
+    }
     client.put("/api/v1/alerts", json=[{**ALERT, "diagnosis": card}], headers=INGEST)
-    assert client.get(f"/api/v1/alerts/{W1}", headers=OK).json()["diagnosis"]["notes"][0]["kind"] == "sprint_overload"
+    assert (
+        client.get(f"/api/v1/alerts/{W1}", headers=OK).json()["diagnosis"]["notes"][0]["kind"]
+        == "sprint_overload"
+    )
     card["notes"][0]["kind"] = "lazy_team"
-    assert client.put("/api/v1/alerts", json=[{**ALERT, "diagnosis": card}], headers=INGEST).status_code == 422
+    assert (
+        client.put(
+            "/api/v1/alerts", json=[{**ALERT, "diagnosis": card}], headers=INGEST
+        ).status_code
+        == 422
+    )
+
+
+def _alert(project, key, score, **fields):
+    return {
+        **ALERT,
+        "work_item_id": str(uuid.uuid4()),
+        "project_id": project,
+        "issue_key": key,
+        "score": score,
+    } | fields
+
+
+def test_summary_counts_only_visible_projects_and_follows_decisions(client, plane):
+    mine, theirs = str(uuid.uuid4()), str(uuid.uuid4())
+    plane.projects = [mine]
+    meta = {"model": "m1", "cost": 0.001, "error": None}
+    kept = _card("IS-9") | {"meta": meta, "notes": [{"kind": "sprint_overload", "text": "x"}]}
+    unk = {"hypotheses": [], "dropped": 2, "unknown": True, "meta": {**meta, "error": "bad json"}}
+    a1 = _alert(mine, "IS-1", 0.9, diagnosis=kept)
+    a2 = _alert(mine, "IS-2", 0.5, diagnosis=unk)
+    a3 = _alert(theirs, "XX-1", 0.99, diagnosis=kept)  # another team: never counted
+    client.put("/api/v1/alerts", json=[a1, a2, a3], headers=INGEST)
+    client.post(
+        f"/api/v1/alerts/{a1['work_item_id']}/decision", json={"decision": "approve"}, headers=OK
+    )
+    s = client.get("/api/v1/insights/summary", headers=OK).json()
+    assert s["alerts"] == {"total": 2, "pending": 1, "approved": 1, "dismissed": 0}
+    assert s["acceptance_rate"] == 1.0 and s["undone"] == 0
+    assert {c["cause"]: c["n"] for c in s["causes"]} == {"pulled_away": 1, "unknown": 1}
+    ai = s["ai"]
+    assert (ai["diagnosed"], ai["unknown"], ai["hypotheses_kept"], ai["hypotheses_dropped"]) == (
+        2,
+        1,
+        1,
+        2,
+    )
+    assert (
+        ai["cost_usd"] == 0.002
+        and ai["calls_failed"] == 1
+        and ai["notes"] == {"sprint_overload": 1}
+    )
+    assert ai["evidence_kinds"] == {"owner": 1, "discussion": 1}
+    assert [p["project_id"] for p in s["projects"]] == [mine]
+    assert s["decisions_by_day"][0]["approve"] == 1
+    client.post(f"/api/v1/alerts/{a1['work_item_id']}/undo", headers=OK)
+    s = client.get("/api/v1/insights/summary", headers=OK).json()
+    assert s["alerts"]["pending"] == 2 and s["undone"] == 1 and s["acceptance_rate"] is None
+
+
+def test_pending_lists_visible_alerts_by_score_with_redacted_reason(client, plane):
+    mine = str(uuid.uuid4())
+    plane.projects = [mine]
+    lo, hi = _alert(mine, "IS-1", 0.4), _alert(mine, "IS-2", 0.8, diagnosis=_card("OTHER-9"))
+    client.put("/api/v1/alerts", json=[lo, hi], headers=INGEST)
+    out = client.get("/api/v1/insights/pending", headers=OK).json()
+    assert [i["issue_key"] for i in out] == ["IS-2", "IS-1"]
+    assert "secret title" not in str(out) and out[0]["cause_label"]
+
+
+def test_insights_need_a_plane_session(client, plane):
+    assert client.get("/api/v1/insights/summary").status_code == 401
+    assert client.get("/api/v1/insights/pending", headers=LIMITED).status_code == 403

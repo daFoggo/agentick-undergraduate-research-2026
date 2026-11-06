@@ -6,8 +6,15 @@ from pydantic import BaseModel, ConfigDict, Field, model_validator
 Change = Annotated[str, Field(max_length=1000)]
 # the first three are carried out in Plane on approval; the rest is advice
 Cause = Literal[  # the first five are the earlier labels, kept so stored alerts still read
-    "waiting_on_person", "blocked_by_issue", "needs_decision", "unclear_scope", "not_started",
-    "pulled_away", "blocked", "waiting_person", "carry_over",
+    "waiting_on_person",
+    "blocked_by_issue",
+    "needs_decision",
+    "unclear_scope",
+    "not_started",
+    "pulled_away",
+    "blocked",
+    "waiting_person",
+    "carry_over",
 ]
 ActionType = Literal["raise_priority", "nudge_owner", "assign_owner", "split", "move_next_cycle"]
 
@@ -18,7 +25,9 @@ class Evidence(BaseModel):
     ts: str = Field(max_length=40)
     text: str = Field(max_length=1000)
     ref_key: str | None = Field(default=None, max_length=32)  # another issue this event is about
-    safe_text: str | None = Field(default=None, max_length=300)  # what a viewer outside its project sees
+    safe_text: str | None = Field(
+        default=None, max_length=300
+    )  # what a viewer outside its project sees
 
 
 class Hypothesis(BaseModel):
@@ -39,13 +48,22 @@ class Note(BaseModel):
     event_ids: list[str] = Field(default=[], max_length=12)
 
 
+class DiagnosisMeta(BaseModel):
+    model: str = Field(max_length=100)
+    cost: float = Field(ge=0)  # USD of the one model call
+    error: str | None = Field(default=None, max_length=200)  # why the call or its reply failed
+
+
 class Diagnosis(BaseModel):
     hypotheses: list[Hypothesis] = Field(max_length=3)
     dropped: int = Field(default=0, ge=0, le=100)  # hypotheses the verifier removed
     unknown: bool
     missing_info: str | None = Field(default=None, max_length=300)
     action: DiagnosisAction = DiagnosisAction()
-    notes: list[Note] = Field(default=[], max_length=2)  # states beside the diagnosis, about this issue's own sprint
+    meta: DiagnosisMeta | None = None  # what the model call cost and whether it failed
+    notes: list[Note] = Field(
+        default=[], max_length=2
+    )  # states beside the diagnosis, about this issue's own sprint
 
 
 def prefix(key: str) -> str:
@@ -53,8 +71,10 @@ def prefix(key: str) -> str:
 
 
 def redact(diagnosis: Diagnosis, issue_key: str) -> Diagnosis:
-    """Evidence about an issue of another project shows only its safe summary (priority, state), never its title or text.
-    The model's own words about it (reason, missing_info) could repeat that text, so they fall back to the label."""
+    """Evidence about an issue of another project shows only its safe summary (priority, state).
+
+    The model's own words about it (reason, missing_info) could repeat its text, so they fall back
+    to the label."""
     hidden = False
     for h in diagnosis.hypotheses:
         cut = False
