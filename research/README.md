@@ -15,7 +15,8 @@ Tests (pandas DLLs are blocked by Windows application control in a local venv, s
 first with `../scripts/stack.sh start`: without `TAWOS_DSN` the collector tests are skipped, not run):
 
 ```bash
-docker run --rm -e TAWOS_DSN=postgresql://tawos:tawos_local_dev@host.docker.internal:15432/tawos \n  -v "$(pwd -W)":/w -v research-pip-cache:/root/.cache/pip -w /w python:3.12-slim \
+docker run --rm -e TAWOS_DSN=postgresql://tawos:tawos_local_dev@host.docker.internal:15432/tawos \
+  -v "$(pwd -W)":/w -v research-pip-cache:/root/.cache/pip -w /w python:3.12-slim \
   sh -c "pip install -q -r requirements-dev.txt && python -m pytest -q"
 ```
 
