@@ -39,3 +39,10 @@ def test_next_cycle_is_the_one_starting_right_after_and_must_not_be_over():
     assert next_cycle(CYCLES, 'c3', date(2026, 10, 20)) is None          # nothing after the last one
     assert next_cycle(CYCLES, 'c1', date(2026, 11, 20)) is None          # the next one has already finished
     assert next_cycle(CYCLES, 'zz', date(2026, 10, 20)) is None
+
+
+def test_a_reminder_does_not_call_a_missing_status_a_state():
+    for status in ('unknown', None, ''):
+        text = choose_action('X-1', status, 5)['action_text']
+        assert 'unknown' not in text and text.startswith('Hi, X-1 has had no recorded activity for 5 days')
+    assert 'X-1 is still in progress' in choose_action('X-1', 'in progress', 5)['action_text']

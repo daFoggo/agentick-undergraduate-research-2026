@@ -17,7 +17,8 @@ def choose_action(key, status, inactive_days, mark=.5, cycle_id=None, next_cycle
     if mark >= LATE_MARK and cycle_id and next_cycle_id:
         return {'action_type': 'move_next_cycle', 'cycle_id': cycle_id, 'target_cycle_id': next_cycle_id}
     if inactive_days >= SILENT_DAYS:
+        state = f' is still {status}' if status and str(status).lower() != 'unknown' else ''  # a missing status is not a state
         return {'action_type': 'nudge_owner', 'action_text': (
-            f"Hi, {key} is still {status} and has had no recorded activity for {inactive_days:.0f} days. "
+            f"Hi, {key}{state} has had no recorded activity for {inactive_days:.0f} days. "
             "Could you share where it stands and what, if anything, is blocking it?")}
     return {'action_type': 'raise_priority'}
