@@ -47,6 +47,7 @@ export type TRiskPlanItem = {
   why: "risk" | "follows";
   cause: string | null;
   reason: string | null;
+  state: "pending" | "applied" | "dismissed";
 };
 
 export type TRiskPlan = {
@@ -62,6 +63,7 @@ export type TRiskPlan = {
   expected_unfinished: number;
   budget: number;
   items: TRiskPlanItem[];
+  errors: Record<string, string>; // items the last request could not move, with Plane's answer
 };
 
 async function getRisk<T>(path: string): Promise<T | null> {
@@ -74,3 +76,15 @@ async function getRisk<T>(path: string): Promise<T | null> {
 
 export const fetchRiskInsights = <T>(path: string) => getRisk<T>(`insights/${path}`);
 export const fetchRiskPlans = () => getRisk<TRiskPlan[]>("plans");
+
+// decision: approve moves the chosen items in Plane, reject dismisses them; undo reverses what was decided
+export async function postRiskPlan(planId: string, action: "decision" | "undo", body: object): Promise<TRiskPlan> {
+  const response = await fetch(`${RISK_API}/plans/${planId}/${action}`, {
+    method: "POST",
+    credentials: "same-origin",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(body),
+  });
+  if (!response.ok) throw new Error(String(response.status));
+  return (await response.json()) as TRiskPlan;
+}
