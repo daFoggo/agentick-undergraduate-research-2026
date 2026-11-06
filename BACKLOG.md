@@ -14,3 +14,4 @@
 | 10 | The diagnosis prompt is tuned on 5 + 6 live cases only | No labelled set (see 6); cost ~0.0001 USD per alert | Report time |
 | 11 | `is dependent of` (446 links) and `requires` (52) left out of the waits-on map | Direction not confirmable from data (creation order is ~50/50) | Only if blockers look incomplete on the live run |
 | 12 | Redaction hides other-project text but not the nudge text the model drafts | The nudge is posted on this issue for people who can see it | If cross-project links ever appear (0 of 9159 now) |
+| 13 | `post_briefs.py` has no retry: one dropped HTTP request to Plane stops the run (seen once, `RemoteDisconnected`) | Re-running is safe (briefs are replaced), so it was left | If the job runs unattended |

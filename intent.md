@@ -70,3 +70,7 @@ phát hiện (E1–E9) làm nền. Không dùng các file này làm nguồn khi 
 
 Huấn luyện lại hoặc so sánh phương pháp; tìm ca tương tự (cần gán nhãn trước); đọc trực tiếp dữ liệu Plane sống;
 sổ cảnh báo và vòng đời; nhãn sau sự việc và người chấm. Khi viết báo cáo mới chọn phần cần so sánh.
+
+## Tiến độ (2026-11-06)
+
+M0–M7 xong và đã review một lượt; giới hạn còn lại ghi ở [BACKLOG.md](BACKLOG.md). Chạy đầu cuối: `scripts/score_sprints.py` -> `scripts/post_briefs.py` -> thẻ trên Plane (Duyệt / Bỏ qua / Hoàn tác đã thử trên ISP-459).

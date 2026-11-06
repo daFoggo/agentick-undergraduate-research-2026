@@ -31,6 +31,7 @@ def test_nothing_after_t_and_ids_unique(conn):
             kinds.add(e['kind'])
             assert e['ts'] <= t, (issue_id, e)
             assert e['text'] and e['id'].startswith(PREFIX[e['kind']] + '-')
+            assert '""' not in e['text'] or e['kind'] == 'discussion'  # titles are not double-quoted
     assert {'sprint', 'history'} <= kinds
 
 
