@@ -32,3 +32,8 @@ class ForbiddenError(AppError):
 class ExternalServiceError(AppError):
     def __init__(self, detail: Any = "An upstream service failed.") -> None:
         super().__init__(status.HTTP_502_BAD_GATEWAY, detail)
+
+
+class ServiceUnavailableError(AppError):
+    def __init__(self, detail: Any = "The service is not available.") -> None:
+        super().__init__(status.HTTP_503_SERVICE_UNAVAILABLE, detail)

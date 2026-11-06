@@ -21,6 +21,11 @@ class Settings(BaseSettings):
         ""
     )  # bearer token of the offline job that publishes alerts and cases
 
+    # The question-answering assistant: one model on OpenRouter, a spend cap for the whole process.
+    openrouter_api_key: SecretStr = SecretStr("")
+    assistant_model: str = "openai/gpt-6-luna"
+    assistant_budget_usd: float = 1.0
+
     cors_origins: list[str] = ["http://localhost:3000"]
 
     # Environments where interactive docs (/docs, /redoc, /openapi.json) are served.

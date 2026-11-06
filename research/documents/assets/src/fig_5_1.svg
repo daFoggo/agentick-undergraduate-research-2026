@@ -1,0 +1,101 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1600" height="960" viewBox="0 0 1600 960" font-family="Segoe UI, Arial, sans-serif">
+<defs>
+<marker id="b" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="8" markerHeight="8" orient="auto"><path d="M0,0 L10,5 L0,10 z" fill="#2F6DB5"/></marker>
+<marker id="r" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="8" markerHeight="8" orient="auto"><path d="M0,0 L10,5 L0,10 z" fill="#C0392B"/></marker>
+<style>
+.card{fill:#fff;stroke:#2F6DB5;stroke-width:2;rx:14}
+.t{font-size:25px;font-weight:700;fill:#173B66}
+.d{font-size:19px;fill:#333}
+.s{font-size:17px;fill:#2F6DB5;font-style:italic}
+.ic{fill:none;stroke:#2F6DB5;stroke-width:3;stroke-linecap:round;stroke-linejoin:round}
+.bg{fill:#EAF1FA}
+.f{stroke:#2F6DB5;stroke-width:4;fill:none;marker-end:url(#b)}
+.w{stroke:#C0392B;stroke-width:4;fill:none;marker-end:url(#r)}
+.lab{font-size:17px;fill:#C0392B;font-weight:600}
+.tag{font-size:16px;fill:#666;letter-spacing:1px}
+</style></defs>
+<rect width="1600" height="960" fill="#fff"/>
+<text x="40" y="38" class="tag">CHẠY NGOẠI TUYẾN (job theo lô)</text>
+<text x="640" y="38" class="tag">DỊCH VỤ</text>
+<text x="1140" y="38" class="tag">NGƯỜI DÙNG</text>
+
+<!-- 1 -->
+<rect class="card" x="40" y="55" width="500" height="215"/>
+<circle class="bg" cx="92" cy="110" r="32"/>
+<g class="ic" transform="translate(70,88)"><ellipse cx="22" cy="8" rx="16" ry="6"/><path d="M6 8v26c0 3.3 7 6 16 6s16-2.7 16-6V8"/><path d="M6 21c0 3.3 7 6 16 6s16-2.7 16-6"/></g>
+<text x="145" y="106" class="t">1. Dữ liệu và phát hiện</text>
+<text x="70" y="168" class="d">Dựng trạng thái issue tại thời điểm t từ</text>
+<text x="70" y="194" class="d">lịch sử thay đổi, chấm điểm nguy cơ trễ</text>
+<text x="70" y="220" class="d">cho từng issue đang mở.</text>
+<text x="70" y="244" class="s">PostgreSQL 17 (TAWOS) · Python · CatBoost</text>
+
+<!-- 2 -->
+<rect class="card" x="40" y="320" width="500" height="250"/>
+<circle class="bg" cx="92" cy="375" r="32"/>
+<g class="ic" transform="translate(72,355)"><circle cx="18" cy="18" r="13"/><path d="M28 28l12 12"/><path d="M12 18l4 4 8-8"/></g>
+<text x="145" y="381" class="t">2. Bằng chứng và chẩn đoán</text>
+<text x="70" y="425" class="d">Năm truy vấn SQL cố định lấy sự kiện đến t.</text>
+<text x="70" y="451" class="d">Một lần gọi mô hình nêu nguyên nhân kèm mã</text>
+<text x="70" y="477" class="d">sự kiện; đoạn code kiểm lại từng mã.</text>
+<text x="70" y="540" class="s">Python · SQL · OpenRouter (gpt-6-luna)</text>
+
+<!-- 3 -->
+<rect class="card" x="40" y="620" width="500" height="215"/>
+<circle class="bg" cx="92" cy="675" r="32"/>
+<g class="ic" transform="translate(70,653)"><rect x="3" y="7" width="38" height="32" rx="4"/><path d="M3 18h38M13 3v8M31 3v8"/><path d="M14 28h6M24 28h6"/></g>
+<text x="145" y="681" class="t">3. Kế hoạch sprint</text>
+<text x="70" y="725" class="d">Ước lượng số issue sẽ không xong từ các</text>
+<text x="70" y="751" class="d">sprint trước, chọn issue nên chuyển sang</text>
+<text x="70" y="777" class="d">cycle sau.</text>
+<text x="70" y="815" class="s">Python</text>
+
+<!-- 4 -->
+<rect class="card" x="640" y="190" width="460" height="470" style="stroke-width:3"/>
+<circle class="bg" cx="692" cy="248" r="32"/>
+<g class="ic" transform="translate(670,226)"><rect x="4" y="4" width="36" height="14" rx="3"/><rect x="4" y="24" width="36" height="14" rx="3"/><path d="M11 11h.01M11 31h.01"/></g>
+<text x="745" y="256" class="t">4. Dịch vụ risk</text>
+<text x="670" y="310" class="d">Lưu chẩn đoán và kế hoạch.</text>
+<text x="670" y="340" class="d">Lọc theo quyền xem của người dùng.</text>
+<text x="670" y="370" class="d">Tính thống kê tổng hợp.</text>
+<text x="670" y="400" class="d">Thực thi Duyệt, Bỏ qua, Hoàn tác</text>
+<text x="670" y="430" class="d">(từng issue và cả lô).</text>
+<text x="670" y="460" class="d">Đếm số lần cảnh báo được kiểm tra.</text>
+<text x="670" y="490" class="d">Trả lời câu hỏi bằng công cụ chỉ đọc.</text>
+<text x="670" y="620" class="s">FastAPI · SQLAlchemy 2 · Alembic</text>
+<text x="670" y="645" class="s">PostgreSQL 16</text>
+
+<!-- 5 -->
+<rect class="card" x="1200" y="55" width="360" height="330"/>
+<circle class="bg" cx="1252" cy="112" r="32"/>
+<g class="ic" transform="translate(1230,92)"><rect x="3" y="5" width="38" height="30" rx="4"/><path d="M3 15h38M10 10h.01M16 10h.01"/><path d="M11 25h12M11 30h20"/></g>
+<text x="1305" y="120" class="t">5. Giao diện Plane</text>
+<text x="1230" y="170" class="d">Thẻ cảnh báo trên issue,</text>
+<text x="1230" y="198" class="d">tab Delivery risk, danh sách</text>
+<text x="1230" y="226" class="d">ở Home và Your work,</text>
+<text x="1230" y="254" class="d">kế hoạch sprint, ô hỏi đáp.</text>
+<text x="1230" y="340" class="s">Plane (bản fork) · React · MobX</text>
+
+<!-- Plane API -->
+<rect class="card" x="1200" y="470" width="360" height="190" style="stroke:#777;stroke-dasharray:8 6;fill:#F4F4F4"/>
+<text x="1230" y="515" class="t" style="fill:#444">API của Plane</text>
+<text x="1230" y="550" class="d">Hệ thống bên ngoài. Chỉ được ghi</text>
+<text x="1230" y="578" class="d">khi người bấm Duyệt: đổi ưu tiên,</text>
+<text x="1230" y="606" class="d">đăng comment, chuyển cycle.</text>
+
+<!-- 6 -->
+<rect class="card" x="40" y="870" width="1520" height="70"/>
+<circle class="bg" cx="92" cy="905" r="26"/>
+<g class="ic" transform="translate(76,889) scale(.72)"><path d="M4 40V20M16 40V8M28 40V26M40 40V14"/></g>
+<text x="135" y="912" class="d"><tspan class="t" style="font-size:23px">6. Đánh giá và vận hành</tspan>   Đo chẩn đoán với nhãn độc lập; chạy đầu cuối trên Plane cục bộ.   </text>
+<text x="1180" y="912" class="s" text-anchor="start">Python · Docker Compose · pytest</text>
+
+<!-- flows -->
+<path class="f" d="M290 270 V318"/>
+<path class="f" d="M290 570 V618"/>
+<path class="f" d="M540 445 H638"/>
+<path class="f" d="M540 727 H590 Q 600 727 600 700 V560 Q600 560 638 560" />
+<path class="f" d="M1100 300 H1198"/>
+<path class="w" d="M1100 600 H1196"/>
+<text x="1108" y="630" class="lab" style="font-size:15px">chỉ khi người</text>
+<text x="1108" y="650" class="lab" style="font-size:15px">bấm Duyệt</text>
+</svg>

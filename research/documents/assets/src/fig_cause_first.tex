@@ -1,0 +1,16 @@
+\documentclass[border=6pt]{standalone}
+\usepackage{fontspec}\setmainfont{Times New Roman}
+\usepackage{pgfplots}\pgfplotsset{compat=1.17}\usepgfplotslibrary{groupplots}\usepackage{tikz}\pgfkeys{/pgf/number format/.cd,use comma,1000 sep={}}
+\definecolor{sys}{HTML}{2F6DB5}\definecolor{lab}{HTML}{D9822B}
+\begin{document}
+\begin{tikzpicture}
+\begin{axis}[xbar, bar width=5pt, width=11cm, height=7.2cm, xmin=0,
+ symbolic y coords={Dồn từ sprint trước,Người phụ trách bận việc khác,Không rõ,Chờ một người,Phạm vi chưa rõ,Bị issue khác chặn,Chờ quyết định}, ytick=data, y dir=reverse, enlarge y limits=0.12, nodes near coords,
+ nodes near coords style={font=\footnotesize}, xlabel={Số alert (n=81)}, title={Lần 1: 81 alert, trước khi sửa thứ tự},
+ legend style={at={(0.98,0.05)}, anchor=south east, font=\footnotesize}, tick label style={font=\small}]
+\addplot[fill=sys, draw=none] coordinates {(41,Dồn từ sprint trước) (19,Người phụ trách bận việc khác) (16,Không rõ) (2,Chờ một người) (1,Phạm vi chưa rõ) (2,Bị issue khác chặn) (0,Chờ quyết định)};
+\addplot[fill=lab, draw=none] coordinates {(20,Dồn từ sprint trước) (31,Người phụ trách bận việc khác) (9,Không rõ) (8,Chờ một người) (8,Phạm vi chưa rõ) (3,Bị issue khác chặn) (2,Chờ quyết định)};
+\legend{Hệ thống (nguyên nhân đứng đầu), Người chấm độc lập}
+\end{axis}
+\end{tikzpicture}
+\end{document}

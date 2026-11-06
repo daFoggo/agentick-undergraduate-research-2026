@@ -1,0 +1,16 @@
+\documentclass[border=6pt]{standalone}
+\usepackage{fontspec}\setmainfont{Times New Roman}
+\usepackage{pgfplots}\pgfplotsset{compat=1.17}\usepgfplotslibrary{groupplots}\usepackage{tikz}\pgfkeys{/pgf/number format/.cd,use comma,1000 sep={}}
+\definecolor{sys}{HTML}{2F6DB5}\definecolor{lab}{HTML}{D9822B}
+\begin{document}
+\begin{tikzpicture}
+\begin{axis}[xbar, bar width=5pt, width=11cm, height=7.2cm, xmin=0,
+ symbolic y coords={Người phụ trách bận việc khác,Dồn từ sprint trước,Không rõ,Phạm vi chưa rõ,Chờ một người,Chờ quyết định,Bị issue khác chặn}, ytick=data, y dir=reverse, enlarge y limits=0.12, nodes near coords,
+ nodes near coords style={font=\footnotesize}, xlabel={Số alert (n=60)}, title={Held-out: 60 ca, sau khi sửa thứ tự},
+ legend style={at={(0.98,0.05)}, anchor=south east, font=\footnotesize}, tick label style={font=\small}]
+\addplot[fill=sys, draw=none] coordinates {(22,Người phụ trách bận việc khác) (20,Dồn từ sprint trước) (15,Không rõ) (0,Phạm vi chưa rõ) (1,Chờ một người) (1,Chờ quyết định) (1,Bị issue khác chặn)};
+\addplot[fill=lab, draw=none] coordinates {(19,Người phụ trách bận việc khác) (17,Dồn từ sprint trước) (12,Không rõ) (5,Phạm vi chưa rõ) (3,Chờ một người) (3,Chờ quyết định) (1,Bị issue khác chặn)};
+\legend{Hệ thống (nguyên nhân đứng đầu), Người chấm độc lập}
+\end{axis}
+\end{tikzpicture}
+\end{document}

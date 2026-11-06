@@ -1,0 +1,29 @@
+\documentclass[border=6pt]{standalone}
+\usepackage{fontspec}\setmainfont{Times New Roman}
+\usepackage{tikz}\usetikzlibrary{arrows.meta,patterns}
+\definecolor{sys}{HTML}{2F6DB5}\definecolor{cut}{HTML}{B03A2E}
+\begin{document}
+\begin{tikzpicture}[x=0.15cm, y=1cm, font=\small]
+% vùng được dùng và vùng bị cắt tại t = 50%
+\fill[sys!16] (0,0) rectangle (50,2.3);
+\fill[pattern=north east lines, pattern color=gray!55] (50,0) rectangle (100,2.3);
+\draw[gray!70] (0,0) rectangle (100,2.3);
+\draw[very thick, cut] (50,-0.25) -- (50,2.9);
+\node[cut, font=\small\bfseries] at (50,3.25) {t: thời điểm cảnh báo};
+\node[sys!80!black] at (25,1.95) {được dùng làm bằng chứng};
+\node[gray!60!black, fill=white, inner sep=1.5pt] at (75,1.95) {bị cắt, hệ thống không nhìn thấy};
+% trục thời gian
+\draw[thick, -{Stealth}] (-3,0) -- (104,0);
+\foreach \x/\l in {0/{Bắt đầu sprint},25/{25\%},50/{50\%},75/{75\%},100/{Kết thúc sprint}} {
+  \draw (\x,0) -- (\x,-0.18); \node[below=2pt] at (\x,-0.15) {\l};}
+% sự kiện: bình luận (tròn), đổi trạng thái (vuông)
+\foreach \x in {8,21,38} \node[circle, fill=sys, inner sep=2.2pt] at (\x,0.85) {};
+\foreach \x in {14,44} \node[rectangle, fill=sys, inner sep=2.4pt] at (\x,0.85) {};
+\foreach \x in {59,72,91} \node[circle, draw=gray!70, fill=white, inner sep=2.2pt] at (\x,0.85) {};
+\foreach \x in {64,83} \node[rectangle, draw=gray!70, fill=white, inner sep=2.4pt] at (\x,0.85) {};
+% chú thích
+\node[circle, fill=sys, inner sep=2.2pt, label=right:{bình luận}] at (5,-1.6) {};
+\node[rectangle, fill=sys, inner sep=2.4pt, label=right:{đổi trạng thái, người phụ trách, sprint}] at (27,-1.6) {};
+\node[circle, draw=gray!70, fill=white, inner sep=2.2pt, label=right:{sự kiện sau t, không được dùng}] at (72,-1.6) {};
+\end{tikzpicture}
+\end{document}

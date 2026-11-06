@@ -1,0 +1,28 @@
+\documentclass[border=6pt]{standalone}
+\usepackage{fontspec}\setmainfont{Times New Roman}\setmonofont{Consolas}[Scale=0.82]
+\usepackage{tikz}\usetikzlibrary{arrows.meta,positioning,calc}
+\definecolor{sys}{HTML}{2F6DB5}
+\begin{document}
+\begin{tikzpicture}[font=\small,
+ box/.style={draw=sys!70!black, rounded corners=3pt, fill=white, text width=14.2cm, inner sep=6pt, align=left},
+ num/.style={circle, fill=sys, text=white, font=\bfseries, minimum size=0.75cm, inner sep=0pt},
+ arr/.style={-{Stealth[length=2.6mm]}, very thick, sys!70!black}]
+\node[box] (b1) {\textbf{Phát hiện.} Issue \texttt{IS-1119} “POA: DIDDoc support” (ISP-401), mốc 25\% của sprint. Điểm rủi ro 0,759, hạng 2 trong 7 issue còn mở. Trạng thái \emph{code review}, không có hoạt động 3,3 ngày.};
+\node[box, below=0.7cm of b1] (b2) {\textbf{Thu thập bằng chứng.} 12 sự kiện cắt tại t: 2 bình luận, 1 tình trạng sprint, 9 dòng lịch sử. Hai sự kiện sẽ được trích dẫn:\\[2pt]
+ \texttt{[c-550736]} bình luận: “For now waiting for review form \ldots”\\
+ \texttt{[h-carry-203241]} lịch sử: “added to a sprint 7 times before now (carried over)”};
+\node[box, below=0.7cm of b2] (b3) {\textbf{Mô hình trả lời} (một lần gọi, chi phí 0,000136 USD).\\[2pt]
+ \texttt{\{"hypotheses": [}\\
+ \texttt{\ \ \{"cause": "waiting\_person", "event\_ids": ["c-550736"],}\\
+ \texttt{\ \ \ "reason": "The discussion says the issue is waiting for review, but it does not identify}\\
+ \texttt{\ \ \ whether that review is still pending."\},}\\
+ \texttt{\ \ \{"cause": "carry\_over", "event\_ids": ["h-carry-203241"],}\\
+ \texttt{\ \ \ "reason": "The issue has been added to a sprint seven times before now."\}],}\\
+ \texttt{ "missing\_info": "Ask the assignee and requested reviewers whether a review is still pending \ldots",}\\
+ \texttt{ "action": "nudge\_owner", "nudge\_text": "Hi, could you share an update on IS-1119 \ldots"\}}};
+\node[box, below=0.7cm of b3] (b4) {\textbf{Verifier} (đoạn code kiểm lại). Giữ 2 giả thuyết, bỏ 0: mỗi mã sự kiện có thật và đúng loại (\texttt{c-550736} là bình luận, \texttt{h-carry-203241} là dòng lịch sử). \texttt{carry\_over} xếp cuối vì chỉ là tín hiệu yếu. Câu nhắc có mã issue, không có liên kết hay \texttt{@}, và 3,3 ngày im lặng đủ lâu để nhắc.};
+\node[box, below=0.7cm of b4] (b5) {\textbf{Thẻ trên Plane.} “Sprint-risk alert, waiting for a decision”. Lý do: chờ một người (trích bình luận c-550736), dồn từ sprint trước (trích h-carry-203241). Điều chưa biết: ai đang review và review còn treo không. Hành động đề xuất: nhắc người phụ trách bằng câu trên. Người dùng bấm \textbf{Duyệt}, \textbf{Bỏ qua} hoặc \textbf{Hoàn tác}; không bấm thì Plane không đổi gì.};
+\foreach \i in {1,...,5} \node[num] at ($(b\i.north west)+(-0.5,-0.45)$) {\i};
+\foreach \a/\b in {1/2,2/3,3/4,4/5} \draw[arr] (b\a.south) -- (b\b.north);
+\end{tikzpicture}
+\end{document}
