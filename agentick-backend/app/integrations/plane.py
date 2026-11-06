@@ -44,7 +44,7 @@ class PlaneClient:
             raise NotFoundError("Not found in Plane.")
         if response.is_error:
             raise ExternalServiceError(f"Plane returned {response.status_code}.")
-        return response.json()
+        return response.json() if response.content else {}
 
     def _user(self, path: str, session: str) -> dict:
         response = self._send("GET", path, {"Cookie": f"{SESSION_COOKIE}={session}"})
@@ -77,4 +77,17 @@ class PlaneClient:
             "POST",
             f"/projects/{project_id}/work-items/{work_item_id}/comments/",
             {"comment_html": html},
+        )
+
+    def delete_comment(self, project_id: str, work_item_id: str, comment_id: str) -> None:
+        self._bot(
+            "DELETE", f"/projects/{project_id}/work-items/{work_item_id}/comments/{comment_id}/"
+        )
+
+    def move_to_cycle(self, project_id: str, work_item_id: str, cycle_id: str) -> None:
+        """Adding to a cycle takes the item out of its old one; Plane refuses a finished cycle."""
+        self._bot(
+            "POST",
+            f"/projects/{project_id}/cycles/{cycle_id}/cycle-issues/",
+            {"issues": [work_item_id]},
         )

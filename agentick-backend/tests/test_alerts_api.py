@@ -158,3 +158,103 @@ def test_an_alert_a_person_already_decided_on_is_not_retired(seeded):
     seeded.post(f"/api/v1/alerts/{W1}/decision", json={"decision": "reject"}, headers=OK)
     assert seeded.delete(f"/api/v1/alerts/{W1}", headers=INGEST).status_code == 409
     assert seeded.get(f"/api/v1/alerts/{W1}", headers=OK).json()["state"] == "dismissed"
+
+
+NUDGE = {
+    **ALERT,
+    "action_type": "nudge_owner",
+    "action_text": "Hi, ISP-1 has had no activity for 6 days. What is blocking it?",
+}
+
+
+def test_default_action_is_raising_the_priority(seeded):
+    assert seeded.get(f"/api/v1/alerts/{W1}", headers=OK).json()["action_type"] == "raise_priority"
+
+
+def test_approving_a_nudge_posts_the_draft_and_undo_removes_it(client, plane):
+    client.put("/api/v1/alerts", json=[NUDGE], headers=INGEST)
+    body = client.get(f"/api/v1/alerts/{W1}", headers=OK).json()
+    assert body["action_type"] == "nudge_owner" and body["action_text"] == NUDGE["action_text"]
+    plane.comments.clear()
+    r = client.post(f"/api/v1/alerts/{W1}/decision", json={"decision": "approve"}, headers=OK)
+    assert r.json()["state"] == "approved"
+    assert any(NUDGE["action_text"] in c for c in plane.comments)
+    assert plane.patches() == []  # a reminder never touches the priority
+    r = client.post(f"/api/v1/alerts/{W1}/undo", headers=OK)
+    assert r.json()["state"] == "pending" and plane.deleted == ["c1"]
+
+
+def test_a_nudge_without_text_is_rejected(client, plane):
+    bad = {**ALERT, "action_type": "nudge_owner"}
+    assert client.put("/api/v1/alerts", json=[bad], headers=INGEST).status_code == 422
+
+
+def test_advice_only_actions_write_nothing_but_the_audit_comment(client, plane):
+    client.put("/api/v1/alerts", json=[{**ALERT, "action_type": "split"}], headers=INGEST)
+    plane.comments.clear()
+    r = client.post(f"/api/v1/alerts/{W1}/decision", json={"decision": "approve"}, headers=OK)
+    assert r.json()["state"] == "approved" and plane.patches() == [] and len(plane.comments) == 1
+    client.post(f"/api/v1/alerts/{W1}/undo", headers=OK)
+    assert plane.deleted == []  # the audit comment stays as history
+
+
+def test_the_mark_an_alert_was_raised_at_is_kept(client, plane):
+    client.put("/api/v1/alerts", json=[{**ALERT, "mark": 0.25}], headers=INGEST)
+    assert client.get(f"/api/v1/alerts/{W1}", headers=OK).json()["mark"] == 0.25
+    assert (
+        client.put("/api/v1/alerts", json=[{**ALERT, "mark": 1.5}], headers=INGEST).status_code
+        == 422
+    )
+    client.put("/api/v1/alerts", json=[ALERT], headers=INGEST)
+    assert (
+        client.get(f"/api/v1/alerts/{W1}", headers=OK).json()["mark"] == 0.5
+    )  # older jobs: the 50% mark
+
+
+CYCLE, NEXT = str(uuid.uuid4()), str(uuid.uuid4())
+MOVE = {**ALERT, "action_type": "move_next_cycle", "cycle_id": CYCLE, "target_cycle_id": NEXT}
+
+
+def test_approving_a_move_puts_the_item_in_the_next_cycle_and_undo_brings_it_back(client, plane):
+    client.put("/api/v1/alerts", json=[MOVE], headers=INGEST)
+    r = client.post(f"/api/v1/alerts/{W1}/decision", json={"decision": "approve"}, headers=OK)
+    assert r.json()["state"] == "approved"
+    assert plane.moves == [(NEXT, {"issues": [W1]})]
+    r = client.post(f"/api/v1/alerts/{W1}/undo", headers=OK)
+    assert r.json()["state"] == "pending" and plane.moves[-1] == (CYCLE, {"issues": [W1]})
+
+
+def test_a_move_needs_both_cycles(client, plane):
+    for bad in ({**ALERT, "action_type": "move_next_cycle"}, {**MOVE, "cycle_id": None}):
+        assert client.put("/api/v1/alerts", json=[bad], headers=INGEST).status_code == 422
+
+
+def test_a_cycle_plane_refuses_leaves_the_alert_pending(client, monkeypatch):
+    monkeypatch.setattr(settings, "ingest_token", SecretStr("ingest-token"))
+    fake = FakePlane(cycle_fails=True)
+    app.dependency_overrides[get_plane] = lambda: fake.client
+    try:
+        client.put("/api/v1/alerts", json=[MOVE], headers=INGEST)
+        r = client.post(f"/api/v1/alerts/{W1}/decision", json={"decision": "approve"}, headers=OK)
+        assert r.status_code == 502
+        assert client.get(f"/api/v1/alerts/{W1}", headers=OK).json()["state"] == "pending"
+    finally:
+        app.dependency_overrides.pop(get_plane, None)
+
+
+def test_the_diagnosed_cause_and_its_quote_are_kept_and_optional(client, plane):
+    diagnosed = {
+        **ALERT,
+        "cause": "waiting_on_person",
+        "evidence_quote": "waiting for review from QA",
+    }
+    client.put("/api/v1/alerts", json=[diagnosed], headers=INGEST)
+    body = client.get(f"/api/v1/alerts/{W1}", headers=OK).json()
+    assert (
+        body["cause"] == "waiting_on_person"
+        and body["evidence_quote"] == "waiting for review from QA"
+    )
+    client.put("/api/v1/alerts", json=[ALERT], headers=INGEST)
+    assert client.get(f"/api/v1/alerts/{W1}", headers=OK).json()["cause"] is None
+    bad = {**ALERT, "cause": "the stars"}
+    assert client.put("/api/v1/alerts", json=[bad], headers=INGEST).status_code == 422

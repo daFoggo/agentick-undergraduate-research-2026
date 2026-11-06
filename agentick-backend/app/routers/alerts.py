@@ -1,3 +1,4 @@
+import html
 import uuid
 from typing import Annotated
 
@@ -137,22 +138,38 @@ def decide(
     alert, by = authorize(db, plane, session, work_item_id, lock=True)
     if read_model(db, alert).state != "pending":
         raise DuplicatedError("This alert already has a decision. Undo it first.")
-    project, previous = str(alert.project_id), None
+    project, previous, applied = str(alert.project_id), None, None
     if body.decision == "approve":
-        previous = plane.get_work_item(project, str(work_item_id))["priority"]
-        plane.update_work_item(
-            project, str(work_item_id), {"priority": "high"}
-        )  # Plane first: a failure leaves it pending
-        text = (
-            f"{by} đã duyệt: độ ưu tiên đổi từ {previous} thành high. "
-            "Có thể hoàn tác ngay trên issue."
-        )
+        if alert.action_type == "raise_priority":
+            previous = plane.get_work_item(project, str(work_item_id))["priority"]
+            plane.update_work_item(
+                project, str(work_item_id), {"priority": "high"}
+            )  # Plane first: a failure leaves it pending
+            text = (
+                f"{by} approved: priority changed from {previous} to high. "
+                "It can be undone on the item."
+            )
+        elif alert.action_type == "nudge_owner":
+            sent = plane.add_comment(
+                project, str(work_item_id), f"<p>{html.escape(alert.action_text or '')}</p>"
+            )
+            applied = sent["id"]
+            text = f"{by} approved: the reminder above was posted. It can be undone on the item."
+        elif alert.action_type == "move_next_cycle":
+            plane.move_to_cycle(project, str(work_item_id), str(alert.target_cycle_id))
+            text = f"{by} approved: the item was moved to the next cycle. It can be undone."
+        else:
+            text = f"{by} accepted the suggestion ({alert.action_type.replace('_', ' ')})."
     else:
-        text = f"{by} đã bỏ qua cảnh báo rủi ro này. Có thể mở lại ngay trên issue."
+        text = f"{by} dismissed this risk alert. It can be reopened on the item."
     plane.add_comment(project, str(work_item_id), f"<p>{text}</p>")
     db.add(
         AlertDecision(
-            work_item_id=work_item_id, event=body.decision, decided_by=by, prev_priority=previous
+            work_item_id=work_item_id,
+            event=body.decision,
+            decided_by=by,
+            prev_priority=previous,
+            applied_comment_id=applied,
         )
     )
     db.commit()
@@ -177,11 +194,19 @@ def undo(
     if state == "pending":
         raise DuplicatedError("Nothing to undo.")
     project, last = str(alert.project_id), last_event(db, work_item_id)
-    if state == "approved":
+    if state == "approved" and alert.action_type == "raise_priority":
         plane.update_work_item(project, str(work_item_id), {"priority": last.prev_priority})
-        text = f"{by} đã hoàn tác: độ ưu tiên trở lại {last.prev_priority}."
+        text = f"{by} undid it: priority is back to {last.prev_priority}."
+    elif state == "approved" and alert.action_type == "nudge_owner":
+        plane.delete_comment(project, str(work_item_id), last.applied_comment_id)
+        text = f"{by} undid it: the reminder was removed."
+    elif state == "approved" and alert.action_type == "move_next_cycle":
+        plane.move_to_cycle(
+            project, str(work_item_id), str(alert.cycle_id)
+        )  # 502 if it has finished
+        text = f"{by} undid it: the item is back in its cycle."
     else:
-        text = f"{by} đã mở lại cảnh báo rủi ro này."
+        text = f"{by} reopened this risk alert."
     plane.add_comment(project, str(work_item_id), f"<p>{text}</p>")
     db.add(AlertDecision(work_item_id=work_item_id, event="undo", decided_by=by))
     db.commit()

@@ -25,3 +25,7 @@ build/
 *.log
 .DS_Store
 .idea/
+
+# Nested fork repo (pushed separately to daFoggo/plane, branch feat/risk-service) and local migration dumps (contain secrets)
+plane/
+migration_dump_*/
