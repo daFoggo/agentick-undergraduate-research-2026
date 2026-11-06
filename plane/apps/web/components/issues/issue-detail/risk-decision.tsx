@@ -44,6 +44,8 @@ type TRiskAlert = {
   diagnosis: TRiskDiagnosis | null;
   state: "pending" | "approved" | "dismissed";
   decided_by: string | null;
+  seen_count: number; // runs of the job that published this alert
+  prev_score: number | null; // its score in the run before
 };
 
 class RiskRequestError extends Error {}
@@ -114,6 +116,15 @@ export function IssueRiskDecision(props: Props) {
       <p className="mt-1 text-caption-sm-regular text-tertiary">
         {t("risk_alert.raised_at", { percent: Math.round(alert.mark * 100) })}
       </p>
+      {alert.seen_count > 1 && alert.prev_score !== null && (
+        <p className="text-caption-sm-regular text-tertiary">
+          {t("risk_alert.seen", {
+            count: alert.seen_count,
+            prev: alert.prev_score.toFixed(2),
+            now: alert.score.toFixed(2),
+          })}
+        </p>
+      )}
       {alert.diagnosis && (
         <div className="mt-2">
           <p className="text-body-sm-medium text-secondary">{t("risk_alert.why_late")}</p>

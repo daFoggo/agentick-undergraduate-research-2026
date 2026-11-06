@@ -10,13 +10,16 @@ from sqlalchemy.orm import Session
 from app.core.exceptions import DuplicatedError, NotFoundError
 from app.db.session import get_db
 from app.dependencies import PlaneDep, PlaneSession, require_ingest_token
-from app.models.alert import Alert, AlertDecision
+from app.models.alert import SYSTEM, Alert, AlertDecision
 from app.schemas.alert import AlertIn, AlertRead, DecisionIn, redact
 from app.schemas.error import ErrorDetail
 
 router = APIRouter(prefix="/alerts", tags=["alerts"])
 
 STATES = {"approve": "approved", "reject": "dismissed"}
+REOPEN_RISE = (
+    0.15  # a dismissed alert comes back when its score rose this much since the run before
+)
 USER_ERRORS = {
     401: {"model": ErrorDetail, "description": "Not signed in to Plane."},
     403: {"model": ErrorDetail, "description": "Plane does not let this user see the work item."},
@@ -49,6 +52,8 @@ def read_model(db: Session, alert: Alert) -> AlertRead:
         **data.model_dump(),
         state=state,
         decided_by=last.decided_by if state != "pending" else None,
+        seen_count=alert.seen_count,
+        prev_score=alert.prev_score,
     )
 
 
@@ -76,10 +81,30 @@ def authorize(
 )
 def publish(body: list[AlertIn], db: Annotated[Session, Depends(get_db)]) -> dict[str, int]:
     if body:
+        before = dict(
+            db.execute(
+                select(Alert.work_item_id, Alert.score).where(
+                    Alert.work_item_id.in_([item.work_item_id for item in body])
+                )
+            ).all()
+        )
+        reopen = [  # dismissed, and clearly worse than in the run before
+            item
+            for item in body
+            if item.work_item_id in before
+            and item.score >= before[item.work_item_id] + REOPEN_RISE
+            and (last := last_event(db, item.work_item_id)) is not None
+            and last.event == "reject"
+        ]
         rows = [item.model_dump(mode="json") for item in body]
         stmt = insert(Alert).values(rows)
         update = {c: stmt.excluded[c] for c in rows[0] if c != "work_item_id"}
+        update["seen_count"] = Alert.seen_count + 1  # the right side is the row already stored
+        update["prev_score"] = Alert.score
         db.execute(stmt.on_conflict_do_update(index_elements=["work_item_id"], set_=update))
+        for item in reopen:
+            note = f"{SYSTEM}: score rose from {before[item.work_item_id]:.2f} to {item.score:.2f}"
+            db.add(AlertDecision(work_item_id=item.work_item_id, event="undo", decided_by=note))
         db.commit()
     return {"stored": len(body)}
 

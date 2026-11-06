@@ -125,6 +125,8 @@ class AlertRead(AlertIn):
 
     state: Literal["pending", "approved", "dismissed"]
     decided_by: str | None
+    seen_count: int = 1  # runs of the job that published this alert
+    prev_score: float | None = None  # its score in the run before
 
 
 class DecisionIn(BaseModel):

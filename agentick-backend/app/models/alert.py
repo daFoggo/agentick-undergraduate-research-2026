@@ -41,6 +41,13 @@ class Alert(Base, TimestampMixin):
     )  # the card: hypotheses + evidence, see schemas.alert
     cycle_id: Mapped[uuid.UUID | None] = mapped_column()  # cycle the item is in now
     target_cycle_id: Mapped[uuid.UUID | None] = mapped_column()  # cycle a move puts it in
+    seen_count: Mapped[int] = mapped_column(
+        Integer, nullable=False, server_default="1"
+    )  # runs of the job that published it
+    prev_score: Mapped[float | None] = mapped_column(Float)  # its score in the run before
+
+
+SYSTEM = "risk service"  # decided_by of an event the service wrote itself, not a person
 
 
 class AlertDecision(Base):
