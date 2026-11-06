@@ -19,3 +19,6 @@
 | 15 | `sprint_overload` thresholds (>= 50% elapsed, >= 60% open, >= 5 issues) chosen by eye, not tuned | No labelled set | Report time |
 | 16 | When the status at t is unknown, the rule-written reminder says "IS-1365 is still unknown" (seen on ISP-449) | `choose_action` puts the status word into the text without a case for "unknown" | Next pass on `alert_actions.py` |
 | 17 | M8 notes never fired on the 30 live alerts of ISP (alerts come at the 0-75% marks); the card layout was checked with a note written by hand into the risk DB, and both kinds fire in the collectors test on random issues | Sprint overload is rare early in a sprint | Report time |
+| 18 | The "All projects" filter at the top of Analytics does not apply to the Delivery risk tab (counts come from every project the user can see) | The tab reads the risk service, not Plane's analytics API | If people ask to filter by project or period |
+| 19 | The statistics are summed in Python per request (fine for thousands of alerts) | Marked `shortcut:` in `insights.py` | When alerts reach the hundred-thousands |
+| 20 | Alerts sort by score only; 41 of 81 flagged items are "carried over", which is a weak signal on its own | Cause precision is not measured (see 6, 10) | Report time |

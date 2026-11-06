@@ -550,6 +550,11 @@
     "home_more": "See all",
     "hint_decided": "{count} of {total} decided",
     "hint_checked": "{count} out of {total} looked at",
-    "not_checked_note": "{count} work items have not been checked by the AI yet, so they are not counted above."
+    "not_checked_note": "{count} work items have not been checked by the AI yet, so they are not counted above.",
+    "cause_unclear_scope": "The scope is unclear",
+    "cause_needs_decision": "Waiting for a decision",
+    "cause_waiting_on_person": "Waiting for someone",
+    "cause_blocked_by_issue": "Blocked by another work item",
+    "cause_not_started": "Nobody has started it"
   }
 }

@@ -550,6 +550,11 @@
     "home_more": "Xem tất cả",
     "hint_decided": "{count} trên {total} đã quyết định",
     "hint_checked": "{count} trên {total} đã xem xét",
-    "not_checked_note": "{count} công việc AI chưa xem xét nên chưa được tính ở trên."
+    "not_checked_note": "{count} công việc AI chưa xem xét nên chưa được tính ở trên.",
+    "cause_unclear_scope": "Phạm vi chưa rõ",
+    "cause_needs_decision": "Đang chờ một quyết định",
+    "cause_waiting_on_person": "Đang chờ một người",
+    "cause_blocked_by_issue": "Bị công việc khác chặn",
+    "cause_not_started": "Chưa ai bắt đầu"
   }
 }
