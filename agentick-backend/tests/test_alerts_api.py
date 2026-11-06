@@ -391,8 +391,17 @@ def test_pending_lists_visible_alerts_by_score_with_redacted_reason(client, plan
     out = client.get("/api/v1/insights/pending", headers=OK).json()
     assert [i["issue_key"] for i in out] == ["IS-2", "IS-1"]
     assert "secret title" not in str(out) and out[0]["cause_label"]
+    assert [i["diagnosed"] for i in out] == [True, False]
 
 
 def test_insights_need_a_plane_session(client, plane):
     assert client.get("/api/v1/insights/summary").status_code == 401
     assert client.get("/api/v1/insights/pending", headers=LIMITED).status_code == 403
+
+
+def test_an_alert_without_a_diagnosis_is_not_counted_as_an_unknown_cause(client, plane):
+    mine = str(uuid.uuid4())
+    plane.projects = [mine]
+    client.put("/api/v1/alerts", json=[_alert(mine, "IS-1", 0.4)], headers=INGEST)
+    s = client.get("/api/v1/insights/summary", headers=OK).json()
+    assert s["causes"] == [{"cause": "undiagnosed", "n": 1}] and s["ai"]["diagnosed"] == 0

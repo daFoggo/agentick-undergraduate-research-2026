@@ -59,6 +59,9 @@ pydantic · FastAPI, SQLAlchemy 2, Alembic, PostgreSQL 16 (`agentick-backend`) �
 | M6 | Thẻ Plane hiển thị chẩn đoán | Kiểm trong trình duyệt, chụp màn hình |
 | M7 | Chạy đầu cuối, sửa lỗi, chốt | Demo chạy từ đầu đến cuối |
 | M8 | Hai ghi chú `sprint_overload`, `done_not_updated` cạnh chẩn đoán | Test collectors trên DB, thẻ hiển thị trong trình duyệt |
+| M9 | Backend `GET /insights/summary` và `/insights/pending` (chỉ đếm project người xem thấy), `diagnosis.meta` (model, chi phí, lỗi) | pytest và contract test xanh |
+| M10 | Tab Analytics "Delivery risk": KPI, nguyên nhân, hành động và quyết định, độ bám bằng chứng, chi phí, theo ngày, theo project | Kiểm trong trình duyệt |
+| M11 | Home: danh sách cảnh báo đang chờ quyết định, bấm vào mở issue | Kiểm trong trình duyệt |
 
 ## Báo cáo cũ phải viết lại nhiều
 
@@ -75,3 +78,7 @@ sổ cảnh báo và vòng đời; nhãn sau sự việc và người chấm. Kh
 ## Tiến độ (2026-11-06)
 
 M0–M8 xong và đã review một lượt; giới hạn còn lại ghi ở [BACKLOG.md](BACKLOG.md). Chạy đầu cuối: `scripts/score_sprints.py` -> `scripts/post_briefs.py` -> thẻ trên Plane (Duyệt / Bỏ qua / Hoàn tác đã thử trên ISP-459).
+
+## Trang Plane đã khảo sát (2026-11-06)
+
+Làm: tab Analytics riêng (Overview của Plane là thống kê chung, không chứa số liệu AI) và widget ở Home. Không làm: Your work (cảnh báo chưa có người phụ trách để lọc), Views (nhãn `risk-alert` đã có sẵn nên view "có cảnh báo" tạo bằng bộ lọc nhãn của Plane, không cần code).

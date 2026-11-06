@@ -61,5 +61,6 @@ class PendingItem(BaseModel):
     rank: int
     size: int
     action_type: str
+    diagnosed: bool  # false for alerts raised before the diagnosis existed
     cause_label: str | None
     reason: str | None
