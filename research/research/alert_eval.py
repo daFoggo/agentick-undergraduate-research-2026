@@ -59,13 +59,13 @@ def lift_ci(frame, col, capacity='ceil20'):
     return _boot(stat, len(s))
 
 
-def load():
+def load(landmark=0.5):
     snap = pd.read_parquet('data/processed/snapshots.parquet')
-    snap = snap[snap.landmark == 0.5][['sprint_id', 'issue_id', 'dynamic_status']]
+    snap = snap[snap.landmark == landmark][['sprint_id', 'issue_id', 'dynamic_status']]
     out = None
     for model in MODELS:
         d = pd.concat([pd.read_parquet(f) for f in sorted(glob.glob(
-            f'artifacts/_archive_v2_momentum/predictions/cross_project__*__0.5__{model}.parquet'))])
+            f'artifacts/_archive_v2_momentum/predictions/cross_project__*__{landmark:g}__{model}.parquet'))])
         d = d[['project', 'sprint_id', 'issue_id', 'dynamic_is_done', 'y', 'p']].rename(columns={'p': model})
         out = d if out is None else out.merge(d[['sprint_id', 'issue_id', model]], on=['sprint_id', 'issue_id'],
                                               validate='one_to_one')

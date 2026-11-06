@@ -25,3 +25,27 @@ def test_paired_difference_is_zero_for_identical_rankings_and_positive_when_one_
     assert same['delta'] == 0
     better = paired_diff(d.assign(p=lambda x: (x.y == 1).astype(float) + x.p / 10), 'p', 'q')
     assert better['delta'] > 0 and better['ci_low'] > 0
+
+
+def test_load_reads_the_requested_landmark(tmp_path, monkeypatch):
+    import pandas as pd
+    from research import alert_eval
+    monkeypatch.chdir(tmp_path)
+    (tmp_path / 'data/processed').mkdir(parents=True)
+    pd.DataFrame({'sprint_id': [1, 1], 'issue_id': [1, 2], 'landmark': [0.25, 0.5],
+                  'dynamic_status': ['To Do', 'Done']}).to_parquet('data/processed/snapshots.parquet')
+    pred = tmp_path / 'artifacts/_archive_v2_momentum/predictions'
+    pred.mkdir(parents=True)
+    for model in alert_eval.MODELS:
+        pd.DataFrame({'project': ['P'], 'sprint_id': [1], 'issue_id': [1], 'dynamic_is_done': [0], 'y': [1],
+                      'p': [.7]}).to_parquet(pred / f'cross_project__P__0.25__{model}.parquet')
+    d = alert_eval.load(0.25)
+    assert d.dynamic_status.tolist() == ['To Do'] and len(d) == 1
+
+
+def test_earliest_useful_needs_lift_and_rule_beaten():
+    from research.lead_time import earliest_useful
+    ok = lambda lo, ci: {'dynamic_catboost': {'lift_ci': [lo, 2]}, 'model_minus_rule': {'ci_low': ci}}
+    summary = {'0.0': ok(.9, .1), '0.25': ok(1.1, -.1), '0.5': ok(1.1, .1), '0.75': ok(1.2, .2)}
+    assert earliest_useful(summary) == .5
+    assert earliest_useful({'0.0': ok(.9, .1)}) is None

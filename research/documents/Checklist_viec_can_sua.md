@@ -47,11 +47,12 @@ Ngày 2026-11-05, sau review chặng "cảnh báo rủi ro + Việc giống th�
 - [ ] Ngưỡng nhỏ/vừa/lớn (P33/P80) và ngưỡng độ chắc (≥70%) do người làm đặt, chưa kiểm chứng.
 - [ ] Mức độ chắc không có "cao" vì smoke chỉ cho thấy giảm sai số khoảng 6%.
 - [ ] Thẻ chưa giải thích vì sao hai issue được coi là giống nhau.
-- [ ] Nguồn ngoài (RAG story point, CoGEE, replication GPT2SP, Llama3SP, ProactiveBench...) chỉ đọc qua tóm tắt tìm kiếm; đọc toàn văn trước khi trích.
+- [ ] Nguồn ngoài: đã đọc toàn văn RAG story point (arXiv 2604.03443), CoGEE (2403.08430) và đọc một phần replication (2201.05401: tóm tắt, mở đầu, bảng; chưa đọc kỹ phương pháp và kết quả). Chưa đọc: Llama3SP (trả phí), 2505.01108, RAG4Tickets, ProactiveBench, PROBE. Chỉ trích những bài đã đọc.
 - [ ] Các con số E1 và E3 (recall ~59%, precision ~77–80%, A0 100%, A1 và A2 98%) lấy từ tài liệu tiến độ, chưa đối chiếu với báo cáo gốc.
 - [ ] Trùng lặp (duplicate) giữa các issue cùng dự án có thể làm kNN lạc quan; chưa kiểm soát.
 
-- [ ] **Brief và thẻ cảnh báo chưa nêu tỉ lệ nền**: 67% issue chưa xong ở mốc 50% cuối cùng không hoàn thành; cảnh báo chỉ hơn mức đó 14% (lift 1,14). Sửa lời của brief để không ngụ ý chắc chắn trễ (mục 5f).
+- [x] **Brief và thẻ không còn nói "dự báo trễ"**: chữ nhẹ hơn, không nêu thống kê (người dùng không cần). Tỉ lệ nền 67% giữ trong tài liệu và luận văn (mục 5f).
+- [x] **Ngôn ngữ đồng bộ với app**: brief bot viết tiếng Anh như giao diện Plane (trước đây tiếng Việt lẫn trong app tiếng Anh). Thẻ cảnh báo và thẻ case theo bộ dịch i18n của Plane. Brief cũ tiếng Việt sẽ bị thay khi đăng lại.
 
 ## Roadmap tiếp theo (chưa làm)
 
@@ -59,6 +60,8 @@ Ngày 2026-11-05, sau review chặng "cảnh báo rủi ro + Việc giống th�
   - Đã chạy cổng E7 không LLM (xem mục 5d của `Mo_rong_tro_ly_sprint.md`): qua theo quy tắc khóa trước (ΔAUC +0,016) nhưng chủ yếu nhờ số comment, không bền theo nhãn phụ (−0,073); chưa biện minh agent LLM đọc comment.
 - [x] **Policy giới hạn cảnh báo mỗi sprint** nối vào luồng (mặc định ceil20 của issue đủ điều kiện, tùy chọn k1 đến k3 và floor20); chưa có giao diện chọn K.
 - [ ] **Ledger chống báo lặp, snooze, dry-run** (Task 6 của kế hoạch agent).
+  - E10 (mục 5i) và amendment 1: P2 (sổ 4 mốc) hơn P0 về phần vượt kỳ vọng ngẫu nhiên (+0,031 [+0,013; +0,048]) và báo sớm hơn; chọn P2 cho chạy thật. Code đã có trong `scripts/score_sprints.py`; còn đăng lên Plane (cần khóa API).
+  - E9 (mục 5h): cảnh báo đáng báo từ mốc 0% (lift 1,23); nên xem lại ở 25, 50, 75%. Đây là cơ sở cho ledger theo thời gian.
 - [ ] **Chọn hành động theo ngữ cảnh** thay vì chỉ nâng priority.
 - [ ] **Chip "N cảnh báo" ở trang cycle.**
 - [ ] **So với estimate của chính issue** và nút "Đặt estimate": cần biết Plane có bật trường estimate cho ISP và DCP không.

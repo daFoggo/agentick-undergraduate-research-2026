@@ -43,8 +43,33 @@ def test_rejects_nonfree_usage_cost():
 
 
 def test_only_explicitly_allowed_free_models_can_be_selected():
-    with pytest.raises(ValueError, match='free allowlist'):
+    with pytest.raises(ValueError, match='allowlist'):
         OpenRouterClient('x', model='google/gemma-4-31b-it')
     client = OpenRouterClient('x', model='nvidia/nemotron-3-super-120b-a12b:free')
     assert client.model.endswith(':free')
     client.close()
+
+
+def _ok(cost):
+    return httpx.Response(200, json={'choices': [{'message': {'content': '{}'}, 'finish_reason': 'stop'}],
+                                     'usage': {'cost': cost}})
+
+
+def test_paid_model_is_opt_in_with_a_price_cap_in_every_request():
+    requests = []
+    client = OpenRouterClient('x', model='openai/gpt-6-luna', transport=httpx.MockTransport(
+        lambda r: requests.append(r) or _ok(.001)))
+    client.complete([{'role': 'user', 'content': 'test'}])
+    body = __import__('json').loads(requests[0].content)
+    assert body['model'] == 'openai/gpt-6-luna'
+    assert body['provider']['max_price'] == {'prompt': .10, 'completion': .50}  # USD per million tokens
+    assert client.spent == .001
+
+
+def test_paid_spend_stops_at_the_budget():
+    client = OpenRouterClient('x', model='openai/gpt-6-luna', budget=.01, transport=httpx.MockTransport(
+        lambda r: _ok(.006)))
+    client.complete([{'role': 'user', 'content': 'test'}])
+    client.complete([{'role': 'user', 'content': 'test'}])  # spends 0.012, over the budget, but it was already paid
+    with pytest.raises(OpenRouterError, match='budget'):
+        client.complete([{'role': 'user', 'content': 'test'}])

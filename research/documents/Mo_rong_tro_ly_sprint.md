@@ -169,3 +169,70 @@ Hạn chế: thăm dò, dùng lại dữ liệu E1, `y = 1` gồm cả issue b�
 - [ProactiveBench](https://arxiv.org/pdf/2410.12361), [PROBE](https://www.arxiv.org/pdf/2510.19771)
 - Tawosi, Sarro: LHC-SE, trong [luận án Vali Tawosi](https://discovery.ucl.ac.uk/id/eprint/10175111/1/Vali_PhD_Thesis.pdf)
 - Sản phẩm thương mại (tự quảng cáo, chưa có đánh giá độc lập): Wrike, Monday.com, Atlassian Rovo, Asana.
+
+## 5g. Đối chiếu với tài liệu đã đọc toàn văn (2026-11-05)
+- RAG story point (Maha, Rahman, Roy, ICPC 2026): cùng dữ liệu TAWOS, cắt theo thời gian 80/20, truy xuất 2–4 ca bằng embedding rồi Llama-3.2-3B sinh điểm; MAE khoảng 1,6–2,0, không khác biệt có ý nghĩa so với các phương pháp cũ; kết luận dùng làm công cụ hỗ trợ bằng cách cho xem ca giống nhau. E6 của ta là phần truy xuất không có LLM, kết quả cùng mức (MAE 1,61 so với 1,71), tự làm độc lập.
+- CoGEE (Tawosi và cộng sự): GPT-4 không ví dụ kém mean/median; có tìm kiếm ví dụ thì tốt hơn nhưng 3 dự án, 30 issue test, hàm mục tiêu tính trên tập test (đọc từ mô tả phương pháp).
+- Replication Deep-SE: chỉ đọc tóm tắt, mở đầu và bảng; Deep-SE hơn median có ý nghĩa ở 8/42 trường hợp.
+
+## 5h. E9: cảnh báo sớm đến đâu thì còn đáng báo (2026-11-05)
+Protocol `Protocol_lead_time_E9.md` (khóa trước), `research/research/lead_time.py`, một lần chạy; kết quả ở `artifacts/lead_time_e9/` (không commit theo chính sách). Cùng 1.962 sprint, 14 dự án mô hình chưa từng thấy, chính sách ceil20 như E8.
+
+| Mốc sprint | Cảnh báo | Precision | Tỉ lệ nền | Lift [CI 95%] | Recall | Mô hình trừ quy tắc (cảnh báo đúng mỗi sprint) |
+|---|---|---|---|---|---|---|
+| 0% | 4.263 | 0,612 | 0,496 | 1,23 [1,21; 1,26] | 0,312 | +0,236 [+0,197; +0,277] |
+| 25% | 3.741 | 0,694 | 0,583 | 1,19 [1,17; 1,21] | 0,312 | +0,180 [+0,146; +0,214] |
+| 50% | 3.339 | 0,763 | 0,670 | 1,14 [1,12; 1,16] | 0,308 | +0,119 [+0,091; +0,148] |
+| 75% | 2.976 | 0,850 | 0,784 | 1,08 [1,07; 1,10] | 0,307 | +0,066 [+0,045; +0,088] |
+
+**Mốc sớm nhất đáng báo theo quy tắc khóa trước: 0%** (lúc lập kế hoạch sprint). Lift cao nhất và mô hình hơn quy tắc nhiều nhất ở mốc sớm nhất; tỉ lệ nền tăng theo thời gian (mọi issue chưa xong ở cuối sprint đều gần như chắc không xong) nên lift giảm dù precision thô tăng. Không so precision thô giữa các mốc.
+Hệ quả: cảnh báo nên chạy từ lúc lập kế hoạch và được xem lại ở các mốc sau (nền tảng của sổ cảnh báo theo thời gian), thay vì chỉ một lần ở 50%.
+Hạn chế: giống E8 (dùng lại dữ liệu E1, `y=1` gồm cả issue bị rút khỏi sprint); ở mốc 0% chưa kiểm xem đặc trưng "động" có thật sự chỉ gồm thông tin trước lúc bắt đầu sprint (cần đối chiếu với định nghĩa đặc trưng trong E1 trước khi tuyên bố).
+
+## 5i. E10: khi nào báo (2026-11-05)
+Protocol `Protocol_when_to_alert_E10.md` (khóa trước), `research/research/when_to_alert.py`, 6 test, một lần chạy; kết quả ở `artifacts/when_to_alert_e10/`. Cùng ngân sách K mỗi sprint (bằng số cảnh báo của chính sách đang chạy, 1,70 cảnh báo mỗi sprint), 1.962 sprint, 14 dự án mô hình chưa từng thấy.
+
+| Chính sách | Cảnh báo đúng mỗi sprint | Precision | Độ sớm (phần sprint còn lại) |
+|---|---|---|---|
+| P0 đang chạy (top K ở 50%) | 1,298 | 0,763 | 0,50 |
+| P1 (top K ở 0%) | 1,138 | 0,669 | 1,00 |
+| P2 (sổ 4 mốc, không báo lặp, ngưỡng điểm ≥ 0,5) | 1,203 | 0,713 | 0,79 |
+| P3 (sổ 4 mốc, không ngưỡng) | 1,194 | 0,702 | 0,82 |
+
+So với P0: P1 −0,160 [−0,182; −0,138], P2 −0,095 [−0,113; −0,076], P3 −0,103 [−0,123; −0,085] cảnh báo đúng mỗi sprint; độ sớm P1 +0,50, P2 +0,29 [+0,28; +0,30], P3 +0,32. P2 so với P3: +0,009 [+0,002; +0,016] cảnh báo đúng, độ sớm −0,032 [−0,037; −0,027].
+
+**Theo quy tắc khóa trước:** không chính sách nào "tốt hơn P0" (cảnh báo đúng thấp hơn có ý nghĩa), và ngưỡng 0,5 không "tốt hơn" không ngưỡng (lợi cảnh báo đúng +0,009 nhưng mất độ sớm). Kết luận: **báo sớm hơn phải đánh đổi độ đúng**: ở cùng ngân sách, mỗi lần dời cảnh báo sớm hơn làm precision giảm (0,763 → 0,669 khi dời từ mốc 50% về 0%). Không có chính sách thống trị; đây là một đường đánh đổi.
+**Đọc cho sản phẩm (đánh giá thiết kế, không phải kết quả đã khóa):** sổ nhiều mốc P2 đổi khoảng 7% cảnh báo đúng (1,298 → 1,203) lấy thêm khoảng 0,29 phần sprint thời gian để hành động (từ 0,50 lên 0,79), và cho phép bắt issue "nổi lên" ở mốc sau. Lựa chọn giữa P0 và P2 là quyết định về mức giá trị của thời gian để hành động, chưa thể rút ra từ replay vì chưa đo người phản ứng thế nào với cảnh báo sớm.
+Hạn chế: giống E8, E9; ngưỡng 0,5 và cách chia ngân sách do người làm đặt, không tối ưu; "độ sớm" chỉ là phần sprint còn lại, không phải thời gian người thật cần để sửa.
+
+**Bổ sung thăm dò cho 5i (2026-11-05, sau khi chạy; chưa có CI, chưa có protocol):** chỉ số chính khóa trước của E10 (số cảnh báo đúng mỗi sprint) bất lợi cho cảnh báo sớm vì tỉ lệ nền tăng theo thời gian: ở mốc muộn gần như mọi issue còn mở đều không xong nên cảnh báo nào cũng "đúng". Tính phần **vượt kỳ vọng ngẫu nhiên** (đúng trừ số đúng mong đợi khi chọn ngẫu nhiên trong các issue đủ điều kiện cùng sprint và cùng mốc): P0 0,150; P1 0,194; P2 0,181; P3 0,179 cảnh báo mỗi sprint. Theo cách đo này cảnh báo sớm không kém, thậm chí hơn. Muốn kết luận phải viết amendment khóa trước (chỉ số vượt kỳ vọng ngẫu nhiên, CI bootstrap theo sprint) rồi chạy lại. Chọn chỉ số chính "số đúng" trong E10 là một lựa chọn chưa tốt của người làm.
+
+## 5j. Định nghĩa nhãn giữ nguyên (2026-11-05)
+Nhãn `y = 1` giữ như đề cương: issue cam kết trong sprint mà đến hết sprint chưa xong, gồm cả làm dở lẫn bị rút khỏi sprint (sprint kết thúc theo ngày, issue dở dang trôi sang sprint sau hoặc về backlog). Tỉ lệ issue bị rút trong số không xong ở mốc 75%: XD 57%, TISTUD 42%, MULE 37%, ... CONFSERVER 10%. Tỉ lệ nền ở 75% khác nhau theo dự án từ 0,55 đến 0,94, nên so sánh giữa dự án dùng lift và phần vượt kỳ vọng ngẫu nhiên, không dùng precision thô. Phân tích phụ cần báo: tỉ lệ bị rút theo dự án. "Chuyển sang cycle kế" là hành động khớp với định nghĩa này.
+
+**Amendment 1 của E10 (khóa trước, chạy lại cùng dữ liệu, `artifacts/when_to_alert_e10_amendment1/`)** với chỉ số phần vượt kỳ vọng ngẫu nhiên mỗi sprint:
+
+| Chính sách | Vượt kỳ vọng ngẫu nhiên | So với P0 [CI 95%] | Độ sớm |
+|---|---|---|---|
+| P0 (báo ở 50%) | 0,150 | | 0,50 |
+| P1 (báo ở 0%) | 0,194 | +0,044 [+0,022; +0,064] | 1,00 |
+| **P2 (sổ 4 mốc, ngưỡng 0,5)** | 0,181 | **+0,031 [+0,013; +0,048]** | 0,79 |
+| P3 (sổ 4 mốc, không ngưỡng) | 0,179 | +0,029 [+0,011; +0,046] | 0,82 |
+
+Theo quy tắc của amendment: P1, P2, P3 đều **tốt hơn P0** (CI nằm hoàn toàn trên 0), đồng thời báo sớm hơn. Chỉ số cũ (số đúng thô) vẫn ngược chiều vì tỉ lệ nền tăng theo thời gian; hai chỉ số được báo cùng nhau. **Quyết định thiết kế: chạy thật dùng P2** (sổ nhiều mốc, không báo lặp), vì nó hơn P0 về phần vượt kỳ vọng ngẫu nhiên, báo sớm hơn nhiều, và cho phép bắt issue nổi lên ở mốc sau. P1 có phần vượt cao nhất nhưng không cho xem lại. Hạn chế như E8, E9.
+
+## 5k. E11: agent chọn và soạn hành động, chạy thử nhỏ (2026-11-05)
+Protocol `Protocol_action_agent_E11.md` và amendment 1 (chạy thử nhỏ trước vì lần đầy đủ đầu tiên bị dừng do quá tốn, không ghi kết quả). Mã `app/services/action_agent.py`, `research/agent_action_eval.py`, 7 test. Chạy thử 10 cảnh báo của dự án IS (chính sách P2), `gpt-oss-120b`, 1 lần lặp, kèm 10 lần chèn lệnh trong comment; tổng chi khoảng 0,0005 USD.
+- **Lần 1:** đầu ra hợp lệ 10/10, bộ kiểm tra chặn 4/4 đầu ra xấu cố định, chèn lệnh lọt vào thẻ 0 lần, 0,00005 USD và khoảng 5 giây mỗi cảnh báo. Đọc đầu ra thấy lỗi: nhắc "đang kẹt gì" cho issue vừa hoạt động 0,0 đến 0,9 ngày; ghi "status: unknown"; một lần chọn "giao người phụ trách" dựa trên dữ kiện không được cung cấp.
+- **Sửa:** chỉ cho nhắc khi im lặng ≥ 2 ngày; agent chỉ được chọn tăng ưu tiên, nhắc, chuyển cycle (bỏ giao người và tách nhỏ vì thiếu dữ kiện); dặn bỏ trạng thái khi không rõ.
+- **Lần 2 (sau sửa, cùng 10 cảnh báo):** hành động agent **trùng quy tắc ở cả 10**; 4 lần agent đề xuất nhắc cho issue vừa hoạt động bị bộ kiểm tra từ chối và quay về quy tắc (tỉ lệ hợp lệ 0,6, dưới ngưỡng 90% của protocol gốc; sau đó prompt được dặn thêm điều kiện ≥ 2 ngày để giảm bị từ chối, chưa đo lại). Chèn lệnh lọt 0.
+**Đọc:** trên mẫu nhỏ này agent chưa chọn hành động tốt hơn quy tắc; giá trị còn lại là lời nhắc viết tự nhiên và (chưa kiểm) khả năng đọc comment. Muốn kết luận chất lượng cần người chấm (bảng chấm nằm trong thư mục kết quả), không phải đo thêm bằng máy.
+
+## 5l. Agent chẩn đoán nguyên nhân kẹt (2026-11-05)
+Nhiệm vụ mới của agent (thay cho "chọn hành động", vốn trùng quy tắc ở 10/10 trong 5k): đọc comment, mô tả và liên kết chặn trước mốc rồi trả lời **vì sao issue có vẻ kẹt** trong tập (chờ người, bị issue khác chặn, cần quyết định, phạm vi chưa rõ, chưa bắt đầu, không đủ thông tin), **trích nguyên văn** một câu bằng chứng, nêu issue đang chặn nếu có, và soạn lời nhắc nhắm đúng chỗ. Mã `app/services/stuck_diagnosis.py` (6 test). Mã kiểm tra từng phần: câu trích phải có thật trong văn bản (so sánh không phân biệt hoa thường và khoảng trắng), issue chặn phải là liên kết đang mở, lời nhắc không có link, mention, thẻ HTML, phải nhắc đúng khóa issue và số ngày; hỏng thì thành `no_signal` và quy tắc quyết định. Backend lưu `cause` và `evidence_quote`; thẻ Plane hiện "Why it looks stuck" cùng câu trích; brief có cùng dòng đó.
+**Chạy thử nhỏ** (`research/research/stuck_diagnosis_pilot.py`): 30 cảnh báo của dự án IS có comment, `gpt-6-luna`, một lần, tốn 0,002 USD. Agent trả "không đủ thông tin" ở 20/30, có nguyên nhân ở 10/30 (cần quyết định 5, chờ người 3, phạm vi chưa rõ 1, bị chặn 1); bộ từ khóa của E7 có nguyên nhân ở 17/30. Câu trích bịa: 0/9. Trùng nguyên nhân với bộ từ khóa: 43%. Đọc từng dòng (người đọc là tác giả, không độc lập): từ khóa gán sai nhiều trường hợp ("Dependencies of packages" thành bị chặn, "Done in PR" thành chờ), agent thận trọng hơn và có ca đúng rõ (IS-736 bị IS-867 chặn nhờ liên kết và comment, IS-1119 chờ review, IS-1500 chờ người báo lỗi cung cấp thông tin); agent bỏ sót một số ca (IS-1211, IS-712). Bảng 30 dòng `artifacts/stuck_diagnosis_pilot/rating_sheet.csv` có hai cột trống cho người chấm. **Chưa kết luận** agent chẩn đoán đúng hơn bộ từ khóa cho đến khi có người chấm độc lập.
+
+## 5m. Agent chẩn đoán có công cụ (2026-11-05)
+Sau khi đối chiếu với các tài liệu thiết kế (Protocol_agent_E3_v2, tài liệu Anthropic về kiến trúc agent): bản "một lần gọi" (5l) là workflow chứ chưa phải agent. Bản mới `app/services/stuck_agent.py` là agent có công cụ thật: vòng lặp tối đa 4 bước, công cụ chỉ đọc `get_comments` (chỉ issue được cảnh báo) và `get_linked_issue` (chỉ issue có liên kết với nó), kết thúc bằng `submit_diagnosis`. Dữ liệu công cụ cắt tại thời điểm cảnh báo (`research/tawos_source.py`), kết quả công cụ bị cắt tối đa 3.000 ký tự, quote phải có thật trong kết quả công cụ, issue chặn phải là liên kết đang mở, lời nhắc qua cùng bộ kiểm tra; chạy dở, bị từ chối hoặc lỗi thì `no_signal` và quy tắc quyết định. Mỗi bước ghi vào `meta['trace']` (công cụ, tham số, kích thước, chi phí). 7 test (đọc comment rồi trả lời, theo issue chặn, công cụ ngoài phạm vi bị từ chối, quote bịa bị loại, vòng lặp có giới hạn, kết quả công cụ bị cắt, lỗi thì quay về quy tắc).
+**Chạy thử nhỏ** (cùng 30 cảnh báo của dự án IS như 5l, `gpt-6-luna`, tốn 0,0043 USD, `artifacts/stuck_agent_pilot/`): có nguyên nhân 13/30 (một lần gọi: 10/30; bộ từ khóa: 17/30); 30/30 gọi `get_comments`, 4 lần gọi `get_linked_issue` (đúng các issue có liên kết), không lần nào chạy dở; một câu trả lời bị bộ kiểm tra từ chối (blocker không phải liên kết đang mở). Cùng nguyên nhân với bản một lần gọi ở 18/30. Ví dụ: IS-736 bị IS-867 chặn (tìm được qua liên kết), IS-582 bị IS-574 chặn, IS-1121 có hai liên kết đều đã xong nên kết luận không đủ thông tin. Hạn chế: chỉ 30 mẫu, người đọc kết quả là tác giả, chưa có người chấm; lời nhắc của agent đôi khi không mở đầu lịch sự; bộ kiểm tra số ngày chỉ so với issue được cảnh báo nên lời nhắc nêu số ngày của issue chặn bị từ chối.
+Nhãn trên thẻ và brief đổi thành "Theo các comment: ..." để không thành khẳng định nhân quả (cổng an toàn nhân quả của E3).
