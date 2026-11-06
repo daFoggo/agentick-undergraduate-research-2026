@@ -9,3 +9,6 @@
 | 5 | Evidence of other issues shows titles without a per-viewer check in the job | Filter happens in the backend (M4) per viewer | M4 |
 | 6 | Cause labels are not validated against human labels | No labelled set; out of scope for now | Report time |
 | 7 | Old modules kept only for scoring (`alert_actions`, `alert_eval`, ...) | `score_sprints.py` imports them | After M5, prune what is unused |
+| 8 | `.spectral.yaml` lint of the backend OpenAPI not run locally | Only pytest + schemathesis contract tests were run after M4 | Before merging to main (CI runs it) |
+| 9 | `move_next_cycle` is never proposed by the model's card | The rules know the cycles; the model's choice is only used for `nudge_owner` / `raise_priority` | If the card should explain a move |
+| 10 | The diagnosis prompt is tuned on 5 + 6 live cases only | No labelled set (see 6); cost ~0.0001 USD per alert | Report time |
