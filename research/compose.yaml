@@ -15,17 +15,6 @@ services:
       timeout: 5s
       retries: 20
 
-  api:
-    build: .
-    environment:
-      DATABASE_URL: ${DATABASE_URL:-postgresql+psycopg://tawos:tawos_local_dev@db:5432/tawos}
-      APP_NAME: Sprint Risk Research API
-    ports:
-      - "8000:8000"
-    depends_on:
-      db:
-        condition: service_healthy
-
   source-mysql:
     image: mysql:8.0
     container_name: tawos-source-mysql

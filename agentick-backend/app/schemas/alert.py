@@ -5,10 +5,60 @@ from pydantic import BaseModel, ConfigDict, Field, model_validator
 
 Change = Annotated[str, Field(max_length=1000)]
 # the first three are carried out in Plane on approval; the rest is advice
-Cause = Literal[
-    "waiting_on_person", "blocked_by_issue", "needs_decision", "unclear_scope", "not_started"
+Cause = Literal[  # the first five are the earlier labels, kept so stored alerts still read
+    "waiting_on_person", "blocked_by_issue", "needs_decision", "unclear_scope", "not_started",
+    "pulled_away", "blocked", "waiting_person", "carry_over",
 ]
 ActionType = Literal["raise_priority", "nudge_owner", "assign_owner", "split", "move_next_cycle"]
+
+
+class Evidence(BaseModel):
+    id: str = Field(max_length=64)
+    kind: Literal["discussion", "owner", "blockers", "sprint", "history"]
+    ts: str = Field(max_length=40)
+    text: str = Field(max_length=1000)
+    ref_key: str | None = Field(default=None, max_length=32)  # another issue this event is about
+    safe_text: str | None = Field(default=None, max_length=300)  # what a viewer outside its project sees
+
+
+class Hypothesis(BaseModel):
+    cause: Cause
+    label: str = Field(max_length=100)
+    reason: str = Field(max_length=400)
+    evidence: list[Evidence] = Field(min_length=1, max_length=12)
+
+
+class DiagnosisAction(BaseModel):
+    type: ActionType | None = None
+    text: str | None = Field(default=None, max_length=2000)
+
+
+class Diagnosis(BaseModel):
+    hypotheses: list[Hypothesis] = Field(max_length=3)
+    dropped: int = Field(default=0, ge=0, le=100)  # hypotheses the verifier removed
+    unknown: bool
+    missing_info: str | None = Field(default=None, max_length=300)
+    action: DiagnosisAction = DiagnosisAction()
+
+
+def prefix(key: str) -> str:
+    return key.rsplit("-", 1)[0]
+
+
+def redact(diagnosis: Diagnosis, issue_key: str) -> Diagnosis:
+    """Evidence about an issue of another project shows only its safe summary (priority, state), never its title or text.
+    The model's own words about it (reason, missing_info) could repeat that text, so they fall back to the label."""
+    hidden = False
+    for h in diagnosis.hypotheses:
+        cut = False
+        for e in h.evidence:
+            if e.ref_key and prefix(e.ref_key) != prefix(issue_key):
+                e.text, e.ref_key, cut = e.safe_text or "an issue in another project", None, True
+        if cut:
+            h.reason, hidden = h.label, True
+    if hidden:
+        diagnosis.missing_info = None
+    return diagnosis
 
 
 class AlertIn(BaseModel):
@@ -29,6 +79,7 @@ class AlertIn(BaseModel):
     action_text: str | None = Field(default=None, max_length=2000)
     cause: Cause | None = None  # why the issue looks stuck, from the agent that read its comments
     evidence_quote: str | None = Field(default=None, max_length=500)  # what it quoted
+    diagnosis: Diagnosis | None = None  # why it is at risk: hypotheses with evidence, or "unknown"
     cycle_id: uuid.UUID | None = None  # the cycle the item is in now (where an undo puts it back)
     target_cycle_id: uuid.UUID | None = None  # the cycle a move_next_cycle action puts it in
 

@@ -19,6 +19,13 @@ import { useIssueDetail } from "@/hooks/store/use-issue-detail";
 // asking Plane about the caller's session, so this component sends no credentials of its own.
 const RISK_API = "/risk/api/v1/alerts";
 
+// Why the item is at risk: hypotheses, each with the recorded events that back it (the backend redacts other projects)
+type TRiskDiagnosis = {
+  hypotheses: { cause: string; label: string; reason: string; evidence: { id: string; text: string }[] }[];
+  unknown: boolean;
+  missing_info: string | null;
+};
+
 type TRiskAlert = {
   work_item_id: string;
   comment_id: string;
@@ -31,8 +38,9 @@ type TRiskAlert = {
   changes: string[];
   action_type: "raise_priority" | "nudge_owner" | "move_next_cycle" | "assign_owner" | "split";
   action_text: string | null;
-  cause: "waiting_on_person" | "blocked_by_issue" | "needs_decision" | "unclear_scope" | "not_started" | null;
+  cause: string | null; // earlier labels or the new set; the diagnosis below carries the readable label
   evidence_quote: string | null;
+  diagnosis: TRiskDiagnosis | null;
   state: "pending" | "approved" | "dismissed";
   decided_by: string | null;
 };
@@ -105,7 +113,32 @@ export function IssueRiskDecision(props: Props) {
       <p className="mt-1 text-caption-sm-regular text-tertiary">
         {t("risk_alert.raised_at", { percent: Math.round(alert.mark * 100) })}
       </p>
-      {alert.cause && (
+      {alert.diagnosis && (
+        <div className="mt-2">
+          <p className="text-body-sm-medium text-secondary">{t("risk_alert.why_late")}</p>
+          {alert.diagnosis.unknown && (
+            <p className="mt-1 text-body-sm-regular text-tertiary">{t("risk_alert.why_unknown")}</p>
+          )}
+          {alert.diagnosis.hypotheses.map((h) => (
+            <div key={h.cause} className="mt-1">
+              <p className="text-body-sm-regular text-secondary">
+                <span className="text-body-sm-medium">{h.label}</span>: {h.reason}
+              </p>
+              {h.evidence.slice(0, 3).map((e) => (
+                <p key={e.id} className="mt-1 border-l-2 border-subtle pl-2 text-body-sm-regular text-tertiary">
+                  {e.text}
+                </p>
+              ))}
+            </div>
+          ))}
+          {alert.diagnosis.missing_info && (
+            <p className="mt-1 text-body-sm-regular text-tertiary">
+              {t("risk_alert.still_unknown")} {alert.diagnosis.missing_info}
+            </p>
+          )}
+        </div>
+      )}
+      {!alert.diagnosis && alert.cause && (
         <div className="mt-2">
           <p className="text-body-sm-medium text-secondary">
             {t("risk_alert.why_stuck")} {t(`risk_alert.cause_${alert.cause}`)}
