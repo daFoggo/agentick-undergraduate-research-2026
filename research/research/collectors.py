@@ -119,7 +119,8 @@ def notes(cur, issue_id, t, events):
         out.append(dict(kind='sprint_overload', event_ids=[f"s-{st['sid']}"],
                         text=f"{st['total'] - st['done']} of {st['total']} issues of {st['name']} are still open with "
                              f"{st['frac']:.0%} of the sprint elapsed"))
-    if (state_at(cur, issue_id, t)['status'] or '').lower() not in DONE:
+    status = (state_at(cur, issue_id, t)['status'] or '').lower()
+    if status and status not in DONE:  # an unknown status is not "still open"
         said = [e for e in events if e['kind'] == 'discussion' and t - e['ts'] <= DONE_WITHIN and DONE_WORDS.search(e['text'])]
         if said:
             word = DONE_WORDS.search(said[-1]['text']).group(1).lower()
