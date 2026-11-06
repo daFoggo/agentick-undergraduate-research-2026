@@ -26,6 +26,7 @@ import psycopg
 
 from app.services.brief import final_action, why
 from app.services.diagnosis import diagnose
+from app.services.http_retry import send
 from app.services.openrouter_client import OpenRouterClient
 from research.alert_actions import choose_action, next_cycle
 from research.collectors import collect
@@ -50,7 +51,7 @@ def plane(method, path, body=None, key=None):
     req = urllib.request.Request(BASE + path, method=method, data=json.dumps(body).encode() if body else None,
                                  headers={'X-API-Key': key or KEY, 'Content-Type': 'application/json'})
     try:
-        with urllib.request.urlopen(req, timeout=30) as r:
+        with send(req) as r:
             return json.load(r) if r.status != 204 else None
     except urllib.error.HTTPError as e:
         sys.exit(f'{method} {path} -> {e.code} {e.read()[:300]}')
@@ -82,7 +83,7 @@ def retire(w, label_id):
     req = urllib.request.Request(f"{RISK_URL}/{w['id']}", method='DELETE',
                                  headers={'Authorization': f"Bearer {os.environ['RISK_INGEST_TOKEN']}"})
     try:
-        urllib.request.urlopen(req, timeout=30)
+        send(req)
     except urllib.error.HTTPError as e:
         if e.code != 409:  # 409 = a person already decided on it: the alert stays
             raise
@@ -194,7 +195,7 @@ for w in items:
 if published:
     req = urllib.request.Request(RISK_URL, method='PUT', data=json.dumps(published, default=str).encode(), headers={
         'Authorization': f"Bearer {os.environ['RISK_INGEST_TOKEN']}", 'Content-Type': 'application/json'})
-    with urllib.request.urlopen(req, timeout=30) as r:
+    with send(req) as r:
         print('risk service stored', json.load(r)['stored'], 'alerts')
 if agent:
     print('causes:', dict(agent_stats), 'cost USD', round(agent_cost, 5))
