@@ -8,6 +8,7 @@ it (collected up to the alert time, research/collectors.py), what is still unkno
 without real event ids (app/services/diagnosis.py). Without a key or with AGENT=0 the card says "unknown" and the rules
 choose the action. Each alert is also published to the risk service, which feeds the Approve / Dismiss / Undo card.
 Re-running replaces earlier briefs (deleted with PLANE_API_KEY, posted with PLANE_BOT_KEY if set) and overwrites the alerts.
+DUMP_INPUTS=path.jsonl also writes, per alert, the events the model saw and the card it returned (see eval_diagnosis.py).
 Usage: PLANE_API_KEY=... [PLANE_BOT_KEY=...] RISK_INGEST_TOKEN=... [RESEARCH_DATABASE_URL=...] \
        python scripts/post_briefs.py scores.csv ISP [limit]
 """
@@ -28,10 +29,10 @@ from app.services.brief import final_action, why
 from app.services.diagnosis import diagnose
 from app.services.http_retry import send
 from app.services.openrouter_client import OpenRouterClient
+from app.services.plane_api import plane
 from research.alert_actions import choose_action, next_cycle
 from research.collectors import collect, notes
 
-BASE = os.environ.get('PLANE_URL', 'http://localhost:31080/api/v1/workspaces/ript')
 KEY = os.environ['PLANE_API_KEY']
 BOT_KEY = os.environ.get('PLANE_BOT_KEY', KEY)
 RISK_URL = os.environ.get('RISK_URL', 'http://localhost:31081/api/v1/alerts')
@@ -45,16 +46,6 @@ limit = int(sys.argv[3]) if len(sys.argv) > 3 else None
 # anonymised ids, so only the fact of the change is shown.
 FIELDS = {'status': 'Status', 'Sprint': 'Sprint', 'Story Points': 'Story points', 'priority': 'Priority',
           'resolution': 'Resolution', 'assignee': 'Assignee'}
-
-
-def plane(method, path, body=None, key=None):
-    req = urllib.request.Request(BASE + path, method=method, data=json.dumps(body).encode() if body else None,
-                                 headers={'X-API-Key': key or KEY, 'Content-Type': 'application/json'})
-    try:
-        with send(req) as r:
-            return json.load(r) if r.status != 204 else None
-    except urllib.error.HTTPError as e:
-        sys.exit(f'{method} {path} -> {e.code} {e.read()[:300]}')
 
 
 def tawos(sql):
@@ -151,6 +142,7 @@ except Exception as exc:
     print('agent off, rules only:', exc)
     agent = None
 agent_stats, agent_cost = Counter(), 0.0
+DUMP = open(os.environ['DUMP_INPUTS'], 'w', encoding='utf-8') if os.environ.get('DUMP_INPUTS') else None
 for w in items:
     r = latest[w['external_id']]
     if r['alert'] != 'True':
@@ -185,6 +177,9 @@ for w in items:
         if meta['error']:
             print('diagnosis failed', key, meta['error'])
         action = final_action(action, card)
+        if DUMP:  # exactly what the model saw and what it answered, for scripts/eval_diagnosis.py
+            DUMP.write(json.dumps(dict(key=key, title=title, status=row['dynamic_status'], inactive=inactive,
+                                       events=evidence, card=card), default=str, ensure_ascii=False) + '\n')
     sprint_note = next((e['text'] for e in evidence if e['kind'] == 'sprint'), '')
     brief = plane('POST', P + f"/work-items/{w['id']}/comments/", {'comment_html': render(
         r, sprint_size[(r['sprint_id'], r['mark'])], row['dynamic_status'], inactive, events, action, card,

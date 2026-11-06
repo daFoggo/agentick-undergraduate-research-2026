@@ -80,6 +80,16 @@ def test_a_cause_needs_evidence_of_the_right_kind_and_is_not_repeated():
     assert card['dropped'] == 2
 
 
+def test_carry_over_is_listed_after_a_stronger_cause_and_never_crowds_it_out():
+    events = [ev('h-carry-1', 'history'), ev('o-1', 'owner'), ev('c-1', 'discussion'), ev('c-2', 'discussion'),
+              ev('c-3', 'discussion')]
+    card, _ = diagnose(Fake(reply(('carry_over', ['h-carry-1']), ('waiting_person', ['c-1']),
+                                  ('unclear_scope', ['c-2']), ('pulled_away', ['o-1']))), 'X-1', 't', 's', 3, events)
+    assert [h['cause'] for h in card['hypotheses']] == ['waiting_person', 'unclear_scope', 'pulled_away']
+    only, _ = diagnose(Fake(reply(('carry_over', ['h-carry-1']))), 'X-1', 't', 's', 3, events)
+    assert [h['cause'] for h in only['hypotheses']] == ['carry_over']
+
+
 def test_a_reminder_needs_two_quiet_days_and_the_right_number_of_days():
     nudge = reply(action='nudge_owner', text='Hi, X-1 has had no activity for 3 days; can you share an update?')
     assert diagnose(Fake(nudge), 'X-1', 't', 's', 3.0, EV)[0]['action']['type'] == 'nudge_owner'
