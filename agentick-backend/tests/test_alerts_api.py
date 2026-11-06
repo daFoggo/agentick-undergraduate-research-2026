@@ -258,3 +258,32 @@ def test_the_diagnosed_cause_and_its_quote_are_kept_and_optional(client, plane):
     assert client.get(f"/api/v1/alerts/{W1}", headers=OK).json()["cause"] is None
     bad = {**ALERT, "cause": "the stars"}
     assert client.put("/api/v1/alerts", json=[bad], headers=INGEST).status_code == 422
+
+
+def _card(ref_key):
+    ev = {"id": "o-1", "kind": "owner", "ts": "2020-01-05T00:00:00+00:00",
+          "text": 'assignee moved OTHER-9 "secret title" In Progress -> Done', "ref_key": ref_key,
+          "safe_text": "another issue, priority High"}
+    mine = {"id": "c-1", "kind": "discussion", "ts": "2020-01-04T00:00:00+00:00", "text": "user#2: waiting"}
+    return {"hypotheses": [{"cause": "pulled_away", "label": "the assignee is pulled to other work",
+                            "reason": "moved a High issue", "evidence": [ev, mine]}],
+            "dropped": 0, "unknown": False, "missing_info": None,
+            "action": {"type": "nudge_owner", "text": "Hi, IS-1 looks stalled; any update?"}}
+
+
+def test_evidence_about_an_issue_of_another_project_is_redacted_for_the_viewer(client, plane):
+    client.put("/api/v1/alerts", json=[{**ALERT, "diagnosis": _card("OTHER-9")}], headers=INGEST)
+    ev = client.get(f"/api/v1/alerts/{W1}", headers=OK).json()["diagnosis"]["hypotheses"][0]["evidence"]
+    assert ev[0]["text"] == "another issue, priority High" and ev[0]["ref_key"] is None
+    assert ev[1]["text"] == "user#2: waiting"
+    client.put("/api/v1/alerts", json=[{**ALERT, "diagnosis": _card("IS-9")}], headers=INGEST)
+    ev = client.get(f"/api/v1/alerts/{W1}", headers=OK).json()["diagnosis"]["hypotheses"][0]["evidence"]
+    assert "secret title" in ev[0]["text"]  # same project: shown in full
+
+
+def test_a_diagnosis_is_optional_and_checked(client, plane):
+    client.put("/api/v1/alerts", json=[ALERT], headers=INGEST)
+    assert client.get(f"/api/v1/alerts/{W1}", headers=OK).json()["diagnosis"] is None
+    bad = _card("IS-9")
+    bad["hypotheses"][0]["evidence"] = []  # a hypothesis without evidence is not storable
+    assert client.put("/api/v1/alerts", json=[{**ALERT, "diagnosis": bad}], headers=INGEST).status_code == 422

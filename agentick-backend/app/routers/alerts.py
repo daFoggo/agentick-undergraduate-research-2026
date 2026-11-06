@@ -11,7 +11,7 @@ from app.core.exceptions import DuplicatedError, NotFoundError
 from app.db.session import get_db
 from app.dependencies import PlaneDep, PlaneSession, require_ingest_token
 from app.models.alert import Alert, AlertDecision
-from app.schemas.alert import AlertIn, AlertRead, DecisionIn
+from app.schemas.alert import AlertIn, AlertRead, DecisionIn, redact
 from app.schemas.error import ErrorDetail
 
 router = APIRouter(prefix="/alerts", tags=["alerts"])
@@ -40,8 +40,11 @@ def last_event(db: Session, work_item_id: uuid.UUID) -> AlertDecision | None:
 def read_model(db: Session, alert: Alert) -> AlertRead:
     last = last_event(db, alert.work_item_id)
     state = "pending" if last is None or last.event == "undo" else STATES[last.event]
+    data = AlertIn.model_validate(alert, from_attributes=True)
+    if data.diagnosis:
+        redact(data.diagnosis, alert.issue_key)  # the viewer's own project is checked by authorize()
     return AlertRead(
-        **AlertIn.model_validate(alert, from_attributes=True).model_dump(),
+        **data.model_dump(),
         state=state,
         decided_by=last.decided_by if state != "pending" else None,
     )
