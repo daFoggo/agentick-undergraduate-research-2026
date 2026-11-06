@@ -24,6 +24,7 @@ type TRiskDiagnosis = {
   hypotheses: { cause: string; label: string; reason: string; evidence: { id: string; text: string }[] }[];
   unknown: boolean;
   missing_info: string | null;
+  notes?: { kind: string; text: string }[];
 };
 
 type TRiskAlert = {
@@ -130,6 +131,11 @@ export function IssueRiskDecision(props: Props) {
                 </p>
               ))}
             </div>
+          ))}
+          {alert.diagnosis.notes?.map((n) => (
+            <p key={n.kind} className="mt-1 text-body-sm-regular text-tertiary">
+              {n.text}
+            </p>
           ))}
           {alert.diagnosis.missing_info && (
             <p className="mt-1 text-body-sm-regular text-tertiary">

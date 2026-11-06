@@ -289,3 +289,11 @@ def test_a_diagnosis_is_optional_and_checked(client, plane):
     bad = _card("IS-9")
     bad["hypotheses"][0]["evidence"] = []  # a hypothesis without evidence is not storable
     assert client.put("/api/v1/alerts", json=[{**ALERT, "diagnosis": bad}], headers=INGEST).status_code == 422
+
+
+def test_notes_are_stored_and_only_known_kinds_are_accepted(client, plane):
+    card = _card("IS-9") | {"notes": [{"kind": "sprint_overload", "text": "7 of 9 open", "event_ids": ["s-1"]}]}
+    client.put("/api/v1/alerts", json=[{**ALERT, "diagnosis": card}], headers=INGEST)
+    assert client.get(f"/api/v1/alerts/{W1}", headers=OK).json()["diagnosis"]["notes"][0]["kind"] == "sprint_overload"
+    card["notes"][0]["kind"] = "lazy_team"
+    assert client.put("/api/v1/alerts", json=[{**ALERT, "diagnosis": card}], headers=INGEST).status_code == 422

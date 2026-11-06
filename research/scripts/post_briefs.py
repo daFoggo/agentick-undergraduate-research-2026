@@ -29,7 +29,7 @@ from app.services.diagnosis import diagnose
 from app.services.http_retry import send
 from app.services.openrouter_client import OpenRouterClient
 from research.alert_actions import choose_action, next_cycle
-from research.collectors import collect
+from research.collectors import collect, notes
 
 BASE = os.environ.get('PLANE_URL', 'http://localhost:31080/api/v1/workspaces/ript')
 KEY = os.environ['PLANE_API_KEY']
@@ -174,6 +174,7 @@ for w in items:
     action = choose_action(key, row['dynamic_status'], inactive, mark, cycle_id, next_id)
     card = dict(hypotheses=[], dropped=0, unknown=True, missing_info=None, action=dict(type=None, text=None))
     evidence = collect(research_db.cursor(), issue_id, cutoff)
+    card['notes'] = notes(research_db.cursor(), issue_id, cutoff, evidence)
     if agent:
         title = tawos(f"select title from tawos_raw.issue where id={issue_id}")[0]['title'] or ''
         card, meta = diagnose(agent, key, title, row['dynamic_status'], inactive, evidence, can_move=bool(next_id))

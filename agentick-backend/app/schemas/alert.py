@@ -33,12 +33,19 @@ class DiagnosisAction(BaseModel):
     text: str | None = Field(default=None, max_length=2000)
 
 
+class Note(BaseModel):
+    kind: Literal["sprint_overload", "done_not_updated"]
+    text: str = Field(max_length=300)
+    event_ids: list[str] = Field(default=[], max_length=12)
+
+
 class Diagnosis(BaseModel):
     hypotheses: list[Hypothesis] = Field(max_length=3)
     dropped: int = Field(default=0, ge=0, le=100)  # hypotheses the verifier removed
     unknown: bool
     missing_info: str | None = Field(default=None, max_length=300)
     action: DiagnosisAction = DiagnosisAction()
+    notes: list[Note] = Field(default=[], max_length=2)  # states beside the diagnosis, about this issue's own sprint
 
 
 def prefix(key: str) -> str:

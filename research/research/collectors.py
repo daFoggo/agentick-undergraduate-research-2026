@@ -1,5 +1,9 @@
 """Five fixed SQL collectors. Each returns events {id, kind, ts, text}, none later than t; the LLM may only cite these ids.
 Titles and comments are user text: the caller passes them as data."""
+import re
+from datetime import timedelta
+
+from research.replay import DONE
 from research.tawos_source import state_at, waits_on
 
 KINDS = ('discussion', 'owner', 'blockers', 'sprint', 'history')
@@ -59,11 +63,11 @@ def blockers(cur, issue_id, t, depth=2):
     return out
 
 
-def sprint(cur, issue_id, t):
-    """The sprint the issue was in at t (from the log, not the final column); dates may be missing in TAWOS."""
+def _sprint_stats(cur, issue_id, t):
+    """The sprint the issue was in at t (from the log, not the final column) and how far along it is; dates may be missing."""
     ids = state_at(cur, issue_id, t)['sprint_ids']
     if not ids:
-        return []
+        return None
     cur.execute("select id, name, start_date, end_date from tawos_raw.sprint where id=any(%s) "
                 "order by start_date desc nulls last limit 1", (list(ids),))
     sid, name, start, end = cur.fetchone()
@@ -71,9 +75,17 @@ def sprint(cur, issue_id, t):
                 "and creation_date<=%s", (t, sid, t))  # shortcut: final membership, see BACKLOG #2
     total, done = cur.fetchone()
     span = (end - start).total_seconds() if start and end else 0
-    elapsed = f'{min(max((t - start).total_seconds() / span, 0), 1):.0%} of the sprint elapsed, ' if span > 0 else ''
-    return [_ev(f's-{sid}', 'sprint', min(start, t) if start else t,
-                f'{name}: {elapsed}{done} of {total} issues resolved, {total - done} still open')]
+    frac = min(max((t - start).total_seconds() / span, 0), 1) if span > 0 else None
+    return dict(sid=sid, name=name, start=start, total=total, done=done, frac=frac)
+
+
+def sprint(cur, issue_id, t):
+    st = _sprint_stats(cur, issue_id, t)
+    if not st:
+        return []
+    elapsed = f"{st['frac']:.0%} of the sprint elapsed, " if st['frac'] is not None else ''
+    return [_ev(f"s-{st['sid']}", 'sprint', min(st['start'], t) if st['start'] else t,
+                f"{st['name']}: {elapsed}{st['done']} of {st['total']} issues resolved, {st['total'] - st['done']} still open")]
 
 
 def history(cur, issue_id, t, n=8):
@@ -92,3 +104,26 @@ def history(cur, issue_id, t, n=8):
 def collect(cur, issue_id, t):
     """All events for one issue at time t, oldest first inside each kind."""
     return [e for f in (discussion, owner, blockers, sprint, history) for e in f(cur, issue_id, t)]
+
+
+DONE_WORDS = re.compile(r'\b(done|fixed|merged|completed|resolved|deployed|released)\b', re.I)
+# shortcuts, tuned by eye: an overloaded sprint is >= half over with >= 60% still open; a comment counts as "done" when it
+# says so within 3 days of t. Both are notes next to the diagnosis, never causes of this issue.
+OVERLOAD_AFTER, OVERLOAD_OPEN, DONE_WITHIN = .5, .6, timedelta(days=3)
+
+
+def notes(cur, issue_id, t, events):
+    """Two states shown beside the diagnosis (not causes of the issue): [{kind, text, event_ids}], all from events <= t."""
+    out, st = [], _sprint_stats(cur, issue_id, t)
+    if st and st['frac'] is not None and st['total'] >= 5 and st['frac'] >= OVERLOAD_AFTER             and (st['total'] - st['done']) / st['total'] >= OVERLOAD_OPEN:
+        out.append(dict(kind='sprint_overload', event_ids=[f"s-{st['sid']}"],
+                        text=f"{st['total'] - st['done']} of {st['total']} issues of {st['name']} are still open with "
+                             f"{st['frac']:.0%} of the sprint elapsed"))
+    status = (state_at(cur, issue_id, t)['status'] or '').lower()
+    if status and status not in DONE:  # an unknown status is not "still open"
+        said = [e for e in events if e['kind'] == 'discussion' and t - e['ts'] <= DONE_WITHIN and DONE_WORDS.search(e['text'])]
+        if said:
+            word = DONE_WORDS.search(said[-1]['text']).group(1).lower()
+            out.append(dict(kind='done_not_updated', event_ids=[said[-1]['id']],  # a keyword, not a verdict: wording says "may"
+                            text=f'it may already be done: a comment in the last 3 days says "{word}" and the status is still open'))
+    return out

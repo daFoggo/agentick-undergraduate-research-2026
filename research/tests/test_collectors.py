@@ -59,3 +59,19 @@ def test_issues_with_blockers_give_ordered_levels_and_unique_ids(conn):
         assert all(e['ts'] <= t and e['ref_key'] and e['safe_text'] for e in blockers)
         assert all(('level 1' in e['text'] or 'level 2' in e['text']) for e in blockers)
     assert seen > 0
+
+
+def test_notes_cite_events_that_exist_and_both_kinds_occur(conn):
+    from research.collectors import notes
+    cur = conn.cursor()
+    cur.execute("select i.id, i.creation_date + (s.end_date - i.creation_date) * .7 from tawos_raw.issue i join "
+                "tawos_raw.sprint s on s.id=i.sprint_id where s.end_date > i.creation_date order by random() limit 300")
+    kinds = set()
+    for issue_id, t in cur.fetchall():
+        events = collect(conn.cursor(), issue_id, t)
+        ids = {e['id'] for e in events}
+        for n in notes(conn.cursor(), issue_id, t, events):
+            kinds.add(n['kind'])
+            assert n['event_ids'] and set(n['event_ids']) <= ids and n['text']
+    assert kinds, 'neither note ever fired on 300 issues: thresholds are wrong'
+    print('note kinds seen:', kinds)
